@@ -1,10 +1,9 @@
 DOTROT_HOME = File.dirname(__FILE__)
+DOTROT_BACKUPS = File.join(DOTROT_HOME, 'backups')
 
-def symlink_dotfile(name)
-  print "symlinking #{name}... "
-  FileUtils.ln_s File.join(DOTROT_HOME, "dot.#{name}"), "#{ENV['HOME']}/.#{name}", :force => true
-  puts 'done!'
-end
+require 'lib/dotrot'
+
+task :default => [:install]
 
 desc "Install dotfiles"
 task :install do
@@ -13,4 +12,20 @@ task :install do
   symlink_dotfile "gemrc"
   puts "\nNow run this command to reload the shell:\n\n"
   puts "  source ~/.bash_profile\n\n"
+end
+
+namespace :backups do
+  desc "Clobber backups"
+  task :clobber do
+    print "=> removing #{DOTROT_BACKUPS}... "
+    FileUtils.rm_rf(DOTROT_BACKUPS)
+    puts "done!"
+  end
+  
+  desc "Restore backups"
+  task :restore do
+    print "=> restoring from backups... "
+    FileUtils.mv File.join(DOTROT_BACKUPS, '*'), File.join(ENV['HOME']), :force => true
+    puts "done!"
+  end
 end
