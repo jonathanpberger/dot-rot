@@ -1,0 +1,25 @@
+[user]
+  name = Pat Nakajima
+  email = patnakajima@gmail.com
+[alias]
+  co = checkout
+  st = status
+[apply]
+  whitespace = nowarn
+[color]
+  branch = auto
+  diff = auto
+  status = auto
+[color "branch"]
+  current = black reverse
+  local = black
+  remote = green
+[color "diff"]
+  meta = yellow bold
+  frag = magenta bold
+  old = red bold
+  new = green bold
+[color "status"]
+  added = black
+  changed = green
+  untracked = magenta

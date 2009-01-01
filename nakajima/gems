@@ -1,0 +1,5 @@
+# Local Gems
+add_to_path "$HOME/.gems/bin"
+export GEM_HOME="$HOME/.gems"
+export GEM_PATH="$GEM_HOME"
+
