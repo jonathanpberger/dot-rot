@@ -11,9 +11,6 @@ task :install do
   symlink_dotfile "bash_profile"
   symlink_dotfile "gitconfig"
   symlink_dotfile "gemrc"
-  puts ""
-  puts "Now run this command to reload the shell:"
-  puts ""
-  puts "  source ~/.bash_profile"
-  puts ""
+  puts "\nNow run this command to reload the shell:\n\n"
+  puts "  source ~/.bash_profile\n\n"
 end
