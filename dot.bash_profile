@@ -2,7 +2,7 @@ function add_to_path {
   export PATH="$1:$PATH"
 }
 
-dotrot() {
+function dotrot {
   source "$HOME/dot-rot/nakajima/$1"
 }
 
