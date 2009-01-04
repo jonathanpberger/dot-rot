@@ -30,4 +30,4 @@ function gc {
 }
 
 # Colorized grep
-alias grep='GREP_COLOR="1;37;41" LANG=C grep --color=auto'
+alias grep='GREP_COLOR="1;32" LANG=C grep --color=auto'
