@@ -19,7 +19,7 @@ add_to_path '/Users/patnakajima/bin'
 export CLICOLOR=1
 
 # How it should look
-export PS1="[\w] \u\$(parse_git_branch)$ "
+export PS1="[\w]\e[1m\$(parse_git_branch)\e[0m$ "
 
 # Setting PATH for MacPython 2.5
 # The orginal version is saved in .bash_profile.pysave
