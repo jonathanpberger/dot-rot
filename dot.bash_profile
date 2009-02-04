@@ -14,6 +14,7 @@ dotrot "aliases"
 
 # For stupid little hacky scripts
 add_to_path '/Users/patnakajima/bin'
+add_to_path "$HOME/dot-rot/bin"
 
 # Color!
 export CLICOLOR=1
