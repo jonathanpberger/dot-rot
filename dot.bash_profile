@@ -9,7 +9,6 @@ function dotrot {
 # Load everything up
 dotrot "gems"
 dotrot "mysql"
-dotrot "git_branch"
 dotrot "aliases"
 
 # For stupid little hacky scripts

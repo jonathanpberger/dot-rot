@@ -1,0 +1,4 @@
+# bash function "awkp" for grabbing fields from output
+# e.g., "ps -ef | fgrep mongrel | awkp 2 | xargs kill"
+narg=$1
+awk "{print \$$1}"
