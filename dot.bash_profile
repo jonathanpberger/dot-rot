@@ -13,7 +13,7 @@ source "$HOME/dot-rot/vendor/j2/j.sh"
 source "$HOME/dot-rot/vendor/git_completions.sh"
 
 # For stupid little hacky scripts
-add_to_path '/Users/patnakajima/bin'
+add_to_path '/Users/jpb/bin'
 add_to_path "$HOME/dot-rot/bin"
 
 # Color!
@@ -54,3 +54,5 @@ ruby_or_irb () {
   fi
 }
 alias rb="ruby_or_irb"
+
+add_to_path "/usr/local/git/bin"
