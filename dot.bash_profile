@@ -12,7 +12,7 @@ dotrot "mysql"
 dotrot "aliases"
 
 # For stupid little hacky scripts
-add_to_path '/Users/patnakajima/bin'
+add_to_path '/Users/jpb/bin'
 add_to_path "$HOME/dot-rot/bin"
 
 # Color!
@@ -26,3 +26,4 @@ export PS1="[\w]\[\e[1m\]\$(parse_git_branch)\[\e[0m\]$ "
 PATH="/Library/Frameworks/Python.framework/Versions/Current/bin:${PATH}"
 export PATH
 
+add_to_path "/usr/local/git/bin"
