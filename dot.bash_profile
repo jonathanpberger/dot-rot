@@ -26,3 +26,6 @@ export PS1="[\w]\[\e[1m\]\$(parse_git_branch)\[\e[0m\]$ "
 PATH="/Library/Frameworks/Python.framework/Versions/Current/bin:${PATH}"
 export PATH
 
+# Keep machine-specific stuff in .bash_local
+touch ~/.bash_local
+source ~/.bash_local
