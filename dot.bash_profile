@@ -18,6 +18,9 @@ add_to_path "$HOME/dot-rot/bin"
 # Color!
 export CLICOLOR=1
 
+# Edit!
+export EDITOR='vi'
+
 # How it should look
 export PS1="[\w]\[\e[1m\]\$(parse_git_branch)\[\e[0m\]$ "
 
