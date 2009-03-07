@@ -1,0 +1,75 @@
+#!/usr/bin/env ruby
+
+# Keep track of Dash tokens in a .dash_tokens file.
+#
+# USAGE
+#
+# Setting a token:
+#
+#   $ dash_token fixjour SOME-DASH-TOKEN-HERE
+#
+# Getting a token:
+#
+#   $ dash_token fixjour
+#
+# Unsetting a token:
+#
+#   $ dash_token fixjour --unset
+#
+# Listing all tokens:
+#
+#   $ dash_token list
+#
+# TODO Real options
+require 'yaml'
+
+class DashToken
+  def get(key)
+    if token = store[key]
+      puts token
+    end
+  end
+  
+  def set(key, val)
+    puts "set #{key} token to #{val}"
+    save(store[key] = val)
+  end
+  
+  def unset(key)
+    puts "unset #{key} token"
+    store.delete(key) if store.has_key?(key)
+    save(store)
+  end
+  
+  def list
+    puts "Dash Tokens:"
+    store.each do |key, val|
+      puts "- #{key}: #{val}"
+    end
+  end
+  
+  private
+  
+  def save(new_store)
+    File.open(tokens, 'w+') do |file|
+      YAML.dump(store, file)
+    end
+  end
+  
+  def store
+    @store ||= YAML.load_file(tokens) || {}
+  end
+  
+  def tokens
+    File.join(ENV['HOME'], '.dash_tokens')
+  end
+end
+
+sym = case
+when ARGV.empty?            then :list
+when ARGV.delete('list')    then :list
+when ARGV.delete('--unset') then :unset
+else ARGV.length > 1 ? :set : :get
+end
+
+DashToken.new.send(sym, *ARGV.dup)
