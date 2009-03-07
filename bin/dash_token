@@ -27,48 +27,46 @@ class DashToken
   def initialize(args)
     sym = case
     when args.empty?            then :list
-    when args.delete('list')    then :list
     when args.delete('--unset') then :unset
     else args.length > 1 ? :set : :get
     end ; send(sym, *args)
   end
-  
+
   def get(key)
     if token = store[key]
       puts token
     end
   end
-  
+
   def set(key, val)
-    save(store[key] = val)
+    store[key] = val and save(store)
     puts "set #{key} token to #{val}"
   end
-  
+
   def unset(key)
-    store.delete(key)
+    store.delete(key) and save(store)
     puts "unset #{key} token"
-    save(store)
   end
-  
+
   def list
     puts "Dash Tokens:"
     store.each do |key, val|
       puts "- #{key}: #{val}"
     end
   end
-  
+
   private
-  
+
   def save(new_store)
     File.open(tokens, 'w+') do |file|
       YAML.dump(store, file)
     end
   end
-  
+
   def store
     @store ||= YAML.load_file(tokens) || {}
   end
-  
+
   def tokens
     File.join(ENV['HOME'], '.dash_tokens')
   end
