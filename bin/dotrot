@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+mate "$HOME/dot-rot/$1"
