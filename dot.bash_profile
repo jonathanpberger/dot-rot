@@ -2,14 +2,15 @@ function add_to_path {
   export PATH="$1:$PATH"
 }
 
-function dotrot {
-  source "$HOME/dot-rot/nakajima/$1"
-}
+# function dotrot {
+#   source "$HOME/dot-rot/nakajima/$1"
+# }
 
 # Load everything up
-dotrot "gems"
-dotrot "mysql"
-dotrot "aliases"
+cd "$HOME/dot-rot/nakajima/$1"
+source "gems"
+source "mysql"
+source "aliases"
 
 # For stupid little hacky scripts
 add_to_path '/Users/patnakajima/bin'
