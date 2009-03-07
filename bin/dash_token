@@ -24,6 +24,15 @@
 require 'yaml'
 
 class DashToken
+  def initialize(args)
+    sym = case
+    when args.empty?            then :list
+    when args.delete('list')    then :list
+    when args.delete('--unset') then :unset
+    else args.length > 1 ? :set : :get
+    end ; send(sym, *args)
+  end
+  
   def get(key)
     if token = store[key]
       puts token
@@ -31,13 +40,13 @@ class DashToken
   end
   
   def set(key, val)
-    puts "set #{key} token to #{val}"
     save(store[key] = val)
+    puts "set #{key} token to #{val}"
   end
   
   def unset(key)
+    store.delete(key)
     puts "unset #{key} token"
-    store.delete(key) if store.has_key?(key)
     save(store)
   end
   
@@ -65,11 +74,4 @@ class DashToken
   end
 end
 
-sym = case
-when ARGV.empty?            then :list
-when ARGV.delete('list')    then :list
-when ARGV.delete('--unset') then :unset
-else ARGV.length > 1 ? :set : :get
-end
-
-DashToken.new.send(sym, *ARGV.dup)
+DashToken.new(ARGV.dup)
