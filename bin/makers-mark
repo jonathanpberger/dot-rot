@@ -17,10 +17,6 @@ require 'rdiscount'
 # or
 #
 #   $ cat README | makers-mark
-#
-# TODO
-#
-# - specify which lexer should be used
 class MakersMark
   def self.parse(argv)
     if idx = argv.index('-l') || argv.index('--lexer')
