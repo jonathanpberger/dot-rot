@@ -7,6 +7,9 @@ source "$HOME/dot-rot/nakajima/gems"
 source "$HOME/dot-rot/nakajima/mysql"
 source "$HOME/dot-rot/nakajima/aliases"
 
+# Vendor files
+source "$HOME/dot-rot/vendor/git_completions.sh" 
+
 # For stupid little hacky scripts
 add_to_path '/Users/patnakajima/bin'
 add_to_path "$HOME/dot-rot/bin"
