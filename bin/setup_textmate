@@ -5,3 +5,4 @@ function get_bundle() {
 get_bundle 'Ack in Project'  'git://github.com/protocool/ack-tmbundle.git'
 get_bundle 'Nakajima' 'git://github.com/nakajima/nakajima-tmbundle.git'
 get_bundle 'RSpec' 'git://github.com/nakajima/rspec-tmbundle.git'
+get_bundle 'Ctags' 'git://github.com/pivotal/tm-ctags-tmbundle.git'
