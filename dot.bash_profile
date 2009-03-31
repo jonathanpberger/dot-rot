@@ -21,7 +21,7 @@ export CLICOLOR=1
 export EDITOR='vi'
 
 # How it should look
-export PS1="[\w]\[\e[1m\]\$(parse_git_branch)\[\e[0m\]$ "
+export PS1="[\w]\[\e[1m\]\$(parse_git_branch)\[\e[0m\] "
 
 # Setting PATH for MacPython 2.5
 # The orginal version is saved in .bash_profile.pysave
