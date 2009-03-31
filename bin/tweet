@@ -1,0 +1,6 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+require 'twitter-client'
+
+Twitter ARGV.empty? ? $stdin.read : ARGV.join(' ')
