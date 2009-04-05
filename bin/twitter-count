@@ -1,0 +1,9 @@
+#!/usr/bin/env ruby
+
+require 'open-uri'
+require 'nokogiri'
+
+html = open('http://twitter.com/nakajima').read
+count = Nokogiri(html).at('#follower_count').text
+
+puts count

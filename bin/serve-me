@@ -1,0 +1,8 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+require 'sinatra'
+
+set :static, true
+set :root, Dir.pwd
+set :public, Dir.pwd
