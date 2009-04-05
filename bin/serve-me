@@ -8,8 +8,14 @@ set :root, Dir.pwd
 set :public, Dir.pwd
 
 helpers do
+  # Forward link
   def _(path)
     path.gsub(File.expand_path(Dir.pwd), '')
+  end
+  
+  # Back link
+  def __(path)
+    _(Dir.pwd + path + '/..')
   end
 end
 
@@ -63,12 +69,22 @@ __END__
 </html>
 
 @@ index
-<h1>Viewing <code><%= params[:path] || Dir.pwd %>/</code></h1>
+<h1>
+  Viewing <code><%= params[:path] || Dir.pwd %>/</code>
+</h1>
+
+<% if params[:path] %>
+  <h3>
+    <a href="/<%= __(params[:path]) %>">/..</a>
+  </h3>
+<% end %>
 
 <% @files.each do |file| %>
-  <h3><a href ="<%= _(file) %>"><%= _(file) %></a></h3>
+  <h3>
+    <a href ="<%= _(file) %>"><%= _(file) %></a>
+  </h3>
 <% end %>
 
 <% if params[:path] %>
-<a href="/<%= _(Dir.pwd + params[:path] + '/..') %>">Back</a>
+  <a href="/<%= __(params[:path]) %>">Back</a>
 <% end %>
