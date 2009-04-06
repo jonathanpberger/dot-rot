@@ -7,10 +7,23 @@ set :static, true
 set :root, Dir.pwd
 set :public, Dir.pwd
 
+def route(path)
+  if prefix = ARGV.first
+    '/' + prefix + path
+  else
+    path
+  end
+end
+
 helpers do
   # Forward link
-  def _(path)
-    path.gsub(File.expand_path(Dir.pwd), '')
+  def _(path, opts={})
+    res = path.gsub(File.expand_path(Dir.pwd), '')
+    if opts[:route] and File.directory?(path)
+      route(res)
+    else
+      res
+    end
   end
   
   # Back link
@@ -19,10 +32,10 @@ helpers do
   end
 end
 
-['/', '/:path'].each do |route|
-  get route do
+['/', '/:path'].each do |path|
+  get route(path) + '?' do
     dir = [Dir.pwd, params[:path], '*'].compact.join('/')
-    @files = Dir[dir].join("\n")
+    @files = Dir[dir]
     erb :index
   end
 end
@@ -75,16 +88,16 @@ __END__
 
 <% if params[:path] %>
   <h3>
-    <a href="/<%= __(params[:path]) %>">/..</a>
+    <a href="<%= __(params[:path]) %>">/..</a>
   </h3>
 <% end %>
 
 <% @files.each do |file| %>
   <h3>
-    <a href ="<%= _(file) %>"><%= _(file) %></a>
+    <a href ="<%= _(file, :route => true) %>"><%= _(file) %></a>
   </h3>
 <% end %>
 
 <% if params[:path] %>
-  <a href="/<%= __(params[:path]) %>">Back</a>
+  <a href="<%= __(params[:path]) %>">Back</a>
 <% end %>
