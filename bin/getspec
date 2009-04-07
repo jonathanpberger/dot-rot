@@ -23,15 +23,17 @@ class GemspecGetter
   end
   
   def env
-    config = YAML.load(`gem env`)['RubyGems Environment']
-    config = config.inject({}) { |res, val| res.merge(val) }
+    @env ||= begin
+      config = YAML.load(`gem env`)['RubyGems Environment']
+      config = config.inject({}) { |res, val| res.merge(val) }
   
-    if config['RUBYGEMS VERSION'] != '1.3.1'
-      puts 'Rubygems version has changed.'
-      puts 'This might not work.'
-    end
+      if config['RUBYGEMS VERSION'] != '1.3.1'
+        puts 'Rubygems version has changed.'
+        puts 'This might not work.'
+      end
 
-    config
+      config
+    end
   end
 end
 
