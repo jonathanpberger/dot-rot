@@ -2,10 +2,15 @@
 
 require 'rubygems'
 require 'sinatra'
+require 'rack-flash'
 
 set :static, true
 set :root, Dir.pwd
 set :public, Dir.pwd
+
+enable :sessions
+
+use Rack::Flash
 
 def route(path)
   if prefix = ARGV.first
@@ -25,11 +30,15 @@ helpers do
       res
     end
   end
-  
+
   # Back link
   def __(path)
     _(Dir.pwd + path + '/..')
   end
+end
+
+configure do
+  $RUNNING = []
 end
 
 ['/', '/:path'].each do |path|
@@ -38,6 +47,15 @@ end
     @files = Dir[dir]
     erb :index
   end
+end
+
+get '/run/*' do
+  file = '/' + params[:splat].join('/')
+  port = "678#{$RUNNING.length}"
+  $RUNNING.push file
+  flash[:port] = port
+  Thread.new { `ruby #{file} -p #{port}` }
+  redirect request.referrer
 end
 
 __END__
@@ -60,6 +78,10 @@ __END__
       color: #000;
     }
 
+    a.run-app {
+      background: #ffc;
+    }
+
     a:hover {
       background: #555;
       color: #fff;
@@ -67,6 +89,16 @@ __END__
 
     a:active {
       background: #333;
+    }
+
+    strong {
+      background: #cfa;
+      padding: 3px;
+    }
+
+    strong a {
+      background: #cfa;
+      color: #484;
     }
 
     code {
@@ -77,6 +109,11 @@ __END__
   </style>
 </head>
 <body>
+  <% if flash.has?(:port) %>
+    <strong>
+      Running on port <a href='http://localhost:<%= flash[:port] %>'><%= flash[:port] %></a>.
+    </strong>
+  <% end %>
   <%= yield %>
 </body>
 </html>
@@ -95,6 +132,11 @@ __END__
 <% @files.each do |file| %>
   <h3>
     <a href ="<%= _(file, :route => true) %>"><%= _(file) %></a>
+    <% if file =~ /\.rb$/ and not $RUNNING.include?(file) %>
+    <small>
+      <a class="run-app" href="/run<%= file %>">Run app</a>
+    </small>
+    <% end %>
   </h3>
 <% end %>
 
