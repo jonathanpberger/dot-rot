@@ -64,7 +64,7 @@ module ServerManager
     def launch!
       puts file
       Thread.new do 
-        puts "ruby #{file} -p #{port}"
+        `ruby #{file} -p #{port}`
       end
     end
     
