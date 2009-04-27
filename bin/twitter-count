@@ -3,8 +3,12 @@
 require 'open-uri'
 require 'nokogiri'
 
-$stderr.print 'Enter your twitter name: '
-name = $stdin.gets.chomp
+
+name = ARGV.first || begin
+  $stderr.print 'Enter your twitter name: '
+  $stdin.gets.chomp
+end
+
 $stderr.puts 'Grabbing...'
 
 html = open('http://twitter.com/' + name).read
