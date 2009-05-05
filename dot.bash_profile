@@ -18,7 +18,7 @@ add_to_path "$HOME/dot-rot/bin"
 export CLICOLOR=1
 
 # Edit!
-export EDITOR='vi'
+export EDITOR='emacs'
 
 # How it should look
 export PS1="[\w]\[\e[1m\]\$(parse_git_branch)\[\e[0m\] "
