@@ -17,6 +17,7 @@ add_to_path "$HOME/dot-rot/bin"
 
 # Color!
 export CLICOLOR=1
+export LSCOLORS=GxFxCxDxBxegedabagacad
 
 # Edit!
 export EDITOR='vi'

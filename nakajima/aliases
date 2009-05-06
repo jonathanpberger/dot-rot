@@ -4,6 +4,9 @@ alias rm='rm -i'
 alias l="ls -lh"
 alias ll="ls -lha"
 
+# Make the "tree" command pretty and useful by default http://feedproxy.google.com/~r/Command-line-fu/~3/IOPOAr98MRo/make-the-tree-command-pretty-and-useful-by-default
+alias tree="tree -CAFa -I 'CVS|*.*.package|.svn|.git' --dirsfirst"
+
 # Convenience
 alias edit_shell='vi ~/.bash_profile && source ~/.bash_profile'
 

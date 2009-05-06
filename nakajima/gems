@@ -1,5 +1,9 @@
 # Local Gems
-export GEM_HOME="$HOME/.gems"
-export GEM_PATH="$GEM_HOME"
-add_to_path "$HOME/.gems/bin"
+
+# Corey: 090506
+# 		 commented out to use the System gems
+#        at /Library/Ruby/Gems/1.8 
+# export GEM_HOME="$HOME/.gems"
+# export GEM_PATH="$GEM_HOME"
+# add_to_path "$HOME/.gems/bin"
 
