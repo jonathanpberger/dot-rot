@@ -1,3 +1,19 @@
+class KeyBindingsInstaller
+  PATH = File.join(ENV['HOME'], *%W[Library KeyBindings DefaultKeyBinding.dict])
+  
+  def self.install!
+    return if File.exist?(PATH)
+    puts '** Installing KeyBindings'
+    puts ' * Creating ~/Library/KeyBindings directory'
+    FileUtils.mkdir_p(File.dirname(PATH))
+    puts ' * Linking file...'
+    FileUtils.ln_s \
+      source = File.join(DOTROT_HOME, 'nakajima', 'DefaultKeyBinding.dict'),
+      target = PATH
+    puts ' * done!'
+  end
+end
+
 def symlink_dotfile(name)
   source = File.join(DOTROT_HOME, "dot.#{name}")
   target = File.join(ENV['HOME'], ".#{name}")
