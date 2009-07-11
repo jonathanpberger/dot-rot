@@ -19,7 +19,15 @@ alias gb='git branch -a -v'
 alias gs='git status'
 alias gd='git diff'
 alias gpp="git pull && git push"
+<<<<<<< HEAD
 alias wip="git add . && git commit -m 'wip'"
+=======
+
+alias github="open \`git config -l | grep 'remote.origin.url' | sed -n 's/remote.origin.url=git@github.com:\(.*\)\/\(.*\).git/https:\/\/github.com\/\1\/\2/p'\`" # from Corey
+
+
+
+>>>>>>> Added some of CoreyTi's OSX-Install prefs
 # gc      => git checkout master
 # gc bugs => git checkout bugs
 function gc {
