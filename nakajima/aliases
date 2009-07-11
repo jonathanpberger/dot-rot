@@ -22,6 +22,11 @@ alias gb='git branch -a -v'
 alias gs='git status'
 alias gd='git diff'
 alias gpp="git pull && git push"
+
+alias github="open \`git config -l | grep 'remote.origin.url' | sed -n 's/remote.origin.url=git@github.com:\(.*\)\/\(.*\).git/https:\/\/github.com\/\1\/\2/p'\`" # from Corey
+
+
+
 # gc      => git checkout master
 # gc bugs => git checkout bugs
 function gc {
