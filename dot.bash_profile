@@ -14,6 +14,7 @@ dotrot "aliases"
 # For stupid little hacky scripts
 add_to_path '/Users/jpb/bin'
 add_to_path "$HOME/dot-rot/bin"
+add_to_path "/usr/local/git/bin"
 
 # Functions to put the version control branch in the prompt
 parse_git_branch() {
@@ -45,7 +46,8 @@ export EDITOR="mate -w"
 #  Corey's prompt http://www.cyberciti.biz/tips/howto-linux-unix-bash-shell-setup-prompt.html
 
 # corey's "parse_svn_branch" kept giving me trouble, so I rm'd it
-export PS1="\[\033[00m\]\u@\h\[\033[01;34m\] \W\[\033[31m\] \$(parse_git_branch)\$(parse_svn_branch) \[\033[00m\]$\[\033[00m\] "
+# export PS1="\[\033[00m\]\u@\h\[\033[01;34m\] \W\[\033[31m\] \$(parse_git_branch)\$(parse_svn_branch) \[\033[00m\]$\[\033[00m\] "
+export PS1="\[\033[00m\]\u@\h\[\033[01;34m\] \W\[\033[31m\] \$(parse_git_branch) \[\033[00m\]$\[\033[00m\] "
 
 # version of prompt w/o SVN parsing
 # export PS1="\[\033[00m\]\u@\h\[\033[01;34m\] \W\[\033[31m\] \[\033[00m\]$\[\033[00m\] "
@@ -58,9 +60,21 @@ export PS1="\[\033[00m\]\u@\h\[\033[01;34m\] \W\[\033[31m\] \$(parse_git_branch)
 # export PATH
 
 
-add_to_path "/usr/local/git/bin"
-
 # Keep machine-specific stuff in .bash_local
 touch ~/.bash_local
 source ~/.bash_local
+
+
+# MacPorts Installer addition on 2009-10-14_at_01:14:33: adding an appropriate PATH variable for use with MacPorts.
+export PATH=/opt/local/bin:/opt/local/sbin:$PATH
+# Finished adapting your PATH environment variable for use with MacPorts.
+
+
+##
+# Your previous /Users/jpb/.profile file was backed up as /Users/jpb/.profile.macports-saved_2009-10-14_at_07:17:50
+##
+
+# MacPorts Installer addition on 2009-10-14_at_07:17:50: adding an appropriate PATH variable for use with MacPorts.
+export PATH=/opt/local/bin:/opt/local/sbin:$PATH
+# Finished adapting your PATH environment variable for use with MacPorts.
 
