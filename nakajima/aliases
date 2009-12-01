@@ -42,3 +42,6 @@ alias gcd="git status | grep deleted: | cut -f 2 -d : | xargs git rm"
 
 # Colorized grep
 alias grep='GREP_COLOR="1;32" LANG=C grep --color=auto'
+
+# Drush
+alias drush='~/Sites/drush/drush'
