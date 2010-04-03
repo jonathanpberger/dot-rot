@@ -1,0 +1,7 @@
+version=3.0-beta1
+
+; Information added by drupal.org packaging script on 2010-02-23
+version = "All-versions-3.0-beta1"
+project = "drush"
+datestamp = "1266957607"
+
