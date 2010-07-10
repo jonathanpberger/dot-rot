@@ -28,8 +28,8 @@
   diff = auto
   status = auto
 [color "branch"]
-  current = black reverse
-  local = black
+  current = red
+  local = yellow
   remote = green
 [color "diff"]
   meta = yellow bold
@@ -37,6 +37,6 @@
   old = red bold
   new = green bold
 [color "status"]
-  added = black
+  added = green bold
   changed = green
   untracked = magenta
