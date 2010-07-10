@@ -16,6 +16,9 @@ add_to_path '/Users/jpb/bin'
 add_to_path "$HOME/dot-rot/bin"
 add_to_path "/usr/local/git/bin"
 
+# make RVM work
+[[ -s $HOME/.rvm/scripts/rvm ]] && source $HOME/.rvm/scripts/rvm
+
 # Functions to put the version control branch in the prompt
 parse_git_branch() {
   git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/(git::\1)/'
@@ -29,7 +32,6 @@ parse_svn_url() {
 parse_svn_repository_root() {
   svn info 2>/dev/null | grep -e '^Repository Root:*' | sed -e 's#^Repository Root: *\(.*\)#\1\/#g'
 }
-
 
 # Color!
 export CLICOLOR=1
