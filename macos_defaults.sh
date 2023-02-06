@@ -83,6 +83,9 @@ sudo pmset -a standbydelay 86400
 # Menu bar: show battery percentage
 defaults write com.apple.menuextra.battery ShowPercent YES
 
+# Menu bar should be opaque
+defaults write com.apple.universalaccess reduceTransparency -bool true
+
 # Disable opening and closing window animations
 defaults write NSGlobalDomain NSAutomaticWindowAnimationsEnabled -bool false
 
