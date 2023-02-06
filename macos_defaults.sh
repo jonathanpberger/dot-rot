@@ -4,6 +4,8 @@ LOCALE="en_US@currency=USD"
 MEASUREMENT_UNITS="Inches"
 SCREENSHOTS_FOLDER="${HOME}/Pictures/Screenshots"
 
+# good reference here: https://macos-defaults.com/
+
 # Topics
 #
 # - Computer & Host name
@@ -37,7 +39,7 @@ sudo scutil --set ComputerName "$COMPUTER_NAME"
 sudo scutil --set HostName "$COMPUTER_NAME"
 sudo scutil --set LocalHostName "$COMPUTER_NAME"
 sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "$COMPUTER_NAME"
-echo "Set computer name (as done via System Preferences → Sharing)"
+echo "###### Set computer name (as done via System Preferences → Sharing)"
 
 ###############################################################################
 # Localization                                                                #
@@ -48,7 +50,7 @@ defaults write NSGlobalDomain AppleLanguages -array ${LANGUAGES[@]}
 defaults write NSGlobalDomain AppleLocale -string "$LOCALE"
 defaults write NSGlobalDomain AppleMeasurementUnits -string "$MEASUREMENT_UNITS"
 defaults write NSGlobalDomain AppleMetricUnits -bool false
-echo "Set language and text formats"
+echo "###### Set language and text formats"
 
 # Using systemsetup might give Error:-99, can be ignored (commands still work)
 # systemsetup manpage: https://ss64.com/osx/systemsetup.html
@@ -56,7 +58,7 @@ echo "Set language and text formats"
 # Set the time zone
 sudo defaults write /Library/Preferences/com.apple.timezone.auto Active -bool YES
 sudo systemsetup -setusingnetworktime on
-echo "Set the time zone"
+echo "###### Set the time zone"
 
 ###############################################################################
 # System                                                                      #
@@ -113,7 +115,7 @@ defaults write com.apple.CrashReporter DialogType -string "none"
 # Disable Notification Center and remove the menu bar icon
 launchctl unload -w /System/Library/LaunchAgents/com.apple.notificationcenterui.plist 2> /dev/null
 
-echo "Setting System prefs"
+echo "###### Setting System prefs"
 
 ###############################################################################
 # Keyboard & Input                                                            #
@@ -154,7 +156,7 @@ defaults write com.apple.BezelServices kDimTime -int 300
 
 defaults write com.apple.HIToolbox AppleEnabledInputSources -array-add '<dict><key>InputSourceKind</key><string>Keyboard Layout</string><key>KeyboardLayout ID</key><integer>16300</integer><key>KeyboardLayout Name</key><string>Dvorak</string></dict>'
 
-echo "Setting Keyboard & Input"
+echo "###### Setting Keyboard & Input"
 
 ###############################################################################
 # Trackpad, mouse, Bluetooth accessories                                      #
@@ -180,7 +182,7 @@ defaults write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
 # Increase sound quality for Bluetooth headphones/headsets
 defaults write com.apple.BluetoothAudioAgent "Apple Bitpool Min (editable)" -int 40
 
-echo "Trackpad, mouse, Bluetooth accessories"
+echo "###### Trackpad, mouse, Bluetooth accessories"
 
 ###############################################################################
 # Screen                                                                      #
@@ -203,7 +205,7 @@ defaults write com.apple.screencapture disable-shadow -bool true
 # Enable subpixel font rendering on non-Apple LCDs
 defaults write NSGlobalDomain AppleFontSmoothing -int 2
 
-echo "Setting Screen prefs"
+echo "###### Setting Screen prefs"
 
 ###############################################################################
 # Finder                                                                      #
@@ -266,7 +268,7 @@ defaults write com.apple.finder WarnOnEmptyTrash -bool false
 # “General”, “Open with”, and “Sharing & Permissions”
 defaults write com.apple.finder FXInfoPanesExpanded -dict General -bool true OpenWith -bool true Privileges -bool true
 
-echo "Setting Finder prefs"
+echo "###### Setting Finder prefs"
 
 ###############################################################################
 # Dock                                                                        #
@@ -312,7 +314,7 @@ defaults write com.apple.dock wvous-br-corner -int 0
 # Don't show recently used applications in the Dock
 defaults write com.Apple.Dock show-recents -bool false
 
-echo "Setting Dock prefs"
+echo "###### Setting Dock prefs"
 
 ###############################################################################
 # Mail                                                                        #
@@ -375,7 +377,7 @@ defaults write com.apple.terminal "Default Window Settings" -string "Pro"
 defaults write com.apple.terminal "Startup Window Settings" -string "Pro"
 defaults write com.apple.Terminal ShowLineMarks -int 0
 
-echo "Setting Terminal prefs"
+echo "###### Setting Terminal prefs"
 
 ###############################################################################
 # Activity Monitor                                                            #
@@ -394,7 +396,7 @@ defaults write com.apple.ActivityMonitor ShowCategory -int 0
 defaults write com.apple.ActivityMonitor SortColumn -string "CPUUsage"
 defaults write com.apple.ActivityMonitor SortDirection -int 0
 
-echo "Setting Activity Monitor prefs"
+echo "###### Setting Activity Monitor prefs"
 
 ###############################################################################
 # Software Updates                                                            #
@@ -418,7 +420,7 @@ defaults write com.apple.commerce AutoUpdate -bool true
 # Allow the App Store to reboot machine on macOS updates
 defaults write com.apple.commerce AutoUpdateRestartRequired -bool true
 
-echo "Setting Software Update prefs"
+echo "###### Setting Software Update prefs"
 
 ###############################################################################
 # Kill affected applications                                                  #

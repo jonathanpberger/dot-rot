@@ -27,17 +27,14 @@ brew install tree
 brew install whatsapp
 brew install zoom
 brew install --cask visual-studio-code
+brew install docker
+brew tap homebrew/cask-fonts         # You only need to do this once!
+brew install font-meslo-for-powerline
+brew install --cask diffusionbee
 
 # go get -u github.com/open-pomodoro/openpomodoro-cli/cmd/pomodoro
 
 # Error'd out
-brew tap homebrew/cask-fonts         # You only need to do this once!
-brew install font-fira-mono-for-powerline
-brew install font-inconsolata-for-powerline
-brew install font-noto-sans-display
-brew install docker-desktop
-brew install pg
-brew install postgres
-brew install postgresql
+
+
 brew install chromeless
-brew install diffusionbee
