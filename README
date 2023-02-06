@@ -1,9 +1,0 @@
-= dot-rot =
-
-My $HOME dot files.
-
-== INSTALL ==
-
-1. Clone this repo in home directory
-2. Run `rake` to install.
-3. Reload shell.
