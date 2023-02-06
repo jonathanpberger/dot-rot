@@ -37,6 +37,7 @@ sudo scutil --set ComputerName "$COMPUTER_NAME"
 sudo scutil --set HostName "$COMPUTER_NAME"
 sudo scutil --set LocalHostName "$COMPUTER_NAME"
 sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "$COMPUTER_NAME"
+echo "Set computer name (as done via System Preferences → Sharing)"
 
 ###############################################################################
 # Localization                                                                #
@@ -47,6 +48,7 @@ defaults write NSGlobalDomain AppleLanguages -array ${LANGUAGES[@]}
 defaults write NSGlobalDomain AppleLocale -string "$LOCALE"
 defaults write NSGlobalDomain AppleMeasurementUnits -string "$MEASUREMENT_UNITS"
 defaults write NSGlobalDomain AppleMetricUnits -bool false
+echo "Set language and text formats"
 
 # Using systemsetup might give Error:-99, can be ignored (commands still work)
 # systemsetup manpage: https://ss64.com/osx/systemsetup.html
@@ -54,6 +56,7 @@ defaults write NSGlobalDomain AppleMetricUnits -bool false
 # Set the time zone
 sudo defaults write /Library/Preferences/com.apple.timezone.auto Active -bool YES
 sudo systemsetup -setusingnetworktime on
+echo "Set the time zone"
 
 ###############################################################################
 # System                                                                      #
@@ -110,6 +113,8 @@ defaults write com.apple.CrashReporter DialogType -string "none"
 # Disable Notification Center and remove the menu bar icon
 launchctl unload -w /System/Library/LaunchAgents/com.apple.notificationcenterui.plist 2> /dev/null
 
+echo "Setting System prefs"
+
 ###############################################################################
 # Keyboard & Input                                                            #
 ###############################################################################
@@ -138,7 +143,19 @@ defaults write com.apple.BezelServices kDimTime -int 300
 # Disable auto-correct
 # defaults write NSGlobalDomain NSAutomaticSpellingCorrectionEnabled -bool false
 
+###############################################################################
+# Set keyboard to Dvorak // from https://apple.stackexchange.com/questions/127246/mavericks-how-to-add-input-source-via-plists-defaults
+###############################################################################
+
+  # From  `$ defaults find keyboard | less`
+  #        InputSourceKind = "Keyboard Layout";
+  #           "KeyboardLayout ID" = 16300;
+  #           "KeyboardLayout Name" = Dvorak;
+
 defaults write com.apple.HIToolbox AppleEnabledInputSources -array-add '<dict><key>InputSourceKind</key><string>Keyboard Layout</string><key>KeyboardLayout ID</key><integer>16300</integer><key>KeyboardLayout Name</key><string>Dvorak</string></dict>'
+
+echo "Setting Keyboard & Input"
+
 ###############################################################################
 # Trackpad, mouse, Bluetooth accessories                                      #
 ###############################################################################
@@ -163,6 +180,8 @@ defaults write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
 # Increase sound quality for Bluetooth headphones/headsets
 defaults write com.apple.BluetoothAudioAgent "Apple Bitpool Min (editable)" -int 40
 
+echo "Trackpad, mouse, Bluetooth accessories"
+
 ###############################################################################
 # Screen                                                                      #
 ###############################################################################
@@ -183,6 +202,8 @@ defaults write com.apple.screencapture disable-shadow -bool true
 
 # Enable subpixel font rendering on non-Apple LCDs
 defaults write NSGlobalDomain AppleFontSmoothing -int 2
+
+echo "Setting Screen prefs"
 
 ###############################################################################
 # Finder                                                                      #
@@ -245,6 +266,8 @@ defaults write com.apple.finder WarnOnEmptyTrash -bool false
 # “General”, “Open with”, and “Sharing & Permissions”
 defaults write com.apple.finder FXInfoPanesExpanded -dict General -bool true OpenWith -bool true Privileges -bool true
 
+echo "Setting Finder prefs"
+
 ###############################################################################
 # Dock                                                                        #
 ###############################################################################
@@ -264,6 +287,9 @@ defaults write com.apple.dock showhidden -bool true
 # No bouncing icons
 defaults write com.apple.dock no-bouncing -bool true
 
+# Set to RH side
+defaults write com.apple.dock "orientation" -string "right"
+
 # Disable/Set hot corners, more here: https://dev.to/darrinndeal/setting-mac-hot-corners-in-the-terminal-3de
 ## Flags:
 # 0: No Option
@@ -278,7 +304,6 @@ defaults write com.apple.dock no-bouncing -bool true
 # 12: Notification Center
 # 13: Lock Screen
 
-
 defaults write com.apple.dock wvous-tl-corner -int 5 # start screen saver
 defaults write com.apple.dock wvous-tr-corner -int 0
 defaults write com.apple.dock wvous-bl-corner -int 0
@@ -286,6 +311,8 @@ defaults write com.apple.dock wvous-br-corner -int 0
 
 # Don't show recently used applications in the Dock
 defaults write com.Apple.Dock show-recents -bool false
+
+echo "Setting Dock prefs"
 
 ###############################################################################
 # Mail                                                                        #
@@ -348,6 +375,8 @@ defaults write com.apple.terminal "Default Window Settings" -string "Pro"
 defaults write com.apple.terminal "Startup Window Settings" -string "Pro"
 defaults write com.apple.Terminal ShowLineMarks -int 0
 
+echo "Setting Terminal prefs"
+
 ###############################################################################
 # Activity Monitor                                                            #
 ###############################################################################
@@ -364,6 +393,8 @@ defaults write com.apple.ActivityMonitor ShowCategory -int 0
 # Sort Activity Monitor results by CPU usage
 defaults write com.apple.ActivityMonitor SortColumn -string "CPUUsage"
 defaults write com.apple.ActivityMonitor SortDirection -int 0
+
+echo "Setting Activity Monitor prefs"
 
 ###############################################################################
 # Software Updates                                                            #
@@ -387,16 +418,7 @@ defaults write com.apple.commerce AutoUpdate -bool true
 # Allow the App Store to reboot machine on macOS updates
 defaults write com.apple.commerce AutoUpdateRestartRequired -bool true
 
-###############################################################################
-# Set keyboard to Dvorak // from https://apple.stackexchange.com/questions/127246/mavericks-how-to-add-input-source-via-plists-defaults
-###############################################################################
-
-  # From  `$ defaults find keyboard | less`
-  #        InputSourceKind = "Keyboard Layout";
-  #           "KeyboardLayout ID" = 16300;
-  #           "KeyboardLayout Name" = Dvorak;
-
-defaults write com.apple.HIToolbox AppleEnabledInputSources -array-add '<dict><key>InputSourceKind</key><string>Keyboard Layout</string><key>KeyboardLayout ID</key><integer>16300</integer><key>KeyboardLayout Name</key><string>Dvorak</string></dict>'
+echo "Setting Software Update prefs"
 
 ###############################################################################
 # Kill affected applications                                                  #
