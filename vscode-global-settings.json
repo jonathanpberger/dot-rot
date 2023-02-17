@@ -31,7 +31,6 @@
     "pasteImage.showFilePathConfirmInputBox": true,
 
     // Misc
-    "window.zoomLevel": -1,
     "security.workspace.trust.untrustedFiles": "open",
     "spellchecker.ignoreWordsList": [
         "AAPL",
