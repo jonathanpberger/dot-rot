@@ -31,10 +31,12 @@ brew install docker
 brew tap homebrew/cask-fonts         # You only need to do this once!
 brew install font-meslo-for-powerline
 brew install --cask diffusionbee
+brew install nvim
+echo "*********************** don't forget to install https://www.lazyvim.org/installation"
 
 # go get -u github.com/open-pomodoro/openpomodoro-cli/cmd/pomodoro
 
 # Error'd out
 
 
-brew install chromeless
+echo "brew install chromeless is broken. DL the dmg: https://github.com/webcatalog/chromeless/releases"

@@ -4,6 +4,8 @@
 alias hg="history | grep"
 alias g="gcalcli"
 alias pomo="pomodoro"
+alias vi="nvim"
+alias vim="nvim"
 
 # Some alias / shell housekeeping
 alias zsh.reload="source ~/.zshrc"
