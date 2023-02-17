@@ -1,14 +1,37 @@
 {
-    "files.autoSave": "onFocusChange",
+
+    // Default theme should be Solarized Light
+    "workbench.colorTheme": "Solarized Light+",
+
+    // Make the terminal nice
+    "terminal.external.osxExec": "iTerm.app",
+    "terminal.integrated.shell.osx": "/bin/zsh",
+    "terminal.integrated.defaultProfile.osx": "zsh",
     "terminal.integrated.fontFamily": "MesloLGS NF",
-    "editor.tabSize": 2,
     "terminal.integrated.tabs.enabled": true,
 
-    "insertnum.formatstr" : "%02d", // printf cheatsheet https://alvinalexander.com/programming/printf-format-cheat-sheet/
+    // Make the editor nice
+    "files.autoSave": "onFocusChange",
+    "editor.tabSize": 2,
+    "workbench.editor.enablePreview": false,
+    "markdown.marp.outlineExtension": false,
+    "rewrap.wrappingColumn": 60,
+    "editor.inlineSuggest.enabled": true,
 
-    "[javascript]": {
-    
+    // GH Copilot
+    "github.copilot.enable": {
+        "*": true,
+        "yaml": false,
+        "plaintext": false,
+        "markdown": false
     },
+
+    // PasteImage
+    "pasteImage.path": "${projectRoot}/img",
+    "pasteImage.showFilePathConfirmInputBox": true,
+
+    // Misc
+    "window.zoomLevel": -1,
     "security.workspace.trust.untrustedFiles": "open",
     "spellchecker.ignoreWordsList": [
         "AAPL",
@@ -16,10 +39,26 @@
         "emoji",
         "Todo"
     ],
+    
     "markdown.extension.toc.levels": "1..2",
+    
+    // Formatting
+    "markdown-table-formatter.markdownGrammarScopes": [
+        "markdown",
+        "html"
+    ],
+    "[markdown]": {
+        "editor.defaultFormatter": "fcrespo82.markdown-table-formatter"
+    },
+    "[html]": {
+        "editor.defaultFormatter": "fcrespo82.markdown-table-formatter"
+    },
 
+    "insertnum.formatstr" : "%02d", // printf cheatsheet https://alvinalexander.com/programming/printf-format-cheat-sheet/
     "insertDateString.formatDate": "M/D - DDDD", // e.g. 11/3 - Thursday
     "insertDateString.formatTime": "H:mm A", // e.g. 10:00 AM
+
+    // Call out "todo" and the like
     "highlight.regexes": {
         "((?:<!-- *)?(?:#|// @|//|./\\*+|<!--|--|\\* @|{!|{{!--|{{!) *TODO(?:\\s*\\([^)]+\\))?:?)((?!\\w)(?: *-->| *\\*/| *!}| *--}}| *}}|(?= *(?:[^:]//|/\\*+|<!--|@|--|{!|{{!--|{{!))|(?: +[^\\n@]*?)(?= *(?:[^:]//|/\\*+|<!--|@|--(?!>)|{!|{{!--|{{!))|(?: +[^@\\n]+)?))": {
             "filterFileRegex": ".*(?<!CHANGELOG.md)$",
@@ -207,32 +246,6 @@
       "gutterIcon": true,
     },
   },
-  "todo-tree.regex.regex": "(//|#|<!--|;|/\\*|^|^\\s*(-|\\d+.))\\s*($TAGS)",//add markdown support: <https://marketplace.visualstudio.com/items?itemName=Gruntfuggly.todo-tree#markdown-support>
-  "workbench.colorTheme": "Solarized Dark",
+  "todo-tree.regex.regex": "(//|#|<!--|;|/\\*|^|^\\s*(-|\\d+.))\\s*($TAGS)" //add markdown support: <https://marketplace.visualstudio.com/items?itemName=Gruntfuggly.todo-tree#markdown-support>
 
-    "markdown.marp.outlineExtension": false,
-    "rewrap.wrappingColumn": 60,
-    "editor.inlineSuggest.enabled": true,
-    "workbench.colorTheme": "Solarized Light+",
-    "github.copilot.enable": {
-        "*": true,
-        "yaml": false,
-        "plaintext": false,
-        "markdown": false
-    },
-    "[markdown]": {
-        "editor.defaultFormatter": "fcrespo82.markdown-table-formatter"
-    },
-    "pasteImage.path": "${projectRoot}/img",
-    "pasteImage.showFilePathConfirmInputBox": true,
-    "workbench.editor.enablePreview": false,
-    "terminal.integrated.defaultProfile.osx": "zsh",
-    "markdown-table-formatter.markdownGrammarScopes": [
-        "markdown",
-        "html"
-    ],
-    "[html]": {
-        "editor.defaultFormatter": "fcrespo82.markdown-table-formatter"
-    },
-    "window.zoomLevel": -1
 }
