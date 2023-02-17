@@ -4,7 +4,7 @@ LOCALE="en_US@currency=USD"
 MEASUREMENT_UNITS="Inches"
 SCREENSHOTS_FOLDER="${HOME}/Pictures/Screenshots"
 
-# good reference here: https://macos-defaults.com/
+######################## good reference here: https://macos-defaults.com/
 
 # Topics
 #
@@ -432,3 +432,8 @@ echo "###### Setting Software Update prefs"
 for app in "Address Book" "Calendar" "Contacts" "Dock" "Finder" "Mail" "Safari" "SystemUIServer" "iCal"; do
   killall "${app}" &> /dev/null
 done
+
+
+# Stop the dictionary lookup from triggering on Force Click. https://apple.stackexchange.com/questions/305291/disable-force-touch-from-terminal-using-bash-or-applescript
+defaults write NSGlobalDomain com.apple.trackpad.forceClick -bool false
+
