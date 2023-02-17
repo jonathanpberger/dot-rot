@@ -25,22 +25,17 @@
 
 - oh-my-zsh
   - sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" // via https://blog.rishabkumar.com/setting-up-terminal-in-macos-installing-ohmyzsh
-  - powerline
-  - jpb alias file
-    - ln -s ~/workspace/dot-rot/aliases.zsh ~/.oh-my-zsh/custom/aliases.zsh => custom.sh
+  - sometimes I have trouble w/ omz clobbering the path to brew; might need to update .zshrc w/ `/opt/homebrew/bin`
+  - add powerline
+  - symlink jpb alias file
+    - [>] ln -s ~/workspace/dot-rot/aliases.zsh ~/.oh-my-zsh/custom/aliases.zsh => custom.sh
 
 - [ ] get my phoenix settings on there
   - https://github.com/jonathanpberger/phoenix_config
-
-- will try to include good stuff from webpro/dotfiles
-  - [ ] review and then install [dock.sh](dock.sh)
-  - [ ] review and then install [macos_defaults.sh](macos_defaults.sh)
-    - [x] dvorak key // maybe? not sure it'll work
-    - [x] faster key repeat
-    - [x] top left corner for sleep
+  - they're janky w/ new monitor sizes. Need to work on this.
 
 - [ ] jpb images (photo, common icons for SSBs. put these on github or jpb.com eg jpb.com/jpb-1024.png. could be a redirect)
-- /Users/jpb/Dropbox/Back-Ups-on-dropbox/vscode-global-settings.json
+- [>] /Users/jpb/Dropbox/Back-Ups-on-dropbox/vscode-global-settings.json => custom.sh
 - create SSBs via chromeless
   - jpb browser
   - strangelove
