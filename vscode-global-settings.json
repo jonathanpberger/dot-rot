@@ -1,0 +1,238 @@
+{
+    "files.autoSave": "onFocusChange",
+    "terminal.integrated.fontFamily": "MesloLGS NF",
+    "editor.tabSize": 2,
+    "terminal.integrated.tabs.enabled": true,
+
+    "insertnum.formatstr" : "%02d", // printf cheatsheet https://alvinalexander.com/programming/printf-format-cheat-sheet/
+
+    "[javascript]": {
+    
+    },
+    "security.workspace.trust.untrustedFiles": "open",
+    "spellchecker.ignoreWordsList": [
+        "AAPL",
+        "talmud",
+        "emoji",
+        "Todo"
+    ],
+    "markdown.extension.toc.levels": "1..2",
+
+    "insertDateString.formatDate": "M/D - DDDD", // e.g. 11/3 - Thursday
+    "insertDateString.formatTime": "H:mm A", // e.g. 10:00 AM
+    "highlight.regexes": {
+        "((?:<!-- *)?(?:#|// @|//|./\\*+|<!--|--|\\* @|{!|{{!--|{{!) *TODO(?:\\s*\\([^)]+\\))?:?)((?!\\w)(?: *-->| *\\*/| *!}| *--}}| *}}|(?= *(?:[^:]//|/\\*+|<!--|@|--|{!|{{!--|{{!))|(?: +[^\\n@]*?)(?= *(?:[^:]//|/\\*+|<!--|@|--(?!>)|{!|{{!--|{{!))|(?: +[^@\\n]+)?))": {
+            "filterFileRegex": ".*(?<!CHANGELOG.md)$",
+            "decorations": [
+                {
+                    "overviewRulerColor": "#fe9",
+                    "backgroundColor": "#fe9",
+                    "color": "#1f1f1f",
+                    "fontWeight": "bold"
+                },
+                {
+                    "backgroundColor": "#fe9",
+                    "color": "#1f1f1f"
+                }
+            ]
+        },
+        "((?:<!-- *)?(?:#|// @|//|./\\*+|<!--|--|\\* @|{!|{{!--|{{!) *(?:FIXME|FIX|BUG|UGLY|DEBUG|HACK)(?:\\s*\\([^)]+\\))?:?)((?!\\w)(?: *-->| *\\*/| *!}| *--}}| *}}|(?= *(?:[^:]//|/\\*+|<!--|@|--|{!|{{!--|{{!))|(?: +[^\\n@]*?)(?= *(?:[^:]//|/\\*+|<!--|@|--(?!>)|{!|{{!--|{{!))|(?: +[^@\\n]+)?))": {
+            "filterFileRegex": ".*(?<!CHANGELOG.md)$",
+            "decorations": [
+                {
+                    "overviewRulerColor": "#c55",
+                    "backgroundColor": "#c55",
+                    "color": "#1f1f1f",
+                    "fontWeight": "bold"
+                },
+                {
+                    "backgroundColor": "#c55",
+                    "color": "#1f1f1f"
+                }
+            ]
+        },
+        "((?:<!-- *)?(?:#|// @|//|./\\*+|<!--|--|\\* @|{!|{{!--|{{!) *(?:REVIEW|OPTIMIZE|TSC)(?:\\s*\\([^)]+\\))?:?)((?!\\w)(?: *-->| *\\*/| *!}| *--}}| *}}|(?= *(?:[^:]//|/\\*+|<!--|@|--|{!|{{!--|{{!))|(?: +[^\\n@]*?)(?= *(?:[^:]//|/\\*+|<!--|@|--(?!>)|{!|{{!--|{{!))|(?: +[^@\\n]+)?))": {
+            "filterFileRegex": ".*(?<!CHANGELOG.md)$",
+            "decorations": [
+                {
+                    "overviewRulerColor": "#9ff",
+                    "backgroundColor": "#9ff",
+                    "color": "#1f1f1f",
+                    "fontWeight": "bold"
+                },
+                {
+                    "backgroundColor": "#9ff",
+                    "color": "#1f1f1f"
+                }
+            ]
+        },
+        "((?:<!-- *)?(?:#|// @|//|./\\*+|<!--|--|\\* @|{!|{{!--|{{!) *(?:IDEA)(?:\\s*\\([^)]+\\))?:?)((?!\\w)(?: *-->| *\\*/| *!}| *--}}| *}}|(?= *(?:[^:]//|/\\*+|<!--|@|--|{!|{{!--|{{!))|(?: +[^\\n@]*?)(?= *(?:[^:]//|/\\*+|<!--|@|--(?!>)|{!|{{!--|{{!))|(?: +[^@\\n]+)?))": {
+            "filterFileRegex": ".*(?<!CHANGELOG.md)$",
+            "decorations": [
+                {
+                    "overviewRulerColor": "#c7c",
+                    "backgroundColor": "#c7c",
+                    "color": "#1f1f1f",
+                    "fontWeight": "bold"
+                },
+                {
+                    "backgroundColor": "#c7c",
+                    "color": "#1f1f1f"
+                }
+            ]
+        },
+
+        // ############## GTD Projects get a "++" prefix, e.g. ++my_project
+        "(.*)(\\+\\+\\w+)(.*)": [
+         
+            { },
+            { "backgroundColor": "#ccf" },
+            { }
+            
+        ],
+        // ############## GTD contexts get a "@@" prefix, e.g. @@phone
+        "(.*)(\\@\\@\\w+)(.*)": [
+         
+            { },
+            { "backgroundColor": "#ea9" },
+            { }
+            
+        ],
+        "((?:<!-- *)?(?:#|// @|//|./\\*+|<!--|--|\\* @|{!|{{!--|{{!) *(?:aoeu)(?:\\s*\\([^)]+\\))?:?)((?!\\w)(?: *-->| *\\*/| *!}| *--}}| *}}|(?= *(?:[^:]//|/\\*+|<!--|@|--|{!|{{!--|{{!))|(?: +[^\\n@]*?)(?= *(?:[^:]//|/\\*+|<!--|@|--(?!>)|{!|{{!--|{{!))|(?: +[^@\\n]+)?))": {
+            "filterFileRegex": ".*(?<!CHANGELOG.md)$",
+            "decorations": [
+                {
+                    "overviewRulerColor": "#afa",
+                    "backgroundColor": "#afa",
+                    "color": "#1f1f1f",
+                    "fontWeight": "bold"
+                },
+                {
+                    "backgroundColor": "#afa",
+                    "color": "#1f1f1f"
+                }
+            ]
+        }
+    },
+
+// Todo-tree stuff from https://github.com/sn3akiwhizper/foam-example-personal/blob/main/.vscode/settings.json via https://discord.com/channels/729975036148056075/729975832982061056/1044331560452751422
+
+"todo-tree.general.tags": [ //https://github.com/Gruntfuggly/todo-tree/wiki/Configuration-Examples
+    "TODO",//todo
+    "NOTE",//note
+    "HACK",//hacky solution
+    "BUG",//broken bug location
+    "FIXME",//needs fixing but not a bug
+    "[x]",//done task
+    "[ ]",//incomplete task
+    "[f]",//failed task
+    "[c]",//cancelled task
+  ],
+  "todo-tree.highlights.defaultHighlight": {
+    "foreground": "#ffffff",
+    "background": "#ff0000",
+    "icon": "check",
+    "type": "text"
+  },
+  "todo-tree.highlights.customHighlight": {
+    //for fore/back color schemes: <https://www.thoughtco.com/contrasting-foreground-background-colors-4061363>
+    "BUG": {
+      "foreground": "#ffffff",
+      "background":"#4f1d30",
+      "icon": "bug",
+      "iconColour": "#886270",
+      "gutterIcon": true,
+    },
+    "HACK": {
+      "foreground": "#ffffff",
+      "background":"#726cde",
+      "icon": "plug",
+      "iconColour": "#726cde",
+      "gutterIcon": true,
+    },
+    "FIXME": {
+      "foreground": "#0c0d0b",
+      "background":"#008800",
+      "icon": "tools",
+      "iconColour": "#ffffff",
+      "gutterIcon": true,
+    },
+    "NOTE": {
+      "foreground": "#0c0d0b",
+      "background":"#008800",
+      "icon": "book",
+      "iconColour": "#ffffff",
+      "gutterIcon": true,
+    },
+    "TODO": {
+      "foreground": "#0c0d0b",
+      "background":"#d9c50f",
+      "icon": "plus-circle",
+      "iconColour": "#d9c50f",
+      "gutterIcon": true,
+    },
+    "[x]":{//complete
+      "foreground": "#64dd17",
+      "background":"#008800",
+      "icon": "check-circle-fill",
+      "iconColour": "#008800",
+      "gutterIcon": true,
+    },
+    "[ ]":{//incomplete
+      "foreground": "#f44336",
+      "background": "#592c2c",
+      "icon": "diamond",
+      "iconColour": "#f44336",
+      "gutterIcon": true,
+    },
+    "[f]":{//failed
+      "foreground": "#d0c9c5",
+      "background": "#91522a",
+      "icon": "eye-closed",
+      "iconColour": "#ffffff",
+      "gutterIcon": true,
+    },
+    "[>]":{//delegated
+      "foreground": "#cfc5d0",
+      "background": "#912a7e",
+      "icon": "chevron-right",
+      "iconColour": "#ffffff",
+      "gutterIcon": true,
+    },
+    "[c]":{//cancelled
+      "foreground": "#d0c9c5",
+      "background": "#91522a",
+      "icon": "diff-ignored",
+      "iconColour": "#91522a",
+      "gutterIcon": true,
+    },
+  },
+  "todo-tree.regex.regex": "(//|#|<!--|;|/\\*|^|^\\s*(-|\\d+.))\\s*($TAGS)",//add markdown support: <https://marketplace.visualstudio.com/items?itemName=Gruntfuggly.todo-tree#markdown-support>
+  "workbench.colorTheme": "Solarized Dark",
+
+    "markdown.marp.outlineExtension": false,
+    "rewrap.wrappingColumn": 60,
+    "editor.inlineSuggest.enabled": true,
+    "workbench.colorTheme": "Solarized Light+",
+    "github.copilot.enable": {
+        "*": true,
+        "yaml": false,
+        "plaintext": false,
+        "markdown": false
+    },
+    "[markdown]": {
+        "editor.defaultFormatter": "fcrespo82.markdown-table-formatter"
+    },
+    "pasteImage.path": "${projectRoot}/img",
+    "pasteImage.showFilePathConfirmInputBox": true,
+    "workbench.editor.enablePreview": false,
+    "terminal.integrated.defaultProfile.osx": "zsh",
+    "markdown-table-formatter.markdownGrammarScopes": [
+        "markdown",
+        "html"
+    ],
+    "[html]": {
+        "editor.defaultFormatter": "fcrespo82.markdown-table-formatter"
+    },
+    "window.zoomLevel": -1
+}
