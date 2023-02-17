@@ -7,6 +7,10 @@ alias pomo="pomodoro"
 alias vi="nvim"
 alias vim="nvim"
 
+# Navigation
+alias vscode-global="cd ~/Library/Application\ Support/Code/User/"
+alias dotrot="cd ~/workspace/dot-rot"
+
 # Some alias / shell housekeeping
 alias zsh.reload="source ~/.zshrc"
 alias zsh.edit="vi ~/.zshrc"
