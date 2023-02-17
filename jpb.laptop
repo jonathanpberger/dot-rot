@@ -27,7 +27,7 @@
   - sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" // via https://blog.rishabkumar.com/setting-up-terminal-in-macos-installing-ohmyzsh
   - powerline
   - jpb alias file
-    - ~/.oh-my-zsh/custom/aliases.zsh
+    - ln -s ~/workspace/dot-rot/aliases.zsh ~/.oh-my-zsh/custom/aliases.zsh => custom.sh
 
 - [ ] get my phoenix settings on there
   - https://github.com/jonathanpberger/phoenix_config
