@@ -3,6 +3,7 @@
 # Generally helpful
 alias hg="history | grep"
 alias g="gcalcli"
+alias gday="gcalcli --cal 'JPB-DW' --cal 'JPB SL' --cal 'JPB Private' agenda yesterday tomorrow --no-military"
 alias pomo="pomodoro"
 alias vi="nvim"
 alias vim="nvim"
