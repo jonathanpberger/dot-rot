@@ -2,6 +2,10 @@
 
 echo " ######################################### Starting JPB custom stuff"
 
+# `git pull` strategy should be `rebase`
+echo "#### `git pull` strategy should be `rebase`"
+git config pull.rebase true
+
 # symlink aliases
 echo "#### symlink aliases"
 ln -s ~/workspace/dot-rot/aliases.zsh ~/.oh-my-zsh/custom/aliases.zsh
