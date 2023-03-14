@@ -26,7 +26,7 @@ ln -s ~/workspace/dot-rot/keybindings.json ~/Library/Application\ Support/Code/U
 # symlink vscode snippets
 echo "#### symlink vscode snippets"
 mkdir -p ~~/Library/Application\ Support/Code/User/snippets
-ln -s ~/workspace/dot-rot/keybindings.json ~/Library/Application\ Support/Code/snippets/markdown.json
+ln -s ~/workspace/dot-rot/keybindings.json ~/Library/Application\ Support/Code/User/snippets/markdown.json
 
 # grab JPB avatar photo
 echo "#### grab JPB avatar photo"
