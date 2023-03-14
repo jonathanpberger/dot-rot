@@ -1,0 +1,28 @@
+{
+	"day.init": {
+		"prefix": "day.init",
+		"body": [
+			"## Day.init / 🍅 Todo Today",
+			"",
+			"### What's the most important thing to do today?",
+			"",
+			"### Day.init preflight",
+			"1. sort out gCal",
+			"2. copy from gcalcli `g --cal 'JPB-DW' --cal 'JPB SL' --cal 'JPB Private' agenda today tomorrow --no-military`",
+			"3. paste into table here",
+			"4. triage [[inbox]] 🍅🍒🕙🏃‍♂️" & [[todo]] 💼🐣🚰, including `tl` and `todos`",
+			""
+			"| 🍅🍒🕙🏃‍♂️ | Status | Planned 🕚 | Session | Started | Item | Domain |",
+			"|----------|:------:|------------|---------|--------:|------|--------|",
+			"| 00 🍅    |  [ ]   |            |         |         |      |        |",
+			"",
+			"{💼 CAREER, 🐣 CREATIVITY, 🪢 DISCIPLINE, 👪 FAMILY, 🐒 FRIENDS, 🍎 HEALTH,",
+			" 🌱 LEARNING, 🏠 LIFESTYLE, 💰 MONEY, 🦦 RELATIONSHIP, 😎 SELF, 💀 SPIRIT}",
+			""
+			"{M: houseTrello, T: dudesday, W: work stuff, R: unicorn, F: shabbat }",
+			""
+		],
+		"description": "Day.init template."
+	}
+}
+

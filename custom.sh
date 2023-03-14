@@ -23,6 +23,11 @@ ln -sf ~/workspace/dot-rot/vscode-global-settings.json ~/Library/Application\ Su
 echo "#### symlink vscode keybindings"
 ln -s ~/workspace/dot-rot/keybindings.json ~/Library/Application\ Support/Code/User
 
+# symlink vscode snippets
+echo "#### symlink vscode snippets"
+mkdir -p ~~/Library/Application\ Support/Code/User/snippets
+ln -s ~/workspace/dot-rot/keybindings.json ~/Library/Application\ Support/Code/snippets/markdown.json
+
 # grab JPB avatar photo
 echo "#### grab JPB avatar photo"
 curl https://www.jonathanpberger.com/images/jpb-avatar.png . -o ~/Pictures/jpb-avatar.png
