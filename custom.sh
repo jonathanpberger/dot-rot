@@ -19,6 +19,10 @@ echo "#### symlink global vscode settings"
 cp ~/Library/Application\ Support/Code/User/settings.json ~/Library/Application\ Support/Code/User/settings.json.backup.$(date +%F_%R)
 ln -sf ~/workspace/dot-rot/vscode-global-settings.json ~/Library/Application\ Support/Code/User/settings.json\ Support/Code/User/settings.json
 
+# symlink vscode keybindings
+echo "#### symlink vscode keybindings"
+ln -s keybindings.json ~/Library/Application\ Support/Code/User
+
 # grab JPB avatar photo
 echo "#### grab JPB avatar photo"
 curl https://www.jonathanpberger.com/images/jpb-avatar.png . -o ~/Pictures/jpb-avatar.png

@@ -1,0 +1,135 @@
+// Place your key bindings in this file to override the defaultsauto[]
+[
+  {
+    "key": "ctrl+cmd+a ctrl+cmd",
+    "command": "extension.incrementSelection",
+    "when": "editorTextFocus"
+  },
+  {
+    "key": "alt+cmd+i",
+    "command": "-extension.incrementSelection",
+    "when": "editorTextFocus"
+  },
+  {
+    "key": "ctrl+shift+cmd+a",
+    "command": "extension.incrementSelection"
+  },
+  {
+    "key": "ctrl+cmd+a",
+    "command": "editor.emmet.action.incrementNumberByOne"
+  },
+  {
+    "key": "ctrl+cmd+z",
+    "command": "editor.emmet.action.decrementNumberByOne"
+  },
+  {
+    "key": "ctrl+alt+cmd+v",
+    "command": "toggleVim"
+  },
+  {
+    "key": "ctrl+.",
+    "command": "editor.action.formatSelection",
+    "when": "editorHasDocumentSelectionFormattingProvider && editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "cmd+k cmd+f",
+    "command": "-editor.action.formatSelection",
+    "when": "editorHasDocumentSelectionFormattingProvider && editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "ctrl+alt+cmd+1",
+    "command": "outline.collapse"
+  },
+  {
+    "key": "ctrl+alt+cmd+2",
+    "command": "outline.followCursor"
+  },
+{
+    "key": "ctrl+alt+cmd+7",
+    "command": "extension.multiCommand.execute",
+    "args": { 
+        "sequence": [
+            "select-paragraph.selectParagraph",
+            "editor.action.formatSelection"
+        ]
+    }
+  },
+  {
+    "key": "ctrl+alt+cmd+8",
+    "when": "editorTextFocus",
+    "command": "moveby.regex",
+    "args": {
+      "regex": "Day.init / 🍅 Todo Today",
+      "properties": ["prev", "start"]
+    }
+  },
+  {
+    "key": "ctrl+alt+cmd+9",
+    "when": "editorTextFocus",
+    "command": "moveby.regex",
+    "args": {
+      "regex": "Week.init",
+      "properties": ["prev", "start"]
+    }
+  },
+  {
+    "key": "ctrl+alt+cmd+0",
+    "command": "editor.action.insertSnippet",
+    "when": "editorTextFocus",
+    "args": {
+      "name": "ImDone card"
+    }
+  },
+  {
+    "key": "ctrl+alt+cmd+3",
+    "command": "workbench.action.evenEditorWidths"
+  },
+  {
+    "key": "ctrl+alt+cmd+4",
+    "command": "workbench.action.maximizeEditor"
+  },
+  {
+    "key": "ctrl+alt+cmd+5",
+    "command": "workbench.action.toggleSidebarVisibility"
+  },
+  {
+    "key": "cmd+b",
+    "command": "-workbench.action.toggleSidebarVisibility"
+  },
+  {
+    "key": "shift+cmd+0",
+    "command": "workbench.action.zoomReset"
+  },
+  {
+    "key": "cmd+numpad0",
+    "command": "-workbench.action.zoomReset"
+  },
+  {
+    "key": "alt+cmd+f2",
+    "command": "editor.action.changeAll",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "cmd+f2",
+    "command": "-editor.action.changeAll",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "alt+cmd+f3",
+    "command": "editor.action.nextSelectionMatchFindAction",
+    "when": "editorFocus"
+  },
+  {
+    "key": "cmd+f3",
+    "command": "-editor.action.nextSelectionMatchFindAction",
+    "when": "editorFocus"
+  },
+  {
+    "key": "alt+cmd+d",
+    "command": "foam-vscode.open-daily-note"
+  },
+  {
+    "key": "alt+d",
+    "command": "-foam-vscode.open-daily-note"
+  }
+]
