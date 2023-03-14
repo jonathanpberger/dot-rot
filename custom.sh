@@ -21,7 +21,7 @@ ln -sf ~/workspace/dot-rot/vscode-global-settings.json ~/Library/Application\ Su
 
 # symlink vscode keybindings
 echo "#### symlink vscode keybindings"
-ln -s keybindings.json ~/Library/Application\ Support/Code/User
+ln -s ~/workspace/dot-rot/keybindings.json ~/Library/Application\ Support/Code/User
 
 # grab JPB avatar photo
 echo "#### grab JPB avatar photo"
