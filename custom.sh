@@ -38,4 +38,6 @@ curl https://www.jonathanpberger.com/agile-desktop-backgrounds.zip -o ~/Pictures
 
 echo "############ you'll need to unzip, add to Settings > Wallpaper, and set to auto-rotate manually."
 
+echo "####### copy secrets manually, e.g. ~/.gcalclirc and ~/.gcalcli_oauth"
+
 echo " ######################################### Finished JPB custom stuff"
