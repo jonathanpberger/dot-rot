@@ -34,6 +34,7 @@ brew install --cask diffusionbee
 brew install nvim
 brew install wget
 brew install gcalcli
+brew install keith/formulae/reminders-cli
 
 echo " ****\n ****** don't forget to install https://www.lazyvim.org/installation \n ****\n"
 echo " ****\n ****** brew install chromeless is broken. DL the dmg: https://github.com/webcatalog/chromeless/releases \n ****\n"
