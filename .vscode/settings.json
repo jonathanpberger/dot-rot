@@ -1,8 +1,13 @@
 // Dot-rot VS Code Settings
 
-{  "workbench.colorTheme": "Synthwave x Fluoromachine",
+{
+    "workbench.colorTheme": "Synthwave x Fluoromachine",
+    "workbench.colorCustomizations": {
+        "activityBar.background": "#302F04",
+        "titleBar.activeBackground": "#434206",
+        "titleBar.activeForeground": "#FCFBDD"
+    },
 
 }
-  
-  
-  
+
+

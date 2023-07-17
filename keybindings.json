@@ -23,10 +23,6 @@
     "command": "editor.emmet.action.decrementNumberByOne"
   },
   {
-    "key": "ctrl+alt+cmd+v",
-    "command": "toggleVim"
-  },
-  {
     "key": "ctrl+.",
     "command": "editor.action.formatSelection",
     "when": "editorHasDocumentSelectionFormattingProvider && editorTextFocus && !editorReadonly"
@@ -44,14 +40,14 @@
     "key": "ctrl+alt+cmd+2",
     "command": "outline.followCursor"
   },
-{
+  {
     "key": "ctrl+alt+cmd+7",
     "command": "extension.multiCommand.execute",
-    "args": { 
-        "sequence": [
-            "select-paragraph.selectParagraph",
-            "editor.action.formatSelection"
-        ]
+    "args": {
+      "sequence": [
+        "select-paragraph.selectParagraph",
+        "editor.action.formatSelection"
+      ]
     }
   },
   {
@@ -60,7 +56,10 @@
     "command": "moveby.regex",
     "args": {
       "regex": "Day.init / 🍅 Todo Today",
-      "properties": ["prev", "start"]
+      "properties": [
+        "prev",
+        "start"
+      ]
     }
   },
   {
@@ -69,7 +68,10 @@
     "command": "moveby.regex",
     "args": {
       "regex": "Week.init",
-      "properties": ["prev", "start"]
+      "properties": [
+        "prev",
+        "start"
+      ]
     }
   },
   {
