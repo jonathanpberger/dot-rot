@@ -67,5 +67,6 @@
   "editor.formatOnSave": true,
   "files.autoSave": "onFocusChange",
   "terminal.integrated.defaultProfile.linux": "zsh",
+  "editor.inlineSuggest.enabled": true,
   "window.zoomLevel": 1
 }
