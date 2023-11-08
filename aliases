@@ -32,9 +32,9 @@ alias tl='reminders show Reminders'
 alias rs='reminders show Reminders'
 
 # `Now.md` convenience methods
-alias todos="ack '^.[^|\[]\[[^x]\]\s\w' ~/Dropbox/Notes-and-docs/JPB-monthly-notes/foam/now.md -C2" 
-alias prev-todos="ack '^.[^|\[]\[[^x]\]\s\w' prev.md -C2" 
-alias h2s="ack '^\#{2}\s' ~/Dropbox/Notes-and-docs/JPB-monthly-notes/foam/now.md -C1"           
+alias todos="ack '^.[^|\[]\[[^x]\]\s\w' ~/Dropbox/Notes-and-docs/JPB-monthly-notes/foam/now.md -C2"
+alias prev-todos="ack '^.[^|\[]\[[^x]\]\s\w' prev.md -C2"
+alias h2s="ack '^\#{2}\s' ~/Dropbox/Notes-and-docs/JPB-monthly-notes/foam/now.md -C1"
 alias projects="ack  '(\+\+\w.*)'  ~/Dropbox/Notes-and-docs/JPB-monthly-notes/foam/now.md --output '$1'"
 alias prev-projects="ack  '(\+\+\w.*)'  ~/Dropbox/Notes-and-docs/JPB-monthly-notes/foam/prev.md --output '$1'"
 alias foam="cd ~/Dropbox/Notes-and-docs/JPB-monthly-notes/foam"
