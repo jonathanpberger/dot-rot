@@ -39,3 +39,70 @@ alias projects="ack  '(\+\+\w.*)'  ~/Dropbox/Notes-and-docs/JPB-monthly-notes/fo
 alias prev-projects="ack  '(\+\+\w.*)'  ~/Dropbox/Notes-and-docs/JPB-monthly-notes/foam/prev.md --output '$1'"
 alias foam="cd ~/Dropbox/Notes-and-docs/JPB-monthly-notes/foam"
 
+# alias ghi="echo '########## JPB Github Issues copied to clipboard :-) ##########\n' && gh search issues --assignee=@me --state=open --limit=333 | pbcopy"
+
+# Github CLI
+function pmtl() {
+  local headers="|Order | Status | Title | Project | Link|\n|---|---|---|---|---|"
+
+  local result=$(gh p item-list 36 --limit 300 --format=json | jq -r '(.items | to_entries | map(select((.value.status == "In progress" or .value.status == "Backlog" or .value.status == "Waiting") and (.value.assignees[]? | contains("jonathanpberger"))))) | .[] | "| \(.key+1) | \(.value.status) | \(.value.title) | \(.value["project 🪚"]) | \((.value.content.repository | split("/")[-1]) + "/" + (.value.content.number|tostring)) |"')
+
+  echo -e "### SL PM Tasks"
+  echo -e "$headers"
+  echo "$result"
+  echo -e "$headers\n$result" | pbcopy
+}
+
+function gordtl() {
+  local headers="|Order | Status | Title | Labels | Link|\n|---|---|---|---|---|"
+
+  local result=$(gh p item-list 47 --limit 300 --format=json | jq -r '(.items | to_entries | map(select((.value.status == "In progress" or .value.status == "Backlog" or .value.status == "Waiting") ))) | .[] | "| \(.key+1) | \(.value.status) | \(.value.title) | \(.value["labels"]) | \((.value.content.repository | split("/")[-1]) + "/" + (.value.content.number|tostring)) |"')
+
+  echo -e "### SL PM Tasks"
+  echo -e "$headers"
+  echo "$result"
+  echo -e "$headers\n$result" | pbcopy
+}
+
+function ghtl() {
+  local headers="|Order | Status | Title | Link|"
+  local separators="|$(echo "$headers" | sed 's/[^|]//g' | sed 's/|/---|/g' | sed 's/|$//')"
+
+  local result=$(gh p item-list 46 --limit 300 --format=json | jq -r '(.items | to_entries | map(select((.value.status == "In progress" or .value.status == "Backlog" or .value.status == "Waiting") and (.value.assignees[]? | contains("jonathanpberger"))))) | .[] | "| \(.key+1) | \(.value.status) | \(.value.title) | \((.value.content.repository | split("/")[-1]) + "/" + (.value.content.number|tostring)) |"')
+
+  echo -e "### README.lint Tasks"
+  echo -e "$headers"
+  echo -e "$separators"
+  echo "$result"
+  echo -e "$headers\n$result" | pbcopy
+}
+
+function ghii-old() {
+  local headers="| Repository | Number | State | Title |"
+  local separators="|$(echo "$headers" | sed 's/[^|]//g' | sed 's/|/---|/g' | sed 's/|$//')"
+
+  local result=$(gh search issues --assignee=@me --state=open --limit 3 --include-prs --json="repository,number,state,title" | jq -r '["Repository", "Number", "State", "Title"], (.[] | [.repository.name, .number, .state, .title]) | @tsv' | sed 's/\t/ | /g' | sed '1s/^/| /; 1s/$/ |/' | sed '2s/[^|]/-/g')
+
+
+  echo -e "### GitHub Issues"
+  # echo -e "$headers"
+  # echo -e "$separators"
+  echo "$result"
+  echo -e "$headers\n$result" | pbcopy
+}
+
+function ghii() {
+  local header="| Repository | Number | State | Title |"
+  local separator="|------------|--------|-------|-------|"
+  local title="### GitHub Issues"
+  local results=$(gh search issues --assignee=@me --state=open --limit 333 --include-prs --json="repository,number,state,title" | jq -r '.[] | "| \(.repository.name) | \(.number) | \(.state) | \(.title) |"')
+  local count=$(echo "$results" | wc -l )
+
+  echo "$title"
+  echo "$header"
+  echo "$separator"
+  echo "$results"
+
+  echo -e "$title\n$header\n$separator\n$results" | pbcopy
+  echo -e "\n$title has been copied to the clipboard. There are $count issues. :-) ###"
+}
