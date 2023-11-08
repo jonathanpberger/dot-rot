@@ -75,20 +75,18 @@
     }
   },
   {
-    "key": "ctrl+alt+cmd+0",
-    "command": "editor.action.insertSnippet",
-    "when": "editorTextFocus",
-    "args": {
-      "name": "ImDone card"
-    }
-  },
-  {
     "key": "ctrl+alt+cmd+3",
     "command": "workbench.action.evenEditorWidths"
   },
   {
     "key": "ctrl+alt+cmd+4",
-    "command": "workbench.action.maximizeEditor"
+    "command": "runCommands",
+    "args": {
+      "commands": [
+        "workbench.action.closeSidebar",
+        "workbench.action.minimizeOtherEditors"
+      ]
+    }
   },
   {
     "key": "ctrl+alt+cmd+5",
