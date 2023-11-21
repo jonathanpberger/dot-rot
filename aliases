@@ -1,5 +1,7 @@
 # This probably wants to go in ~/.oh-my-zsh/custom/aliases.zsh
 
+echo "•••••••••• Loading aliases ••• $(date "+%a %b %d %H:%M:%S"): "
+
 # Generally helpful
 alias hg="history | grep"
 alias g="gcalcli"
@@ -106,3 +108,4 @@ function ghii() {
   echo -e "$title\n$header\n$separator\n$results" | pbcopy
   echo -e "\n$title has been copied to the clipboard. There are $count issues. :-) ###"
 }
+echo "•••••••••••••••• Finished Loading aliases!\n\n"
