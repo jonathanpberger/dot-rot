@@ -25,15 +25,11 @@ alias za="vi ~/.oh-my-zsh/custom/aliases.zsh"
 alias aoeu='asdf'
 
 # Some todo apps
-alias r='reminders'
 alias t='reminders'
-alias ra='reminders add'
 alias ta='reminders add'
-alias rc='reminders complete Reminders'
 alias td='reminders complete Reminders'
 alias rsl='reminders show-lists'
 alias tl='reminders show Reminders'
-alias rs='reminders show Reminders'
 
 # `Now.md` convenience methods
 alias todos="ack '^.[^|\[]\[[^x]\]\s\w' ~/Dropbox/Notes-and-docs/JPB-monthly-notes/foam/now.md -C2"
