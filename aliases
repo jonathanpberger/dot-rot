@@ -62,7 +62,7 @@ function gordtl() {
 
   local result=$(gh p item-list 47 --limit 300 --format=json | jq -r '(.items | to_entries | map(select((.value.status == "In progress" or .value.status == "Backlog" or .value.status == "Waiting") ))) | .[] | "| \(.key+1) | \(.value.status) | \(.value.title) | \(.value["labels"]) | \((.value.content.repository | split("/")[-1]) + "/" + (.value.content.number|tostring)) |"')
 
-  echo -e "### SL PM Tasks"
+  echo -e "### Gordian Tasks"
   echo -e "$headers"
   echo "$result"
   echo -e "$headers\n$result" | pbcopy
