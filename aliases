@@ -236,4 +236,49 @@ function collect_field_names() {
   done
 }
 
+function ppi() {
+  echo "Version 0.3.3"
+
+  # Fetch Gordian tasks.
+  local gordianTasks=$(gh p item-list 47 --format=json | jq -r '
+    .items | map({
+      order: .order,
+      status: .status,
+      title: .title,
+      url: .content.url,
+      # Directly join the assignees array to a string, if it is not an array, set to an empty string.
+      assignees: (.assignees | if type == "array" then join(", ") else "" end)
+    })'
+  )
+
+  # Fetch GitHub issues.
+  local gitHubIssues=$(gh search issues --assignee=@me --state=open --limit=333 --include-prs --json="repository,number,state,title,url" | jq -r '.[] | {repository: .repository.name, number: .number, state: .state, title: .title, url: .url}')
+
+  # Combine Gordian tasks and GitHub issues based on URL.
+  local combinedResults=$(jq -s 'flatten | group_by(.url) | map({
+    url: .[0].url,
+    title: .[0].title,
+    status: .[0].status,
+    assignees: .[0].assignees,
+    repository: (.[1] // {}).repository,
+    number: (.[1] // {}).number,
+    state: (.[1] // {}).state
+  })' <(echo "$gordianTasks") <(echo "$gitHubIssues"))
+  local combinedTable=$(echo "$combinedResults" | jq -r '.[] | "| \(.url) | \(.title) | \(.status) | \(.assignees) | \(.repository) | \(.number) | \(.state) |"')
+
+  # Count the results.
+  local count=$(echo "$combinedResults" | jq 'length')
+  local title="### Combined Gordian Tasks and GitHub Issues for @$user"
+
+  # Print the combined table header.
+  local tableHeader=$(echo "|URL|Title|Status|Assignees|Repository|Issue Number|Issue State|")
+  local separator=$(echo "|---|-----|------|---------|----------|------------|-----------|")
+
+  echo -e "$title\n$tableHeader\n$separator\n$combinedTable"
+
+  # Copy the combined results to the clipboard.
+  echo -e "$title\n$tableHeader\n$separator\n$combinedTable" | pbcopy
+  echo -e "\n$title have been copied to the clipboard. There are $count combined tasks and issues. :-) ###"
+}
+
 echo "•••••••••••••••• Finished Loading aliases!\n\n"
