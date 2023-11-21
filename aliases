@@ -141,4 +141,103 @@ function gday() {
 
     echo -e "$title\n$header\n$separator\n$body"
 }
+# alltl function v0.1
+# Retrieves a combined list of all GitHub issues assigned to me and their project status.
+# Depends on GitHub CLI (`gh`) and `jq` for processing JSON.
+
+function alltl() {
+  # Get list of issues assigned to me
+  local issues=$(gh issue list --assignee @me --json number,title,repository --jq '.[] | {number, title, repo: .repository.nameWithOwner}')
+
+  # Get list of projects I'm a member of
+  local projects=$(gh api graphql -f query='
+    {
+      viewer {
+        projectsV2(first: 10) {
+          nodes {
+            name
+            items(first: 100) {
+              nodes {
+                content {
+                  ... on Issue {
+                    number
+                  }
+                }
+                fieldValues(first: 10) {
+                  nodes {
+                    projectField {
+                      name
+                    }
+                    value
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }' --jq '.data.viewer.projectsV2.nodes[] | {project: .name, items: [.items.nodes[] | {number: .content.number, status: (.fieldValues.nodes[] | select(.projectField.name == "Status") | .value)]}}')
+
+  # Synthesize table with combined data
+  local header="| Title | Repo Name / Issue Number | Assigned Project | Status |"
+  local separator="|-------|-------------------------|------------------|--------|"
+  echo "$header"
+  echo "$separator"
+
+  for issue in $(echo "$issues" | jq -c '.'); do
+    local issue_number=$(echo "$issue" | jq -r '.number')
+    local issue_title=$(echo "$issue" | jq -r '.title')
+    local issue_repo=$(echo "$issue" | jq -r '.repo')
+    local project_name="none"
+    local status="none"
+
+    # Check projects for this issue
+    for project in $(echo "$projects" | jq -c '.'); do
+      local p_name=$(echo "$project" | jq -r '.project')
+      local p_issue=$(echo "$project" | jq --arg number "$issue_number" '.items[] | select(.number == ($number | tonumber))')
+      if [ "$p_issue" != "" ]; then
+        if [ "$project_name" == "none" ]; then
+          project_name=$p_name
+          status=$(echo "$p_issue" | jq -r '.status')
+        else
+          project_name="many"
+          status="many"
+          break
+        fi
+      fi
+    done
+
+    echo "| $issue_title | $issue_repo / $issue_number | $project_name | $status |"
+  done | column -t -s '|'
+
+  echo "Table has been synthesized."
+}
+
+function collect_field_names() {
+  local version="v0.4"
+
+  # Emit the version information
+  echo "••••••••• collect_field_names [$version] •••••••••"
+
+  # Retrieve and map the project names to their numbers
+  local project_info=$(gh project list --owner strangelove-ventures --format json ) | jq -r '[.[] | {number, name}]'
+
+  # Define the list of project numbers
+  local project_numbers=(46 49 39 36 34 30 24 18)
+
+  # Iterate over the project numbers to retrieve and print field names
+  for project_number in $project_numbers; do
+    # Extract the project name using the project number
+    local project_name=$(echo "$project_info" | jq -r --argjson number $project_number '.[] | select(.number == $number) | .name')
+
+    # Print the project name
+    echo "Project $project_number ($project_name) fields:"
+
+    # Retrieve and print the field names for the project
+    gh project field-list $project_number --owner strangelove-ventures --format json |
+      jq -r '[.fields[].name] | join(", ")'
+    echo # Print a newline for better readability
+  done
+}
+
 echo "•••••••••••••••• Finished Loading aliases!\n\n"
