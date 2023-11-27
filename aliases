@@ -140,6 +140,9 @@ function gday() {
 
     echo -e "$title\n$header\n$separator\n$body"
 }
+
+alias ttl="pmtl \n\n && gordtl \n\n && ghtl"
+
 # alltl function v0.1
 # Retrieves a combined list of all GitHub issues assigned to me and their project status.
 # Depends on GitHub CLI (`gh`) and `jq` for processing JSON.
