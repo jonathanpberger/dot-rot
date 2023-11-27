@@ -52,20 +52,36 @@ function pmtl() {
   echo "$result"
   echo -e "$headers\n$result" | pbcopy
 }
+# ######### this works
+#
+# function gordtl() {
+#   local headers="|Title|Status|url|Assignees|\n|--|--|--|--|"
+#   local result=$(gh p item-list 47 --limit 22 --format=json | jq -r '.items[] | "| \(.title) | \(.status) |\(.content.url) | \(.assignees // [] | if type == "array" then map(if type == "object" then .login else . end) else [] end | join(", ")) |"')
+
+#   echo -e "### Gordian Tasks"
+#   echo -e "$headers"
+#   echo "$result"
+#   echo -e "$headers\n$result" | pbcopy
+# }
+# #########
 
 function gordtl() {
-  local headers="|Order | Status | Title | Labels | Link|\n|---|---|---|---|---|"
+  echo "Version 0.42"
+  local headers="|Order|Status|Title|URL|Assignees|\n|--|--|--|--|--|"
+  local result=$(gh p item-list 47 --format=json | jq -r '.items | to_entries[] | "| \(.key + 1) | \(.value.status) | \(.value.title) | \(.value.content.url) | \(.value.assignees // [] | if type == "array" then map(if type == "object" then .login else . end) else [] end | join(", ")) |"')
 
-  local result=$(gh p item-list 47 --limit 300 --format=json | jq -r '(.items | to_entries | map(select((.value.status == "In progress" or .value.status == "Backlog" or .value.status == "Waiting") ))) | .[] | "| \(.key+1) | \(.value.status) | \(.value.title) | \(.value["labels"]) | \((.value.content.repository | split("/")[-1]) + "/" + (.value.content.number|tostring)) |"')
+  local count=$(echo "$result" | wc -l | tr -d ' ')
 
   echo -e "### Gordian Tasks"
-  echo -e "$headers"
-  echo "$result"
+  echo -e "$headers\n$result"
   echo -e "$headers\n$result" | pbcopy
+  echo -e "\n\n********* Gordian Tasks have been copied to the clipboard. There are $count tasks. :-) ###\n"
 }
 
+
+
 function ghtl() {
-  local headers="|Order | Status | Title | Link|"
+  local headers="|Order | Status | Title | url|"
   local separators="|$(echo "$headers" | sed 's/[^|]//g' | sed 's/|/---|/g' | sed 's/|$//')"
 
   local result=$(gh p item-list 46 --limit 300 --format=json | jq -r '(.items | to_entries | map(select((.value.status == "In progress" or .value.status == "Backlog" or .value.status == "Waiting") and (.value.assignees[]? | contains("jonathanpberger"))))) | .[] | "| \(.key+1) | \(.value.status) | \(.value.title) | \((.value.content.repository | split("/")[-1]) + "/" + (.value.content.number|tostring)) |"')
