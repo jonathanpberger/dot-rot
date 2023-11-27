@@ -1,6 +1,6 @@
 # This probably wants to go in ~/.oh-my-zsh/custom/aliases.zsh
 
-echo "•••••••••• Loading aliases ••• $(date "+%a %b %d %H:%M:%S"): "
+echo "•••••••••• Loading aliases ••• $(date "+%a %b %d %H:%M:%S") "
 
 # Generally helpful
 alias hg="history | grep"
@@ -39,9 +39,8 @@ alias projects="ack  '(\+\+\w.*)'  ~/Dropbox/Notes-and-docs/JPB-monthly-notes/fo
 alias prev-projects="ack  '(\+\+\w.*)'  ~/Dropbox/Notes-and-docs/JPB-monthly-notes/foam/prev.md --output '$1'"
 alias foam="cd ~/Dropbox/Notes-and-docs/JPB-monthly-notes/foam"
 
-# alias ghi="echo '########## JPB Github Issues copied to clipboard :-) ##########\n' && gh search issues --assignee=@me --state=open --limit=333 | pbcopy"
-
 # Github CLI
+
 function pmtl() {
   local headers="|Order | Status | Title | Project | Link|\n|---|---|---|---|---|"
 
