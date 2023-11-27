@@ -93,26 +93,13 @@ function ghtl() {
   echo -e "$headers\n$result" | pbcopy
 }
 
-function ghii-old() {
-  local headers="| Repository | Number | State | Title |"
-  local separators="|$(echo "$headers" | sed 's/[^|]//g' | sed 's/|/---|/g' | sed 's/|$//')"
-
-  local result=$(gh search issues --assignee=@me --state=open --limit 3 --include-prs --json="repository,number,state,title" | jq -r '["Repository", "Number", "State", "Title"], (.[] | [.repository.name, .number, .state, .title]) | @tsv' | sed 's/\t/ | /g' | sed '1s/^/| /; 1s/$/ |/' | sed '2s/[^|]/-/g')
-
-
-  echo -e "### GitHub Issues"
-  # echo -e "$headers"
-  # echo -e "$separators"
-  echo "$result"
-  echo -e "$headers\n$result" | pbcopy
-}
-
-function ghii() {
-  local header="| Repository | Number | State | Title |"
-  local separator="|------------|--------|-------|-------|"
-  local title="### GitHub Issues"
-  local results=$(gh search issues --assignee=@me --state=open --limit 333 --include-prs --json="repository,number,state,title" | jq -r '.[] | "| \(.repository.name) | \(.number) | \(.state) | \(.title) |"')
-  local count=$(echo "$results" | wc -l )
+function ghi() {
+  local user=$(gh api /user | jq -r '.login')
+  local header="| Repository | Number | State | Title |url|"
+  local separator="|------------|--------|-------|-----|--|"
+  local results=$(gh search issues --assignee=@me --state=open --limit 333 --include-prs --json="repository,number,state,title,url" | jq -r '.[] | "| \(.repository.name) | \(.number) | \(.state) | \(.title) | \(.url) |"')
+  local count=$(echo "$results" | wc -l | tr -d ' ')
+  local title="### $count Open GitHub Issues for @$user"
 
   echo "$title"
   echo "$header"
@@ -120,7 +107,7 @@ function ghii() {
   echo "$results"
 
   echo -e "$title\n$header\n$separator\n$results" | pbcopy
-  echo -e "\n$title has been copied to the clipboard. There are $count issues. :-) ###"
+  echo -e "\n$title have been copied to the clipboard. There are $count issues. :-) ###"
 }
 function gday() {
     # Version 9.6
