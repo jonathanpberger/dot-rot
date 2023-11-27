@@ -109,36 +109,38 @@ function ghi() {
   echo -e "$title\n$header\n$separator\n$results" | pbcopy
   echo -e "\n$title have been copied to the clipboard. There are $count issues. :-) ###"
 }
+
 function gday() {
-    # Version 9.6
-    local title="## 🪢 Todo Today"
-    local header="| Time    | Item |"
-    local separator="|---------|------|"
-    local output=$(gcalcli --cal "JPB-DW" --cal "Pomo" --cal "JPB SL" --cal "JPB Private" agenda "today" "tomorrow" --nocolor --no-military)
+  # Version 9.6
+  local h1=$(echo -e "# $(date '+%m/%d - %A' | sed "s/Monday/& - 📆 Week $(date '+%V')/")")
+  local title="## 🪢 Todo Today"
+  local table_header="| Time    | Item |"
+  local table_separator="|---------|------|"
+  local output=$(gcalcli --cal "JPB-DW" --cal "Pomo" --cal "JPB SL" --cal "JPB Private" agenda "today" "tomorrow" --nocolor --no-military)
 
-    # Remove ANSI color codes
-    local no_color_output=$(echo "$output" | sed 's/\x1b\[[0-9;]*m//g')
+  # Remove ANSI color codes
+  local no_color_output=$(echo "$output" | sed 's/\x1b\[[0-9;]*m//g')
 
-    # Process the output line by line
-    local body=$(echo "$no_color_output" | awk '{
-        # Trim leading whitespace for the whole line
-        gsub(/^[ \t]+/, "", $0);
-        # If the line starts with a non-number (the date line), remove everything up to the time
-        if ($0 ~ /^[^0-9]/) {
-            sub(/.*[0-9]{1,2}:[0-9]{2}[apm]{2}[ \t]+/, "", $0);
-        }
-        # Check if the line has a valid time format now, and if so, process it
-        if ($0 ~ /^[0-9]{1,2}:[0-9]{2}[apm]{2}/) {
-            # Extract the time and item
-            time = $1;
-            $1 = ""; # Remove the time field to concatenate the rest
-            item = $0;
-            # Print pipe, time, pipe, item, pipe
-            print "| " time " | " item " |";
-        }
-    }')
+  # Process the output line by line
+  local body=$(echo "$no_color_output" | awk '{
+    # Trim leading whitespace for the whole line
+    gsub(/^[ \t]+/, "", $0);
+    # If the line starts with a non-number (the date line), remove everything up to the time
+    if ($0 ~ /^[^0-9]/) {
+        sub(/.*[0-9]{1,2}:[0-9]{2}[apm]{2}[ \t]+/, "", $0);
+    }
+    # Check if the line has a valid time format now, and if so, process it
+    if ($0 ~ /^[0-9]{1,2}:[0-9]{2}[apm]{2}/) {
+      # Extract the time and item
+      time = $1;
+      $1 = ""; # Remove the time field to concatenate the rest
+      item = $0;
+      # Print pipe, time, pipe, item, pipe
+      print "| " time " | " item " |";
+    }
+  }')
 
-    echo -e "$title\n$header\n$separator\n$body"
+  echo -e "$h1\n\n$title\n\n$table_header\n$table_separator\n$body"
 }
 
 alias ttl="pmtl \n\n && gordtl \n\n && ghtl"
