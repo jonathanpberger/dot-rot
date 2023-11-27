@@ -244,49 +244,65 @@ function collect_field_names() {
   done
 }
 
-function ppi() {
-  echo "Version 0.3.3"
+# PPI here
 
-  # Fetch Gordian tasks.
+function ppi() {
+  echo "Version 0.6.1"
+
+  echo "Fetching current user..."
+  local user=$(gh api /user | jq -r '.login')
+
+  echo "Fetching Gordian tasks..."
   local gordianTasks=$(gh p item-list 47 --format=json | jq -r '
     .items | map({
-      order: .order,
       status: .status,
       title: .title,
       url: .content.url,
-      # Directly join the assignees array to a string, if it is not an array, set to an empty string.
-      assignees: (.assignees | if type == "array" then join(", ") else "" end)
+      assignees: (.assignees // [] | join(", "))
     })'
   )
 
-  # Fetch GitHub issues.
+  echo "Fetching PM tasks from another project..."
+  local pmTasks=$(gh p item-list 36 --limit 300 --format=json | jq -r '
+    .items | map(select(.content.url != null)) | map({
+      status: .status,
+      title: .title,
+      project: .["project 🪚"],
+      url: .content.url,
+      projectStatuses: [{project: .project, status: .status}]
+    })'
+  )
+
+  echo "Fetching GitHub issues..."
   local gitHubIssues=$(gh search issues --assignee=@me --state=open --limit=333 --include-prs --json="repository,number,state,title,url" | jq -r '.[] | {repository: .repository.name, number: .number, state: .state, title: .title, url: .url}')
 
-  # Combine Gordian tasks and GitHub issues based on URL.
-  local combinedResults=$(jq -s 'flatten | group_by(.url) | map({
-    url: .[0].url,
-    title: .[0].title,
-    status: .[0].status,
-    assignees: .[0].assignees,
-    repository: (.[1] // {}).repository,
-    number: (.[1] // {}).number,
-    state: (.[1] // {}).state
-  })' <(echo "$gordianTasks") <(echo "$gitHubIssues"))
-  local combinedTable=$(echo "$combinedResults" | jq -r '.[] | "| \(.url) | \(.title) | \(.status) | \(.assignees) | \(.repository) | \(.number) | \(.state) |"')
+  echo "Combining tasks and issues..."
+  local combinedResults=$(jq -n '
+    input as $gordianTasks | input as $pmTasks | input as $gitHubIssues |
+    ($gordianTasks + $pmTasks + $gitHubIssues) | group_by(.url) | map({
+      title: .[0].title,
+      status: .[0].status,
+      state: (.[0].state // ""),
+      assignees: .[0].assignees,
+      repository: (.[0].repository // ""),
+      number: (.[0].number // ""),
+      url: .[0].url,
+      projectStatuses: (reduce .[] as $item ([]; . + ($item.projectStatuses // [])))
+    })' <(echo "$gordianTasks") <(echo "$pmTasks") <(echo "$gitHubIssues"))
 
-  # Count the results.
-  local count=$(echo "$combinedResults" | jq 'length')
-  local title="### Combined Gordian Tasks and GitHub Issues for @$user"
+  local combinedTable=$(echo "$combinedResults" | jq -r '.[] | select(.url != null) | "| \(.title) | \(.status) // (if .projectStatuses then (.projectStatuses | map(.status) | join(", ")) else "N/A" end) | \(.assignees) | \(.repository) | \(.number) | \(.state) | \(.url) |"')
 
-  # Print the combined table header.
-  local tableHeader=$(echo "|URL|Title|Status|Assignees|Repository|Issue Number|Issue State|")
-  local separator=$(echo "|---|-----|------|---------|----------|------------|-----------|")
+  local count=$(echo "$combinedResults" | jq -r 'length')
+  local title="### Combined Gordian and SL PM Tasks with GitHub Issues for @$user"
+
+  local tableHeader="|URL|Title|Status|Assignees|Repository|Issue Number|Issue State|"
+  local separator="|---|-----|------|---------|----------|------------|-----------|"
 
   echo -e "$title\n$tableHeader\n$separator\n$combinedTable"
 
-  # Copy the combined results to the clipboard.
   echo -e "$title\n$tableHeader\n$separator\n$combinedTable" | pbcopy
   echo -e "\n$title have been copied to the clipboard. There are $count combined tasks and issues. :-) ###"
 }
 
 echo "•••••••••••••••• Finished Loading aliases!\n\n"
+
