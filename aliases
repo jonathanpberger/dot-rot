@@ -41,6 +41,7 @@ alias foam="cd ~/Dropbox/Notes-and-docs/JPB-monthly-notes/foam"
 
 # Github CLI
 
+alias ttl="pmtl \n\n && gordtl \n\n && ghtl"
 
 #####################   ██████╗ ███╗   ███╗████████╗██╗        Product Management Task List
 #####################   ██╔══██╗████╗ ████║╚══██╔══╝██║
