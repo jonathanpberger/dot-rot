@@ -18,8 +18,8 @@ alias dotrot="cd ~/workspace/dot-rot"
 
 # Some alias / shell housekeeping
 alias zr="source ~/.zshrc"
-alias ze="vi ~/.zshrc"
-alias za="vi ~/.oh-my-zsh/custom/aliases.zsh"
+alias ze="code ~/.zshrc"
+alias za="code ~/.oh-my-zsh/custom/aliases.zsh"
 
 # An alias for dvorak typists
 alias aoeu='asdf'
