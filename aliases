@@ -199,7 +199,7 @@ function gday-safe() {
 
 function gday() {
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞"
-  echo "    🌞🌞🌞   gday Version 1.0.0    🌞🌞🌞"
+  echo "    🌞🌞🌞   gday Version 1.2.0    🌞🌞🌞"
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
 
   # local day_of_week=$(date '+%A')
@@ -246,8 +246,8 @@ function gday() {
     # Transform time into a number for emoji map
     local time_number=$(echo "$time" | tr -d '[:alpha:]' | tr -d ':')
 
-    # Check if the item starts with an emoji
-    if ! [[ $item =~ ^[🍅] ]]; then
+    # Check if the item starts with an emoji (non-alphanumeric character)
+    if ! [[ $item =~ ^[^[:alnum:]] ]]; then
       local emoji=${emoji_map[$time_number]}
       item="${emoji} $item"
     fi
@@ -280,7 +280,7 @@ function gday() {
 #########################################
 
 
-function gday-known-good() {
+function gday-known-good-prev() {
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n"
   echo "    🌞🌞🌞   gday Version 0.17.6   🌞🌞🌞 \n"
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
