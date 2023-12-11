@@ -6,7 +6,6 @@ echo "•••••••••• Loading aliases ••• $(date "+%a %b %d
 alias hg="history | grep"
 alias g="gcalcli"
 alias be="bundle exec"
-alias old-gday="echo '## 🪢 Todo Today\n\n|Time|Item|\n|---|---|\n' & gcalcli --cal 'JPB-DW' --cal 'Pomo' --cal 'JPB SL' --cal 'JPB Private' agenda yesterday tomorrow --no-military"
 
 alias pomo="pomodoro"
 alias vi="nvim"
@@ -146,46 +145,6 @@ function ghi() {
   echo -e "\n$title have been copied to the clipboard. There are $count issues. :-) ###"
 }
 
-function gday-safe() {
-  # Version 9.6
-  local h1=$(echo -e "# $(date '+%m/%d - %A' | sed "s/Monday/& - 📆 Week $(date '+%V')/")")
-  local title="## 🪢 Todo Today"
-  local table_header="| Time    | Item |"
-  local table_separator="|---------|------|"
-  local output=$(gcalcli --cal "JPB-DW" --cal "Pomo" --cal "JPB SL" --cal "JPB Private" agenda "today" "tomorrow" --nocolor --no-military)
-
-  # Remove ANSI color codes
-  local no_color_output=$(echo "$output" | sed 's/\x1b\[[0-9;]*m//g')
-
-  # Process the output line by line
-  local body=$(echo "$no_color_output" | awk '{
-    # Trim leading whitespace for the whole line
-    gsub(/^[ \t]+/, "", $0);
-    # If the line starts with a non-number (the date line), remove everything up to the time
-    if ($0 ~ /^[^0-9]/) {
-        sub(/.*[0-9]{1,2}:[0-9]{2}[apm]{2}[ \t]+/, "", $0);
-    }
-    # Check if the line has a valid time format now, and if so, process it
-    if ($0 ~ /^[0-9]{1,2}:[0-9]{2}[apm]{2}/) {
-      # Extract the time and item
-      time = $1;
-      echo -e "&& TIME: $time"
-      $1 = ""; # Remove the time field to concatenate the rest
-      item = $0;
-      emoji = ":clock" time;
-      echo -e "&& ITEM: $ITEM"
-      # Print pipe, time, pipe, item, pipe
-      print "| " time " | " item " |"
-      print "TIME: "time
-      print "EMO: " emoji
-      print "ITEM: "item;
-
-    }
-  }')
-
-  echo -e "$h1\n\n$title\n\n$table_header\n$table_separator\n$body"
-}
-
 
 ############    ██████╗ ██████╗  █████╗ ██╗   ██╗ ANSI Shadow
 ############   ██╔════╝ ██╔══██╗██╔══██╗╚██╗ ██╔╝
@@ -267,84 +226,6 @@ function gday() {
   done
 
   echo -e "${h1}\n\n${title}\n${table_header}\n${table_separator}\n${body}"
-}
-
-
-
-
-
-#########################################
-#########################################
-#########################################
-#########################################
-#########################################
-
-
-function gday-known-good-prev() {
-  echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n"
-  echo "    🌞🌞🌞   gday Version 0.17.6   🌞🌞🌞 \n"
-  echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
-
-  local h1="# $(date '+%m/%d - %A') - 📆 Week $(date '+%V')"
-  local title="## 🪢 Todo Today"
-  local table_header="| Time    | Item |"
-  local table_separator="|---------|------|"
-  local output=$(gcalcli --cal "JPB-DW" --cal "Pomo" --cal "JPB SL" --cal "JPB Private" agenda "today" "tomorrow" --nocolor --no-military)
-
-  # Emoji map for times
-  declare -A emoji_map=(
-    [1230]="🕧" [1200]="🕛"
-    [1130]="🕦" [1100]="🕚"
-    [1030]="🕥" [1000]="🕙"
-    [930]="🕤" [900]="🕘"
-    [830]="🕣" [800]="🕗"
-    [730]="🕢" [700]="🕖"
-    [630]="🕡" [600]="🕕"
-    [530]="🕠" [500]="🕔"
-    [430]="🕟" [400]="🕓"
-    [330]="🕞" [300]="🕒"
-    [230]="🕝" [200]="🕑"
-    [130]="🕜" [100]="🕐"
-  )
-
-  # Remove ANSI color codes
-  local no_color_output=$(echo "$output" | sed 's/\x1b\[[0-9;]*m//g')
-
-  # Initialize body variable
-  local body=""
-
-  # Process the output line by line
-  echo "$no_color_output" | while IFS= read -r line; do
-    # Remove leading whitespace
-    line=$(echo "$line" | sed 's/^[ \t]*//')
-
-    # Skip lines that don't start with a time
-    if ! [[ $line =~ ^[0-9]{1,2}:[0-9]{2}[apm]{2} ]]; then
-      continue
-    fi
-
-    # Extract the time and the rest of the line
-    local time=$(echo "$line" | awk '{print $1}')
-    local item=$(echo "$line" | awk '{$1=""; print substr($0,2)}')
-
-    # Transform time into a number by removing non-digit characters
-    local time_number=$(echo "$time" | tr -d '[:alpha:]' | tr -d ':')
-
-    # Check if the item already has an emoji
-    if ! [[ $item =~ 🍅 ]]; then
-      # Get the corresponding emoji from the map
-      local emoji=${emoji_map[$time_number]}
-
-      # Add the emoji to the item
-      item="${emoji} $item"
-    fi
-
-    # Append to body with a newline and table formatting
-    body+="| ${time} | ${item} |"$'\n'
-  done
-
-  # Output the table
-  echo -e "${h1}\n\n${title}\n\n${table_header}\n${table_separator}\n${body}"
 }
 
 ######################   █████╗ ██╗     ██╗  ████████╗██╗        # alltl function v0.1
