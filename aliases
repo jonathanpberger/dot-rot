@@ -157,7 +157,7 @@ function ghi() {
 
 function gday() {
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞"
-  echo "    🌞🌞🌞   gday Version 1.10.3    🌞🌞🌞"
+  echo "    🌞🌞🌞   gday Version 1.10.7    🌞🌞🌞"
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
 
   # local day_of_week=$(date '+%A')
@@ -172,8 +172,9 @@ function gday() {
   fi
 
   local title="## 🪢 Todo Today"
-  local table_header="| Time    | Item |"
-  local table_separator="|---------|------|"
+  local table_header="| Time    | Duration | Item |"
+  local table_separator="|---------|----------|------|"
+
   local output=$(gcalcli --cal "JPB-DW" --cal "Pomo" --cal "JPB SL" --cal "JPB Private" agenda "1am today" "11pm today" --nocolor --no-military --details length)
 
   # Emoji map for times
@@ -194,6 +195,16 @@ function gday() {
 
   echo "$no_color_output" | while IFS= read -r line; do
   line=$(echo "$line" | sed 's/^[ \t]*//')
+
+  # Function to add a pomodoro (30 minutes) to a given time
+  add_pomodoro() {
+      local time=$1
+      # Convert 12-hour format to 24-hour format and add 30 minutes
+      local new_time=$(date -j -v+30M -f "%I:%M%p" "$time" +"%I:%M%p")
+
+      # Remove leading zero and downcase "AM/PM"
+      echo $new_time | sed 's/^0//' | tr '[:upper:]' '[:lower:]'
+  }
 
   # Check if line contains time and event
   if [[ $line =~ ^[0-9]{1,2}:[0-9]{2}[apm]{2} ]]; then
@@ -220,26 +231,13 @@ function gday() {
   fi
 done
 
-# Update table headers to include Duration
-local table_header="| Time    | Duration | Item |"
-local table_separator="|---------|----------|------|"
-
-# ... [previous code remains the same]
-
-# Function to add a pomodoro (30 minutes) to a given time
-add_pomodoro() {
-    local time=$1
-    # Convert 12-hour format to 24-hour format and add 30 minutes
-    local new_time=$(date -j -v+30M -f "%I:%M%p" "$time" +"%I:%M%p")
-
-    # Remove leading zero and downcase "AM/PM"
-    echo $new_time | sed 's/^0//' | tr '[:upper:]' '[:lower:]'
-
-}
-
-# Process lines and expand them based on duration
+# Expand >30m blocks into multiple 🍅 pomodoros
 for line in "${lines[@]}"; do
   IFS='|' read -r time_number time duration item <<< "$line"
+  echo "inside multiple pomodoros - time_number: $time_number"
+  echo "inside multiple pomodoros - time: $time"
+  echo "inside multiple pomodoros - duration: $duration"
+  echo "inside multiple pomodoros - item: $item"
   local duration_minutes=$(echo $duration | sed 's/m//')
 
   # Calculate how many 30-minute blocks are needed
@@ -249,6 +247,12 @@ for line in "${lines[@]}"; do
     body+="| ${time} | 30m | ${item} |"$'\n'
     time=$(add_pomodoro "$time")
   done
+
+  # multiple lines have the same time value, remove the line with a tomato emoji
+  # if [[ ${time_count[$time_number]} -gt 1 && $item =="*🍅*"]]; then
+    # continue
+  # fi
+  # body+="| ${time} | ${duration} | ${item} |"$'\n'
 done
 
 echo -e "${h1}\n\n${title}\n${table_header}\n${table_separator}\n${body}"
