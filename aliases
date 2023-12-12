@@ -152,13 +152,12 @@ function ghi() {
 ############   ██║   ██║██║  ██║██╔══██║  ╚██╔╝
 ############   ╚██████╔╝██████╔╝██║  ██║   ██║
 ############    ╚═════╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
-############    TODO: add duration
-############    TODO: extend duration
+############    TODO: extend lines in 30m increments, by duration
 ############    ╚═════╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
 
 function gday() {
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞"
-  echo "    🌞🌞🌞   gday Version 1.4.0    🌞🌞🌞"
+  echo "    🌞🌞🌞   gday Version 1.10.3    🌞🌞🌞"
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
 
   # local day_of_week=$(date '+%A')
@@ -225,17 +224,34 @@ done
 local table_header="| Time    | Duration | Item |"
 local table_separator="|---------|----------|------|"
 
-# Process lines and remove pomodoros where necessary
+# ... [previous code remains the same]
+
+# Function to add a pomodoro (30 minutes) to a given time
+add_pomodoro() {
+    local time=$1
+    # Convert 12-hour format to 24-hour format and add 30 minutes
+    local new_time=$(date -j -v+30M -f "%I:%M%p" "$time" +"%I:%M%p")
+
+    # Remove leading zero and downcase "AM/PM"
+    echo $new_time | sed 's/^0//' | tr '[:upper:]' '[:lower:]'
+
+}
+
+# Process lines and expand them based on duration
 for line in "${lines[@]}"; do
   IFS='|' read -r time_number time duration item <<< "$line"
-  if [[ ${time_count[$time_number]} -gt 1 && $item == *"🍅"* ]]; then
-    continue
-  fi
-  body+="| ${time} | ${duration} | ${item} |"$'\n'
+  local duration_minutes=$(echo $duration | sed 's/m//')
+
+  # Calculate how many 30-minute blocks are needed
+  local blocks=$((duration_minutes / 30))
+
+  for ((i=0; i<blocks; i++)); do
+    body+="| ${time} | 30m | ${item} |"$'\n'
+    time=$(add_pomodoro "$time")
+  done
 done
 
 echo -e "${h1}\n\n${title}\n${table_header}\n${table_separator}\n${body}"
-
 }
 
 ######################   █████╗ ██╗     ██╗  ████████╗██╗        # alltl function v0.1
