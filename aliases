@@ -196,7 +196,7 @@ function ghi() {
 
 function gday() {
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞"
-  echo "    🌞🌞🌞   gday Version 1.19.3    🌞🌞🌞"
+  echo "    🌞🌞🌞   gday Version 1.19.4    🌞🌞🌞"
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
 
   ##### Setup
@@ -212,6 +212,7 @@ function gday() {
   local title="## 🪢 Todo Today"
   local table_header="| Time    | Item |"
   local table_separator="|---------|------|"
+  local kicker="\n- 👑 Most Important Thing Today:\n- 1st 🐸 I'll eat:\n- 2nd 🐸 I'll eat:\n- 3rd 🐸 I'll eat:\n\n"
 
   local day_of_week=$(date '+%A')
   local h1="# $(date '+%m/%d') - ${day_of_week}"
@@ -271,7 +272,7 @@ function gday() {
     done
   done
 
-  echo -e "${h1}\n\n${title}\n${table_header}\n${table_separator}\n${body}"
+  echo -e "${h1}\n\n${title}\n${table_header}\n${table_separator}\n${body}\n${kicker}"
 }
 
 ######################   █████╗ ██╗     ██╗  ████████╗██╗        # alltl function v0.1
