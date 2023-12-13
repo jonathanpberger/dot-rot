@@ -155,7 +155,133 @@ function ghi() {
 ############    TODO: extend lines in 30m increments, by duration
 ############    ╚═════╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
 
+
+########################################
+# ChatGPT Pseudo-code
+## Header Creation: Generates a header for the output, including the current date and week number (for Mondays).
+#
+## Table Headers: Prepares headers for the table that will display the calendar events.
+#
+## Fetching Calendar Data: Uses gcalcli to fetch today's agenda from Google Calendar. The --details length flag is used to include the duration of each event.
+#
+## Emoji Mapping: Defines a map of emojis for different times of the day. This is used to add a visual cue (emoji) to each event based on its start time.
+#
+## Processing Calendar Output: The main part of the script processes the output from gcalcli. It involves several steps:
+#
+## Removing ANSI color codes for plain text processing.
+## Parsing each line to extract the time, duration, and description of events.
+## Adding an emoji to the event if it doesn't start with one.
+## Converting the event duration from hours and minutes to a total in minutes.
+## Storing the processed information for each event.
+## Expanding Events Longer than 30 Minutes: For events longer than 30 minutes, the script splits them into multiple 30-minute blocks. It uses a custom function add_pomodoro to increment the time by 30 minutes for each block.
+#
+## Handling Pomodoros and Event Conflicts: The script aims to remove pomodoro (🍅) events that conflict with longer events. This step seems to need refinement based on the issues you're experiencing.
+#
+## Final Output Assembly: Constructs the final output table with the processed event data.
+## ------------
+
+## # Gday is a script to integrate my gCal with my daily notes. To help organize my time, the day should be broken into pomodoros wheverer I don't have existing appointments
+## ## Pseudo-code
+## - Create Table Headers and define clock Emoji Map
+## - Fetch Calendar Data from Google Calendar
+## - Remove ANSI color codes from Cal data
+## - extract time, duration, and description of events from each line of Cal data
+## - Add clock emoji to Cal data lines lacking emoji
+## - Expand Events Longer than 30 Minutes into multiple lines, 30m each
+## - Remove Pomodoro lines that conflict with other events
+## - Render the final markdown table
+#
+
+########################################
+
 function gday() {
+  echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞"
+  echo "    🌞🌞🌞   gday Version 1.19.0    🌞🌞🌞"
+  echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
+
+  local day_of_week=$(date '+%A')
+  local h1="# $(date '+%m/%d') - ${day_of_week}"
+
+  if [[ $day_of_week == "Monday" ]]; then
+    h1+=" - 📆 Week $(date '+%V')"
+  fi
+
+  local title="## 🪢 Todo Today"
+  local table_header="| Time    | Item |"
+  local table_separator="|---------|------|"
+
+  local output=$(gcalcli --cal "JPB-DW" --cal "Pomo" --cal "JPB SL" --cal "JPB Private" agenda "1am today" "11pm today" --nocolor --no-military --details length)
+
+  declare -A emoji_map=(
+    [800]="🕗" [830]="🕣" [900]="🕘" [930]="🕤"
+    [1000]="🕙" [1030]="🕥" [1100]="🕚" [1130]="🕦"
+    [1200]="🕛" [1230]="🕧" [100]="🕐" [130]="🕜"
+    [200]="🕑" [230]="🕝" [300]="🕒" [330]="🕞"
+    [400]="🕓" [430]="🕟" [500]="🕔" [530]="🕠"
+    [600]="🕕" [630]="🕡" [700]="🕖" [730]="🕢"
+  )
+
+  local no_color_output=$(echo "$output" | sed 's/\x1b\[[0-9;]*m//g')
+  local body=""
+  local lines=()
+  local time_count=()
+
+  echo "$no_color_output" | while IFS= read -r line; do
+    line=$(echo "$line" | sed 's/^[ \t]*//')
+
+    add_pomodoro() {
+      local time=$1
+      local new_time=$(date -j -v+30M -f "%I:%M%p" "$time" +"%I:%M%p")
+      echo $new_time | sed 's/^0//' | tr '[:upper:]' '[:lower:]'
+    }
+
+    if [[ $line =~ ^[0-9]{1,2}:[0-9]{2}[apm]{2} ]]; then
+      local time=$(echo "$line" | awk '{print $1}')
+      local item=$(echo "$line" | awk '{$1=""; print substr($0,2)}')
+      local time_number=$(echo "$time" | tr -d '[:alpha:]' | tr -d ':')
+
+      if ! [[ $item =~ ^[^[:alnum:]] ]]; then
+        local emoji=${emoji_map[$time_number]}
+        item="${emoji} $item"
+      fi
+
+      IFS= read -r next_line
+      local duration_raw=$(echo "$next_line" | awk '/Length:/ {print $2}')
+      local hours=$(echo "$duration_raw" | cut -d ':' -f 1)
+      local minutes=$(echo "$duration_raw" | cut -d ':' -f 2)
+      local total_minutes=$((hours * 60 + minutes))
+
+      lines+=("$time_number|$time|$item|$total_minutes")
+      ((time_count[$time_number]++))
+    fi
+  done
+
+  for line in "${lines[@]}"; do
+    IFS='|' read -r time_number time item duration_minutes <<< "$line"
+    local blocks=$((duration_minutes / 30))
+
+    for ((i=0; i<blocks; i++)); do
+      if [[ ${time_count[$time_number]} -gt 1 && $item == *"🍅"* ]]; then
+        continue 2
+      fi
+      body+="| ${time} | ${item} |"$'\n'
+      time=$(add_pomodoro "$time")
+    done
+  done
+
+  echo -e "${h1}\n\n${title}\n${table_header}\n${table_separator}\n${body}"
+}
+
+
+####################//////////////////////////////######################
+####################//////////////////////////////######################
+####################//////////////////////////////######################
+####################//////////////////////////////######################
+####################//////////////////////////////######################
+####################//////////////////////////////######################
+
+
+function gday-prev() {
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞"
   echo "    🌞🌞🌞   gday Version 1.10.7    🌞🌞🌞"
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
