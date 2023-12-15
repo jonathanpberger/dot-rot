@@ -196,7 +196,7 @@ function ghi() {
 
 function gday() {
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞"
-  echo "    🌞🌞🌞   gday Version 1.19.4    🌞🌞🌞"
+  echo "    🌞🌞🌞   gday Version 1.20.3    🌞🌞🌞"
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
 
   ##### Setup
@@ -223,6 +223,10 @@ function gday() {
 
   local calendar_data=$(gcalcli --cal "JPB-DW" --cal "Pomo" --cal "JPB SL" --cal "JPB Private" agenda "1am today" "11pm today" --nocolor --no-military --details length)
   local calendar_data_no_color=$(echo "$calendar_data" | sed 's/\x1b\[[0-9;]*m//g')
+
+  #convert pipe characters to an em-dash
+  calendar_data_no_color=$(echo "$calendar_data_no_color" | sed 's/|/—/g')
+
   local body=""
   local lines=()
   local time_count=()
