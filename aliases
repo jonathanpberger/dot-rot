@@ -197,6 +197,7 @@ function ghi() {
 function gday() {
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞"
   echo "    🌞🌞🌞   gday Version 1.21.0    🌞🌞🌞"
+  echo "    🌞🌞🌞   gday Version 1.24.1    🌞🌞🌞"
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
 
   ##### Setup
@@ -275,7 +276,8 @@ for line in "${lines[@]}"; do
   body+="| ${time} | ${item} |"$'\n'
 done
 
-echo -e "${h1}\n\n${title}\n${table_header}\n${table_separator}\n${body}"
+echo -e "${h1}\n\n${title}\n${table_header}\n${table_separator}\n${body}\n\n${kicker}"
+
 }
 
 ######################   █████╗ ██╗     ██╗  ████████╗██╗        # alltl function v0.1
