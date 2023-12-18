@@ -196,9 +196,13 @@ function ghi() {
 
 function gday() {
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞"
-  echo "    🌞🌞🌞   gday Version 1.21.0    🌞🌞🌞"
-  echo "    🌞🌞🌞   gday Version 1.24.1    🌞🌞🌞"
+  echo "    🌞🌞🌞   gday Version 1.30.1    🌞🌞🌞"
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
+  # TODO: Cull pomodoros for times which already have appointments
+  # TODO: When splitting long events into multiple pomodoros, duplicate the emoji for each pomodoro
+  # TODO: Add tests. Maybe <https://github.com/shellspec/shellspec>?
+  # TODO: Parse pseudo-code into Features List / Release Notes
+
 
   ##### Setup
   declare -A emoji_map=(
