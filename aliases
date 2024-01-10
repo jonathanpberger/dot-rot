@@ -181,6 +181,19 @@ function ghi() {
 ## ------------
 
 ## # Gday is a script to integrate my gCal with my daily notes. To help organize my time, the day should be broken into pomodoros wheverer I don't have existing appointments
+
+## As JPB
+## I want to connect my gCal to my daily notes
+## Because I prefer to work in plaintext and markdown
+
+## When I run gday
+## Then all my gcal appointments should come in
+## And any appointments longer than a pomodoro should be broken into 30m chunks
+## And any appointments without an emoji should be assigned one based on their start time
+## And their emoji should be duplicated for each chunk, ie the first Most Important Thing should start with 👑 and the second with 👑👑, etc
+## And any unscheduled time should be broken into pomodoros
+## And any pomodoros that conflict with other events should be removed
+
 ## ## Pseudo-code
 ## - Create Table Headers and define clock Emoji Map
 ## - Fetch Calendar Data from Google Calendar
@@ -193,8 +206,227 @@ function ghi() {
 #
 
 ########################################
+########################################
+########################################
+########################################
 
+
+
+
+
+
+########################################
+########################################
+########################################
+########################################
+
+
+
+# Increment time function
+function increment_time() {
+    local time=$1
+    local hour=$(echo $time | cut -d ':' -f 1)
+    local minute=$(echo $time | cut -d ':' -f 2 | sed 's/[apm]*//g')
+    local period=$(echo $time | grep -o '[apm]*')
+    local new_minute=$((minute + 30))
+
+    if [[ $new_minute -ge 60 ]]; then
+        new_minute=$((new_minute % 60))
+        hour=$((hour % 12 + 1))
+    fi
+
+    if [[ $hour -eq 12 && $period == "am" ]]; then
+        period="pm"
+    elif [[ $hour -eq 12 && $period == "pm" ]]; then
+        period="am"
+    fi
+
+    printf "%d:%02d%s" $hour $new_minute $period
+}
+
+# Transform gcalcli output to desired markdown format
+function transform_gcal_output() {
+    local raw_output=$1
+    echo "Debug: Starting transform_gcal_output"
+
+    local processed_output=""
+    local current_time=""
+    local current_event=""
+    local current_length=""
+    local -A emoji_map
+    emoji_map=( ["00"]="🕛" ["30"]="🕧" ["01"]="🕐" ["31"]="🕜" ["02"]="🕑" ["32"]="🕝"
+                ["03"]="🕒" ["33"]="🕞" ["04"]="🕓" ["34"]="🕟" ["05"]="🕔" ["35"]="🕠"
+                ["06"]="🕕" ["36"]="🕡" ["07"]="🕖" ["37"]="🕢" ["08"]="🕗" ["38"]="🕣"
+                ["09"]="🕘" ["39"]="🕤" ["10"]="🕙" ["40"]="🕥" ["11"]="🕚" ["41"]="🕦" )
+
+    # Header
+    local date=$(date '+%m/%d - %A')
+    processed_output+="# $date\n\n## 🪢 Todo Today\n"
+    processed_output+="| Time    | Item                                             | -               |\n"
+    processed_output+="|---------|--------------------------------------------------|-----------------|\n"
+
+    local -a lines
+    lines=("${(@f)raw_output}")
+    local is_event_line=false
+
+    for line in $lines; do
+        echo "Debug: Processing line: $line"
+        if [[ $line =~ ^[[:space:]]*[0-9]{1,2}:[0-9]{2}[apm]{2} ]]; then
+            current_time=$(echo $line | awk '{print $1}')
+            current_event=$(echo $line | awk '{$1=""; print substr($0,2)}' | xargs)
+            current_length=""
+            is_event_line=true
+        elif [[ $line =~ Length: ]] && $is_event_line; then
+            current_length=$(echo $line | awk '{print $2}')
+            local duration_minutes=$(echo $current_length | awk -F: '{print $1 * 60 + $2}')
+            if [[ $duration_minutes -gt 30 ]]; then
+                local blocks=$((duration_minutes / 30))
+                for ((i=1; i<=blocks; i++)); do
+                    local emoji_time=$(echo $current_time | cut -d ':' -f 2 | cut -d [apm]* -f 1)
+                    local emoji=${emoji_map[$emoji_time]}
+                    local prefix=$(printf "%.0s${emoji}" $(seq 1 $i))
+                    processed_output+="| $current_time | $prefix $current_event | Length: $current_length |\n"
+                    current_time=$(increment_time $current_time)
+                done
+            else
+                processed_output+="| $current_time | $current_event | |\n"
+            fi
+            is_event_line=false
+        fi
+    done
+
+    # Footer
+    processed_output+="\n- 👑 Most Important Thing Today:\n- 1st 🐸 I'll eat:\n- 2nd 🐸 I'll eat:\n- 3rd 🐸 I'll eat:\n"
+
+    echo -e "$processed_output"
+}
+
+# Main gday function
 function gday() {
+    # Display header
+    echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞"
+    echo "    🌞🌞🌞   gday Version 1.64.0    🌞🌞🌞"
+    echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
+
+    # Fetch calendar data
+    echo "Debug: Fetching calendar data"
+    local raw_output=$(gcalcli --cal "JPB-DW" --cal "Pomo" --cal "JPB SL" --cal "JPB Private" agenda "1am today" "11pm today" --nocolor --no-military --details length)
+
+    # Process and transform the output
+    transform_gcal_output "$raw_output"
+}
+
+
+
+
+
+########################################
+########################################
+########################################
+########################################
+
+
+
+function gday-old-and-broken() {
+  echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞"
+  echo "    🌞🌞🌞   gday Version 1.32.0    🌞🌞🌞"
+  echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
+
+  # Setup
+  ##### Define clock Emoji Map
+  declare -A emoji_map=(
+    [800]="🕗" [830]="🕣" [900]="🕘" [930]="🕤"
+    [1000]="🕙" [1030]="🕥" [1100]="🕚" [1130]="🕦"
+    [1200]="🕛" [1230]="🕧" [100]="🕐" [130]="🕜"
+    [200]="🕑" [230]="🕝" [300]="🕒" [330]="🕞"
+    [400]="🕓" [430]="🕟" [500]="🕔" [530]="🕠"
+    [600]="🕕" [630]="🕡" [700]="🕖" [730]="🕢"
+  )
+
+  ##### Create Table Headers
+  local title="## 🪢 Todo Today"
+  local table_header="| Time    | Item |"
+  local table_separator="|---------|------|"
+  local kicker="\n- 👑 Most Important Thing Today:\n- 1st 🐸 I'll eat:\n- 2nd 🐸 I'll eat:\n- 3rd 🐸 I'll eat:\n\n"
+
+  ##### Day of week should include 📅 and weeknum on Mondays
+  local day_of_week=$(date '+%A')
+  local h1="# $(date '+%m/%d') - ${day_of_week}"
+  if [[ $day_of_week == "Monday" ]]; then
+    h1+=" - 📆 Week $(date '+%V')"
+  fi
+
+  ##### Fetch Calendar Data from Google Calendar
+  local calendar_data=$(gcalcli --cal "JPB-DW" --cal "Pomo" --cal "JPB SL" --cal "JPB Private" agenda "1am today" "11pm today" --nocolor --no-military --details length)
+  local calendar_data_no_color=$(echo "$calendar_data" | sed 's/\x1b\[[0-9;]*m//g')
+
+  ##### Convert pipe characters to an em-dash (bc escaping pipes is hard)
+  calendar_data_no_color=$(echo "$calendar_data_no_color" | sed 's/|/—/g')
+
+  ##### Initialize variables for processing
+  local body=""
+  local lines=()
+  local time_count=()
+
+  ##### Process Calendar Data
+while IFS= read -r line; do
+  line=$(echo "$line" | sed 's/^[ \t]*//') # trim whitespace
+
+  # Function to add a pomodoro (30 minutes) to a given time
+  add_pomodoro() {
+    local time=$1
+    local new_time=$(date -j -v+30M -f "%I:%M%p" "$time" +"%I:%M%p")
+    echo $new_time | sed 's/^0//' | tr '[:upper:]' '[:lower:]'
+  }
+
+  if [[ $line =~ ^[0-9]{1,2}:[0-9]{2}[apm]{2} ]]; then # if line starts with time
+    local time=$(echo "$line" | awk '{print $1}') # extract time
+    local item=$(echo "$line" | awk '{$1=""; print substr($0,2)}') # extract description
+
+    # Split events >30m into multiple lines
+    IFS= read -r next_line
+    local duration_raw=$(echo "$next_line" | awk '/Length:/ {print $2}')
+    local hours=$(echo "$duration_raw" | cut -d ':' -f 1 | sed 's/[^0-9]*//g')
+    local minutes=$(echo "$duration_raw" | cut -d ':' -f 2 | sed 's/[^0-9]*//g')
+    local total_minutes=$((10#$hours * 60 + 10#$minutes))
+    local blocks=$((total_minutes / 30))
+
+    for ((i=0; i<blocks; i++)); do
+      lines+=("$time|$item")
+      time=$(add_pomodoro "$time")
+      ((time_count["$time"]++))
+    done
+  fi
+done <<< "$calendar_data_no_color"
+
+  ##### Cull pomodoros for times which already have appointments
+  for line in "${lines[@]}"; do
+    IFS='|' read -r time item <<< "$line"
+    if [[ ${time_count["$time"]} -gt 1 && $item == *"🍅"* ]]; then
+      continue
+    fi
+
+    # Add emoji to items lacking emoji
+    if ! [[ $item =~ ^[^[:alnum:]] ]]; then
+      local emoji=${emoji_map[$(echo "$time" | tr -d '[:alpha:]' | tr -d ':')]}
+      item="${emoji} $item"
+    fi
+
+    body+="| ${time} | ${item} |"$'\n'
+  done
+
+  ##### Render the final markdown table
+  echo -e "${h1}\n\n${title}\n${table_header}\n${table_separator}\n${body}\n\n${kicker}"
+}
+
+########################################
+########################################
+########################################
+########################################
+
+
+
+function gday-old() {
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞"
   echo "    🌞🌞🌞   gday Version 1.30.1    🌞🌞🌞"
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
