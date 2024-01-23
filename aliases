@@ -31,12 +31,13 @@ alias rsl='reminders show-lists'
 alias tl='reminders show Reminders'
 
 # `Now.md` convenience methods
-alias todos="ack '^.[^|\[]\[[^x]\]\s\w' ~/Dropbox/Notes-and-docs/JPB-monthly-notes/foam/now.md -C2"
+export FOAM_HOME=~/workspace/foam
+alias todos="ack '^.[^|\[]\[[^x]\]\s\w' ~/workspace/foam/now.md -C2"
 alias prev-todos="ack '^.[^|\[]\[[^x]\]\s\w' prev.md -C2"
-alias h2s="ack '^\#{2}\s' ~/Dropbox/Notes-and-docs/JPB-monthly-notes/foam/now.md -C1"
-alias projects="ack  '(\+\+\w.*)'  ~/Dropbox/Notes-and-docs/JPB-monthly-notes/foam/now.md --output '$1'"
-alias prev-projects="ack  '(\+\+\w.*)'  ~/Dropbox/Notes-and-docs/JPB-monthly-notes/foam/prev.md --output '$1'"
-alias foam="cd ~/Dropbox/Notes-and-docs/JPB-monthly-notes/foam"
+alias h2s="ack '^\#{2}\s' ~/workspace/foam/now.md -C1"
+alias projects="ack  '(\+\+\w.*)'  ~/workspace/foam/now.md --output '$1'"
+alias prev-projects="ack  '(\+\+\w.*)'  ~/workspace/foam/prev.md --output '$1'"
+alias foam="cd ~/workspace/foam"
 
 # Github CLI
 
@@ -52,9 +53,36 @@ alias ttl="pmtl \n\n && gordtl \n\n && ghtl"
 function pmtl() {
   local headers="|Order | Status | Title | Project | Link|\n|---|---|---|---|---|"
 
-  local result=$(gh p item-list 36 --limit 300 --format=json | jq -r '(.items | to_entries | map(select((.value.status == "In progress" or .value.status == "Backlog" or .value.status == "Waiting") and (.value.assignees[]? | contains("jonathanpberger"))))) | .[] | "| \(.key+1) | \(.value.status) | \(.value.title) | \(.value["project 🪚"]) | \((.value.content.repository | split("/")[-1]) + "/" + (.value.content.number|tostring)) |"')
+  local result=$(gh p item-list 36 --limit 300 --format=json | jq -r '(.items | to_entries | map(select((.value.status == "In progress" or .value.status == "Backlog" or .value.status == "Waiting")))) | .[] | "| \(.key+1) | \(.value.status) | \(.value.title) | \(.value["project 🪚"]) | \((.value.content.repository | split("/")[-1]) + "/" + (.value.content.number|tostring)) |"')
 
   echo -e "### SL PM Tasks"
+  echo -e "$headers"
+  echo "$result"
+  echo -e "$headers\n$result" | pbcopy
+}
+
+
+####################################################################################
+####################################################################################
+####################################################################################
+####################################################################################
+####################################################################################
+
+##################                   *******  ****     **** ********** **                  ** *******  ******
+##################                  /**////**/**/**   **/**/////**/// /**                 /**/**////**/*////**
+##################                  /**   /**/**//** ** /**    /**    /**                 /**/**   /**/*   /**
+##################                  /******* /** //***  /**    /**    /**       *****     /**/******* /******
+##################                  /**////  /**  //*   /**    /**    /**      /////      /**/**////  /*//// **
+##################                  /**      /**   /    /**    /**    /**             **  /**/**      /*    /**
+##################                  /**      /**        /**    /**    /********      //***** /**      /*******
+##################                  //       //         //     //     ////////        /////  //       ///////
+
+function pmtl-jpb() {
+  local headers="|Order | Status | Title | Project | Link|\n|---|---|---|---|---|"
+
+  local result=$(gh p item-list 36 --limit 300 --format=json | jq -r '(.items | to_entries | map(select((.value.status == "In progress" or .value.status == "Backlog" or .value.status == "Waiting") and (.value.assignees[]? | contains("jonathanpberger"))))) | .[] | "| \(.key+1) | \(.value.status) | \(.value.title) | \(.value["project 🪚"]) | \((.value.content.repository | split("/")[-1]) + "/" + (.value.content.number|tostring)) |"')
+
+  echo -e "### SL PM Tasks for JPB"
   echo -e "$headers"
   echo "$result"
   echo -e "$headers\n$result" | pbcopy
@@ -210,9 +238,35 @@ function ghi() {
 ########################################
 ########################################
 
+function gday-neo() {
+
+## 0. Create Table Headers and define clock Emoji Map
 
 
 
+## 1. Fetch & sanitize  Calendar Data from Google Calendar
+
+
+
+  ## 1a. Fetch
+  ## 1b. Remove ANSI color codes from Cal data
+
+## 3. extract time, duration, and description of events from each line of Cal data
+
+## 3a. create list of h2s
+
+
+
+## 4. Add clock emoji to Cal data lines lacking emoji
+## 5. Expand Events Longer than 30 Minutes into multiple lines, 30m each
+## 6. Remove Pomodoro lines that conflict with other events
+## 7. Render the final markdown table
+
+
+
+
+
+}
 
 
 ########################################
@@ -247,7 +301,7 @@ function increment_time() {
 # Transform gcalcli output to desired markdown format
 function transform_gcal_output() {
     local raw_output=$1
-    echo "Debug: Starting transform_gcal_output"
+    echo "***************** Debug: Starting transform_gcal_output \n\n\n\n\n\n"
 
     local processed_output=""
     local current_time=""
@@ -305,15 +359,17 @@ function transform_gcal_output() {
 function gday() {
     # Display header
     echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞"
-    echo "    🌞🌞🌞   gday Version 1.64.0    🌞🌞🌞"
+    echo "    🌞🌞🌞   gday Version 1.64.1    🌞🌞🌞"
     echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
 
     # Fetch calendar data
-    echo "Debug: Fetching calendar data"
+    echo "################### Debug: Fetching calendar data \n\n\n"
     local raw_output=$(gcalcli --cal "JPB-DW" --cal "Pomo" --cal "JPB SL" --cal "JPB Private" agenda "1am today" "11pm today" --nocolor --no-military --details length)
 
     # Process and transform the output
     transform_gcal_output "$raw_output"
+
+
 }
 
 
