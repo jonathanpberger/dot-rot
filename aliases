@@ -578,13 +578,8 @@ echo -e "${h1}\n\n${title}\n${table_header}\n${table_separator}\n${body}\n\n${ki
 
 #####
 ##### Get project items, done w/ copilot.
-##### THIS WORKS NICELY!
+##### THIS WORKS
 #####
-
-
-# Usage:
-# get_project_items "assignee_name" 36 49 48 30 39
-# get_project_items "" 36 49 48 30 39
 
 
 function get_project_items {
@@ -592,31 +587,24 @@ function get_project_items {
   shift
   project_numbers=("$@")
 
-  declare -A project_names
-  for project in "${project_numbers[@]}"; do
-    project_names[$project]=$(gh project list | awk -v project="$project" '$1 == project {print $2}')
-  done
-
-  items=$(gh p item-list --format json --limit 999)
-
   current_date=$(date +"%m-%d-%Y")
 
   echo -e "### Stories as of $current_date (excluding Icebox and Done)\n| Project | Title | Status | Number | Story Type | Assignees |\n|---------|-------|--------|--------|------------|-----------|"
   for project in "${project_numbers[@]}"; do
-    project_name=${project_names[$project]}
-    echo "$items" | jq -r ".items[] | select(.project.number == $project) | select(.status==\"In progress\" or .status==\"Backlog\" or .status==\"Waiting/Review\" or .status==\"🏗 In progress\" or .status==\"📋 Backlog\" or .status==\"👀 Waiting/In review\") | select(.assignees==\"$assignee_filter\" or \"$assignee_filter\"==\"\") | select(.[\"story Type\"] != \"Epic\") | \"| $project_name | \(.title) | \(.status) | \(.content.number) | \(.[\"story Type\"]) | \(.assignees) |\""
+    gh p item-list $project --format json --limit 999 -q ".items[] | select(.status==\"In progress\" or .status==\"Backlog\" or .status==\"Waiting/Review\" or .status==\"🏗 In progress\" or .status==\"📋 Backlog\" or .status==\"👀 Waiting/In review\") | select(.assignees==\"$assignee_filter\" or \"$assignee_filter\"==\"\") | select(.[\"story Type\"] != \"Epic\") | \"| $project | \(.title) | \(.status) | \(.content.number) | \(.[\"story Type\"]) | \(.assignees) |\""
   done
 
   echo -e "\n### Epics as of $current_date\n| Project | Title | Status | Number | Story Type | Assignees |\n|---------|-------|--------|--------|------------|-----------|"
   for project in "${project_numbers[@]}"; do
-    project_name=${project_names[$project]}
-    echo "$items" | jq -r ".items[] | select(.project.number == $project) | select(.status==\"In progress\" or .status==\"Backlog\" or .status==\"Waiting/Review\" or .status==\"🏗 In progress\" or .status==\"📋 Backlog\" or .status==\"👀 Waiting/In review\") | select(.assignees==\"$assignee_filter\" or \"$assignee_filter\"==\"\") | select(.[\"story Type\"] == \"Epic\") | \"| $project_name | \(.title) | \(.status) | \(.content.number) | \(.[\"story Type\"]) | \(.assignees) |\""
+    gh p item-list $project --format json --limit 999 -q ".items[] | select(.status==\"In progress\" or .status==\"Backlog\" or .status==\"Waiting/Review\" or .status==\"🏗 In progress\" or .status==\"📋 Backlog\" or .status==\"👀 Waiting/In review\") | select(.assignees==\"$assignee_filter\" or \"$assignee_filter\"==\"\") | select(.[\"story Type\"] == \"Epic\") | \"| $project | \(.title) | \(.status) | \(.content.number) | \(.[\"story Type\"]) | \(.assignees) |\""
   done
 }
 
 # Usage:
 # get_project_items "assignee_name" 36 49 48 30 39
 # get_project_items "" 36 49 48 30 39
+
+
 #####
 #####
 #####
