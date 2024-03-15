@@ -589,7 +589,7 @@ function get_project_items {
   project_numbers=("$@")
 
   current_date=$(date +"%m-%d-%Y")
-  limit=11
+  limit=555
   echo "~~~~~~~~~~~~~~~~~~ limit: $limit ~~~~~~~~~~~~~~~~~~\n\n"
 
   echo -e "\n\n### 👑 Epics (as of $current_date)\n| Project | Number | Title | Status | Story Type | Assignees |\n|---------|--------|-------|--------|------------|-----------|"
