@@ -583,7 +583,7 @@ echo -e "${h1}\n\n${title}\n${table_header}\n${table_separator}\n${body}\n\n${ki
 
 
 function get_project_items {
-  # Version 1.0.3
+  # Version 1.1.0
   assignee_filter=${1:-""}
   shift
   project_numbers=("$@")
@@ -592,14 +592,14 @@ function get_project_items {
   limit=555
   echo "~~~~~~~~~~~~~~~~~~ limit: $limit ~~~~~~~~~~~~~~~~~~\n\n"
 
-  echo -e "\n\n### 👑 Epics (as of $current_date)\n| Project | Number | Title | Status | Story Type | Assignees |\n|---------|--------|-------|--------|------------|-----------|"
+  echo -e "\n\n### 👑 Epics (as of $current_date)\n| Project | Title | Status | Story Type | Assignees | URL |\n|---------|-------|--------|------------|-----------|-----|"
   for project in "${project_numbers[@]}"; do
-    gh p item-list $project --format json --limit $limit -q ".items[] | select((.status? // \"\") | test(\"In progress|Backlog|Waiting/Review\")) | select(.assignees==\"$assignee_filter\" or \"$assignee_filter\"==\"\") | select(if .[\"story Type\"]? then (.[\"story Type\"] // \"\") | test(\"Epic\") else false end) | \"| $project | \(.content.number) | \(.title) | \(.status) | \(.[\"story Type\"]) | \(.assignees) |\""
+    gh p item-list $project --format json --limit $limit -q ".items[] | select((.status? // \"\") | test(\"In progress|Backlog|Waiting/Review\")) | select(.assignees==\"$assignee_filter\" or \"$assignee_filter\"==\"\") | select(if .[\"story Type\"]? then (.[\"story Type\"] // \"\") | test(\"Epic\") else false end) | \"| $project | \(.title) | \(.status) | \(.[\"story Type\"]) | \(.assignees) | \(.content.url | sub(\"https://github.com/strangelove-ventures/\"; \"\")) |\""
   done
 
-  echo -e "\n\n### ⭐️🐞⚙️🏁 Stories (as of $current_date, excluding Icebox and Done)\n| Project | Number | Title | Status | Story Type | Assignees |\n|---------|--------|-------|--------|------------|-----------|"
+  echo -e "\n\n### ⭐️🐞⚙️🏁 Stories (as of $current_date, excluding Icebox and Done)\n| Project | Title | Status | Story Type | Assignees | URL |\n|---------|-------|--------|------------|-----------|-----|"
   for project in "${project_numbers[@]}"; do
-    gh p item-list $project --format json --limit $limit -q ".items[] | select((.status? // \"\") | test(\"In progress|Backlog|Waiting/Review\")) | select(.assignees==\"$assignee_filter\" or \"$assignee_filter\"==\"\") | select(if .[\"story Type\"]? then ((.[\"story Type\"] // \"\") | test(\"Epic\")) | not else true end) | \"| $project | \(.content.number) | \(.title) | \(.status) | \(.[\"story Type\"]) | \(.assignees) |\""
+    gh p item-list $project --format json --limit $limit -q ".items[] | select((.status? // \"\") | test(\"In progress|Backlog|Waiting/Review\")) | select(.assignees==\"$assignee_filter\" or \"$assignee_filter\"==\"\") | select(if .[\"story Type\"]? then ((.[\"story Type\"] // \"\") | test(\"Epic\")) | not else true end) | \"| $project | \(.title) | \(.status) | \(.[\"story Type\"]) | \(.assignees) | \(.content.url | sub(\"https://github.com/strangelove-ventures/\"; \"\")) |\""
   done
 }
 
