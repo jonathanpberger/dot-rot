@@ -35,9 +35,15 @@ export FOAM_HOME=~/workspace/foam
 alias todos="ack '^.[^|\[]\[[^x]\]\s\w' ~/workspace/foam/now.md -C2"
 alias prev-todos="ack '^.[^|\[]\[[^x]\]\s\w' prev.md -C2"
 alias h2s="ack '^\#{2}\s' ~/workspace/foam/now.md -C1"
-alias projects="ack  '(\+\+\w.*)'  ~/workspace/foam/now.md --output '$1'"
+alias projects-w-context="ack  '(\+\+\w.*)'  ~/workspace/foam/now.md --output '$1'"
+alias projects="ack -o '\+\+\w+' ~/workspace/foam/now.md | sort | uniq"
+
+
 alias prev-projects="ack  '(\+\+\w.*)'  ~/workspace/foam/prev.md --output '$1'"
 alias foam="cd ~/workspace/foam"
+alias frogs="ack '🐸' ~/workspace/foam/todo.md | sort"
+alias nitty="ack '🧹' ~/workspace/foam/todo.md | sort"
+
 
 # Github CLI
 
@@ -240,11 +246,105 @@ function ghi() {
 
 function gday-neo() {
 
-## 0. Create Table Headers and define clock Emoji Map
+## 0.1 Create Table Headers
 
+local date=$(date '+%m/%d - %A')
+echo "Welcome to GDAY-NEO for $date"
+processed_output+="# $date\n\n## 🪢 Todo Today\n"
+processed_output+="| Time    | Item                                             | -               |\n"
+processed_output+="|---------|--------------------------------------------------|-----------------|\n"
+
+
+## 0.2 Define clock Emoji Map
+local -A emoji_map
+emoji_map=( ["00"]="🕛" ["30"]="🕧" ["01"]="🕐" ["31"]="🕜" ["02"]="🕑" ["32"]="🕝"
+            ["03"]="🕒" ["33"]="🕞" ["04"]="🕓" ["34"]="🕟" ["05"]="🕔" ["35"]="🕠"
+            ["06"]="🕕" ["36"]="🕡" ["07"]="🕖" ["37"]="🕢" ["08"]="🕗" ["38"]="🕣"
+            ["09"]="🕘" ["39"]="🕤" ["10"]="🕙" ["40"]="🕥" ["11"]="🕚" ["41"]="🕦" )
 
 
 ## 1. Fetch & sanitize  Calendar Data from Google Calendar
+
+local calendar_data=$(gcalcli --cal "JPB-DW" --cal "Pomo" --cal "JPB SL" --cal "JPB Private" agenda "1am today" "11pm today" --nocolor --no-military --details length --tsv)
+
+# give a count of lines in calendar_data
+calendar_data_lines=$(echo "$calendar_data" | wc -l)
+
+# set a new var calendar_data_sifted to remove any pomodoro rows with a start time we've already seen in another row. Preserve the initial order of the rows
+
+
+# Initial results
+# 2024-04-29      00:00   2024-04-30      00:00   Home
+# 2024-04-29      06:30   2024-04-29      08:45   get the kids up and out
+# 2024-04-29      08:30   2024-04-29      09:00   🍅
+# 2024-04-29      08:45   2024-04-29      09:00   🐸 15m of Monarch categorization
+# 2024-04-29      09:00   2024-04-29      09:30   🍅
+# 2024-04-29      09:00   2024-04-29      09:30   🪢 Todo today
+# 2024-04-29      09:15   2024-04-29      09:30   Check slack for open dYdX proposals which need to be voted on (search term: `in:#govstatements-votes dydx "new proposal"`)
+# 2024-04-29      09:30   2024-04-29      10:00   🍅
+# 2024-04-29      09:30   2024-04-29      10:00   🪢📆 JPB IPM
+# 2024-04-29      10:00   2024-04-29      10:30   🍅
+# 2024-04-29      10:00   2024-04-29      10:30   JPB and Alix Keller
+# 2024-04-29      10:30   2024-04-29      11:00   🍅
+# 2024-04-29      10:30   2024-04-29      11:00   🐸 Eat 3 frogs
+# 2024-04-29      11:00   2024-04-29      11:30   🍅
+# 2024-04-29      11:00   2024-04-29      11:20   Infra Standup
+# 2024-04-29      11:30   2024-04-29      12:00   🍅
+# 2024-04-29      12:00   2024-04-29      12:30   🍅
+# 2024-04-29      12:00   2024-04-29      12:30   🌎 Weekly SPoG review
+# 2024-04-29      12:00   2024-04-29      13:00   Strangelove Family Mgmt Weekly
+# 2024-04-29      12:00   2024-04-29      12:55   Art of Action Stand-up V6 (weekly)
+# 2024-04-29      12:30   2024-04-29      13:00   🍅
+# 2024-04-29      13:00   2024-04-29      13:30   🍅
+# 2024-04-29      13:00   2024-04-29      13:30   🍜 Lunch
+# 2024-04-29      13:00   2024-04-29      13:15   Yard Patrol 🌱 Touch grass
+# 2024-04-29      13:30   2024-04-29      14:00   🍅
+# 2024-04-29      13:30   2024-04-29      14:00   🧹 Knock out ~3 nitty-gritties
+# 2024-04-29      14:00   2024-04-29      14:30   🍅
+# 2024-04-29      14:00   2024-04-29      15:00   🦊 Ship README.lint PR (or owe 🍺 to @Ollie)
+# 2024-04-29      14:00   2024-04-29      16:30   👑 A-priority only focus time
+# 2024-04-29      14:30   2024-04-29      15:00   🍅
+# 2024-04-29      15:00   2024-04-29      15:30   🍅
+# 2024-04-29      15:30   2024-04-29      16:00   🍅
+# 2024-04-29      16:00   2024-04-29      16:30   🍅
+# 2024-04-29      16:30   2024-04-29      17:00   🍅
+# 2024-04-29      17:00   2024-04-29      17:30   🍅
+# 2024-04-29      17:00   2024-04-29      17:15   🍒 What did you 🚢 today?
+
+
+# Desired results
+# 2024-04-29      00:00   2024-04-30      00:00   Home
+# 2024-04-29      06:30   2024-04-29      08:45   get the kids up and out
+# 2024-04-29      08:45   2024-04-29      09:00   🐸 15m of Monarch categorization
+# 2024-04-29      09:00   2024-04-29      09:30   🪢 Todo today
+# 2024-04-29      09:15   2024-04-29      09:30   Check slack for open dYdX proposals which need to be voted on (search term: `in:#govstatements-votes dydx "new proposal"`)
+# 2024-04-29      09:30   2024-04-29      10:00   🪢📆 JPB IPM
+# 2024-04-29      10:00   2024-04-29      10:30   JPB and Alix Keller
+# 2024-04-29      10:30   2024-04-29      11:00   🐸 Eat 3 frogs
+# 2024-04-29      11:00   2024-04-29      11:20   Infra Standup
+# 2024-04-29      11:00   2024-04-29      11:30   🍅
+# 2024-04-29      11:30   2024-04-29      12:00   🍅
+# 2024-04-29      12:00   2024-04-29      12:30   🌎 Weekly SPoG review
+# 2024-04-29      12:00   2024-04-29      13:00   Strangelove Family Mgmt Weekly
+# 2024-04-29      12:00   2024-04-29      12:55   Art of Action Stand-up V6 (weekly)
+# 2024-04-29      12:30   2024-04-29      13:00   🍅
+# 2024-04-29      13:00   2024-04-29      13:30   🍜 Lunch
+# 2024-04-29      13:00   2024-04-29      13:15   Yard Patrol 🌱 Touch grass
+# 2024-04-29      13:30   2024-04-29      14:00   🧹 Knock out ~3 nitty-gritties
+# 2024-04-29      14:00   2024-04-29      14:30   🍅
+# 2024-04-29      14:00   2024-04-29      15:00   🦊 Ship README.lint PR (or owe 🍺 to @Ollie)
+# 2024-04-29      14:00   2024-04-29      16:30   👑 A-priority only focus time
+# 2024-04-29      15:00   2024-04-29      15:30   🍅
+# 2024-04-29      15:30   2024-04-29      16:00   🍅
+# 2024-04-29      16:00   2024-04-29      16:30   🍅
+# 2024-04-29      16:30   2024-04-29      17:00   🍅
+# 2024-04-29      17:00   2024-04-29      17:30   🍅
+# 2024-04-29      17:00   2024-04-29      17:15   🍒 What did you 🚢 today?
+
+
+
+
+
 
 
 
@@ -321,10 +421,13 @@ function transform_gcal_output() {
 
     local -a lines
     lines=("${(@f)raw_output}")
+    echo "########### lines starting here"
+    echo $lines
+    echo "########### end of lines var"
     local is_event_line=false
 
     for line in $lines; do
-        echo "Debug: Processing line: $line"
+        echo "$line"
         if [[ $line =~ ^[[:space:]]*[0-9]{1,2}:[0-9]{2}[apm]{2} ]]; then
             current_time=$(echo $line | awk '{print $1}')
             current_event=$(echo $line | awk '{$1=""; print substr($0,2)}' | xargs)
@@ -356,15 +459,15 @@ function transform_gcal_output() {
 }
 
 # Main gday function
-function gday() {
+function gday-factored() {
     # Display header
     echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞"
     echo "    🌞🌞🌞   gday Version 1.64.1    🌞🌞🌞"
     echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
 
     # Fetch calendar data
-    echo "################### Debug: Fetching calendar data \n\n\n"
-    local raw_output=$(gcalcli --cal "JPB-DW" --cal "Pomo" --cal "JPB SL" --cal "JPB Private" agenda "1am today" "11pm today" --nocolor --no-military --details length)
+    echo "################### Debug: Fetching calendar data \n"
+    local raw_output=$(gcalcli --cal "JPB-DW" --cal "Pomo" --cal "JPB SL" --cal "JPB Private" agenda "1am today" "11pm today" --nocolor --no-military --details length --tsv)
 
     # Process and transform the output
     transform_gcal_output "$raw_output"
@@ -372,108 +475,92 @@ function gday() {
 
 }
 
-
-
-
-
 ########################################
 ########################################
 ########################################
 ########################################
 
 
+# path/filename: ~/scripts/todo_project_count.sh
+# This script generates a markdown table with a list of unique projects and their counts from the todo.md file.
+# Function to extract projects and count occurrences
+generate_project_table() {
+  local todo_file=$1
+  echo "| Project | Count |"
+  echo "|---------|-------|"
+  grep -o "++[a-zA-Z0-9_]*" "$todo_file" | sort | uniq -c | while read -r count project; do
+    # Clean project name and format as markdown table row
+    project=${project//++/}
+    echo "| $project | $count |"
+  done
+}
 
-function gday-old-and-broken() {
+# Call the function with the path to the todo.md file
+# generate_project_table "/path/to/todo.md"
+
+
+########################################
+########################################
+########################################
+########################################
+############# GDAY MIKE
+########################################
+########################################
+########################################
+########################################
+
+
+# gday-mike Version 1.38.0
+
+function gday-mike() {
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞"
-  echo "    🌞🌞🌞   gday Version 1.32.0    🌞🌞🌞"
+  echo "    🌞🌞🌞   gday Version 1.38.0 Mike    🌞🌞🌞"
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
 
-  # Setup
-  ##### Define clock Emoji Map
-  declare -A emoji_map=(
-    [800]="🕗" [830]="🕣" [900]="🕘" [930]="🕤"
-    [1000]="🕙" [1030]="🕥" [1100]="🕚" [1130]="🕦"
-    [1200]="🕛" [1230]="🕧" [100]="🕐" [130]="🕜"
-    [200]="🕑" [230]="🕝" [300]="🕒" [330]="🕞"
-    [400]="🕓" [430]="🕟" [500]="🕔" [530]="🕠"
-    [600]="🕕" [630]="🕡" [700]="🕖" [730]="🕢"
-  )
+  local calendar_data=$(gcalcli --cal "JPB-DW" --cal "Pomo" --cal "JPB SL" --cal "JPB Private" agenda "1am today" "11pm today" --nocolor --no-military --details length --tsv)
 
-  ##### Create Table Headers
-  local title="## 🪢 Todo Today"
-  local table_header="| Time    | Item |"
-  local table_separator="|---------|------|"
-  local kicker="\n- 👑 Most Important Thing Today:\n- 1st 🐸 I'll eat:\n- 2nd 🐸 I'll eat:\n- 3rd 🐸 I'll eat:\n\n"
+  echo "Raw gcalcli results:"
+  echo "$calendar_data"
+  local line_count=$(echo "$calendar_data" | wc -l | xargs)
+  echo "Line count: $line_count"
+  echo "-----------------"
 
-  ##### Day of week should include 📅 and weeknum on Mondays
-  local day_of_week=$(date '+%A')
-  local h1="# $(date '+%m/%d') - ${day_of_week}"
-  if [[ $day_of_week == "Monday" ]]; then
-    h1+=" - 📆 Week $(date '+%V')"
+  if [[ -z "$calendar_data" || "$line_count" -eq 0 ]]; then
+    echo "No calendar data found or gcalcli failed."
+    return
   fi
 
-  ##### Fetch Calendar Data from Google Calendar
-  local calendar_data=$(gcalcli --cal "JPB-DW" --cal "Pomo" --cal "JPB SL" --cal "JPB Private" agenda "1am today" "11pm today" --nocolor --no-military --details length)
-  local calendar_data_no_color=$(echo "$calendar_data" | sed 's/\x1b\[[0-9;]*m//g')
+  typeset -A all_items
+  while IFS=$'\t' read -r start_date start_time end_date end_time item; do
+    # Convert to 12-hour format and remove leading zero
+    start_time=$(date -d "$start_date $start_time" +"%I:%M %p" 2>/dev/null || date -jf "%Y-%m-%d %H:%M" "$start_date $start_time" +"%I:%M %p" 2>/dev/null | sed 's/^0//')
+    # Use a unique key combining time and item to ensure uniqueness
+    all_items["$start_time,$item"]=1
+  done <<< "$(echo "$calendar_data")"
 
-  ##### Convert pipe characters to an em-dash (bc escaping pipes is hard)
-  calendar_data_no_color=$(echo "$calendar_data_no_color" | sed 's/|/—/g')
-
-  ##### Initialize variables for processing
-  local body=""
-  local lines=()
-  local time_count=()
-
-  ##### Process Calendar Data
-while IFS= read -r line; do
-  line=$(echo "$line" | sed 's/^[ \t]*//') # trim whitespace
-
-  # Function to add a pomodoro (30 minutes) to a given time
-  add_pomodoro() {
-    local time=$1
-    local new_time=$(date -j -v+30M -f "%I:%M%p" "$time" +"%I:%M%p")
-    echo $new_time | sed 's/^0//' | tr '[:upper:]' '[:lower:]'
-  }
-
-  if [[ $line =~ ^[0-9]{1,2}:[0-9]{2}[apm]{2} ]]; then # if line starts with time
-    local time=$(echo "$line" | awk '{print $1}') # extract time
-    local item=$(echo "$line" | awk '{$1=""; print substr($0,2)}') # extract description
-
-    # Split events >30m into multiple lines
-    IFS= read -r next_line
-    local duration_raw=$(echo "$next_line" | awk '/Length:/ {print $2}')
-    local hours=$(echo "$duration_raw" | cut -d ':' -f 1 | sed 's/[^0-9]*//g')
-    local minutes=$(echo "$duration_raw" | cut -d ':' -f 2 | sed 's/[^0-9]*//g')
-    local total_minutes=$((10#$hours * 60 + 10#$minutes))
-    local blocks=$((total_minutes / 30))
-
-    for ((i=0; i<blocks; i++)); do
-      lines+=("$time|$item")
-      time=$(add_pomodoro "$time")
-      ((time_count["$time"]++))
-    done
-  fi
-done <<< "$calendar_data_no_color"
-
-  ##### Cull pomodoros for times which already have appointments
-  for line in "${lines[@]}"; do
-    IFS='|' read -r time item <<< "$line"
-    if [[ ${time_count["$time"]} -gt 1 && $item == *"🍅"* ]]; then
-      continue
-    fi
-
-    # Add emoji to items lacking emoji
-    if ! [[ $item =~ ^[^[:alnum:]] ]]; then
-      local emoji=${emoji_map[$(echo "$time" | tr -d '[:alpha:]' | tr -d ':')]}
-      item="${emoji} $item"
-    fi
-
-    body+="| ${time} | ${item} |"$'\n'
+  # Sort and print the items
+  echo "## 🪢 Todo Today"
+  echo "| Time    | Item |"
+  echo "|---------|------|"
+  for key in ${(ok)all_items}; do
+    local time=${key%%,*}
+    local item=${key#*,}
+    # Directly print without quotes
+    printf "| %s | %s |\n" "$time" "$item"
   done
 
-  ##### Render the final markdown table
-  echo -e "${h1}\n\n${title}\n${table_header}\n${table_separator}\n${body}\n\n${kicker}"
+  echo "\n- 👑 Most Important Thing Today:"
+  echo "- 1st 🐸 I'll eat:"
+  echo "- 2nd 🐸 I'll eat:"
+  echo "- 3rd 🐸 I'll eat:\n"
 }
+
+# Note: Adjust the `date` command as needed for compatibility with macOS or Linux.
+
+
+
+
+
 
 ########################################
 ########################################
@@ -572,15 +659,10 @@ echo -e "${h1}\n\n${title}\n${table_header}\n${table_separator}\n${body}\n\n${ki
 
 }
 
-
-
-
-
-#####
-##### Get project items, done w/ copilot.
-##### THIS WORKS
-#####
-
+############################    ___|  ____| __ __|       _ \    _ \    _ \       |  ____|   ___| __ __|     _ _| __ __|  ____|   \  |   ___|  ###################
+############################   |      __|      |        |   |  |   |  |   |      |  __|    |        |         |     |    __|    |\/ | \___ \  ################### Get project items, done w/ copilot.
+############################   |   |  |        |        ___/   __ <   |   |  \   |  |      |        |         |     |    |      |   |       | ################### THIS WORKS
+############################  \____| _____|   _|       _|     _| \_\ \___/  \___/  _____| \____|   _|       ___|   _|   _____| _|  _| _____/  ###################
 
 function get_project_items {
   # Version 1.1.0
@@ -589,7 +671,7 @@ function get_project_items {
   project_numbers=("$@")
 
   current_date=$(date +"%m-%d-%Y")
-  limit=555
+  limit=333
   echo "~~~~~~~~~~~~~~~~~~ limit: $limit ~~~~~~~~~~~~~~~~~~\n\n"
 
   echo -e "\n\n### 👑 Epics (as of $current_date)\n| Project | Title | Status | Story Type | Assignees | URL |\n|---------|-------|--------|------------|-----------|-----|"
@@ -606,12 +688,6 @@ function get_project_items {
 # Usage:
 # get_project_items "assignee_name" 36 49 48 30 39
 # get_project_items "" 36 49 48 30 39
-
-
-#####
-#####
-#####
-#####
 
 
 
