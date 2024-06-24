@@ -633,7 +633,7 @@ function gday-old() {
   if [[ $day_of_week == "Monday" ]]; then
     h1+=" - 📆 Week $(date '+%V')"
   fi
-
+  # local calendar_names=("JPB-DW" "Pomo" "JPB SL" "JPB Private" "Jonathan Berger (TripIt)")
   local calendar_data=$(gcalcli --cal "JPB-DW" --cal "Pomo" --cal "JPB SL" --cal "JPB Private" agenda "1am today" "11pm today" --nocolor --no-military --details length)
   local calendar_data_no_color=$(echo "$calendar_data" | sed 's/\x1b\[[0-9;]*m//g')
 
@@ -687,7 +687,10 @@ for line in "${lines[@]}"; do
   body+="| ${time} | ${item} |"$'\n'
 done
 
+
 echo -e "${h1}\n\n${title}\n${table_header}\n${table_separator}\n${body}\n\n${kicker}"
+
+echo $body | extract_h2s
 
 }
 
@@ -698,6 +701,7 @@ echo -e "${h1}\n\n${title}\n${table_header}\n${table_separator}\n${body}\n\n${ki
 
 function get_project_items {
   # Version 1.1.0
+  # Usage: `get_project_items "assignee_name" 36 49 48 30 39` or `get_project_items "" 36 49 48 30 39`
   assignee_filter=${1:-""}
   shift
   project_numbers=("$@")
@@ -717,9 +721,57 @@ function get_project_items {
   done
 }
 
-# Usage:
-# get_project_items "assignee_name" 36 49 48 30 39
-# get_project_items "" 36 49 48 30 39
+# Optimized function to reduce API calls
+function get_project_items2 {
+  # Version 1.2.2
+  # Usage: `get_project_items "assignee_name" 36 49 48 30 39` or `get_project_items "" 36 49 48 30 39`
+  assignee_filter=${1:-""}
+  echo "Assignee filter: $assignee_filter"
+  shift
+  project_numbers=("$@")
+  echo "Project numbers: ${project_numbers[@]}"
+  current_date=$(date +"%m-%d-%Y")
+  limit=3
+  echo "~~~~~~~~~~~~~~~~~~ limit: $limit ~~~~~~~~~~~~~~~~~~\n\n"
+  total_api_calls=0
+  echo "total_api_calls: $total_api_calls"
+
+  echo -e "\n\n### 👑 Epics (as of $current_date)\n| Project | Title | Status | Story Type | Assignees | URL |\n|---------|-------|--------|------------|-----------|-----|"
+  echo -e "\n\n### ⭐️🐞⚙️🏁 Stories (as of $current_date, excluding Icebox and Done)\n| Project | Title | Status | Story Type | Assignees | URL |\n|---------|-------|--------|------------|-----------|-----|"
+
+  for project in "${project_numbers[@]}"; do
+    echo "~~~ Processing project number $project ~~~"
+    # Fetch all items for the project
+    items=$(gh p item-list $project --format json --limit $limit -q ".items[]")
+    total_api_calls=$((total_api_calls+1))
+    echo "total_api_calls: $total_api_calls"
+
+    # Loop through each item and filter based on conditions
+    while read -r item; do
+      # echo "/// in while loop for project $project"
+      # echo "//// item: $item"
+      item_status=$(jq -r '.status' <<< "$item")
+      # echo "///// status: $item_status"
+      story_type=$(jq -r '.["story Type"] // ""' <<< "$item")
+      # echo "////// story_type: $story_type"
+      assignees=$(jq -r '.assignees' <<< "$item")
+      # echo "/////// assignees: $assignees"
+      url=$(jq -r '.content.url' <<< "$item")
+      # echo "//////// url: $url"
+
+      if [[ "$item_status" =~ (in progress|backlog|waiting/review) ]] && [[ "$assignees" == "$assignee_filter" || "$assignee_filter" == "" ]]; then
+        if [[ "${story_type,,}" == *"epic"* ]]; then
+          echo "| $project | $(jq -r '.title' <<< "$item") | $item_status | $story_type | $assignees | ${url//"https://github.com/strangelove-ventures/"/} |"
+        else
+          echo "| $project | $(jq -r '.title' <<< "$item") | $item_status | $story_type | $assignees | ${url//"https://github.com/strangelove-ventures/"/} |"
+        fi
+      fi
+    done <<< "$items"
+  done
+
+  echo "API calls used: $total_api_calls"
+}
+
 
 
 
@@ -890,6 +942,100 @@ function ppi() {
   echo -e "\n$title have been copied to the clipboard. There are $count combined tasks and issues. :-) ###"
 }
 
+#!/bin/zsh  # v0.3.0
+
+# Function to fetch and display assigned issues for a user
+gh_assigned_issues() {
+    local GITHUB_USERNAME="jonathanpberger"
+    local ASSIGNEE="$1"
+
+    # Function to fetch issue details
+    fetch_issue_details() {
+        local url="$1"
+        curl -s -H "Authorization: token $GITHUB_TOKEN" "$url" | jq -r '.[] | [.title, .html_url, (.project | if length == 0 then "none" elif length == 1 then .[0].name else "many" end), (.project | if length == 0 then "none" elif length == 1 then .[0].columns[0].name else [.[] | .columns[0].name] | unique | join(", ") end)] | @tsv' | column -t -s $'\t'
+    }
+
+    # Fetching assigned issues for the user
+    local issues_url="https://api.github.com/issues?assignee=$ASSIGNEE"
+    fetch_issue_details "$issues_url"
+}
+
+#!/bin/zsh  # v0.5.0
+
+# Function to fetch and display assigned issues for a user
+gh_assigned_issues() {
+    echo "~~~~~~~~~~~~ gh_assigned_issues v0.5.1 ~~~~~~~~~~~~"
+    local GITHUB_USERNAME="jonthanpberger"
+    local ASSIGNEE="jonthanpberger"
+    echo "Assignee: $ASSIGNEE"
+
+
+    # GraphQL query to fetch assigned issues along with projects and their statuses
+    local graphql_query=$(cat <<EOF
+{
+  user(login: "$ASSIGNEE") {
+    issues(first: 100, states: OPEN, orderBy: {field: CREATED_AT, direction: DESC}) {
+      nodes {
+        title
+        url
+        projectCards(first: 1) {
+          nodes {
+            column {
+              name
+              project {
+                name
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+EOF
+)
+
+    # Function to execute GraphQL query
+    execute_graphql_query() {
+        local query="$1"
+        curl -s -H "Authorization: token $GITHUB_TOKEN" -X POST -d "{\"query\": \"$query\"}" "https://api.github.com/graphql"
+    }
+
+    # Function to process GraphQL response and display issue details
+    process_response() {
+        local response="$1"
+        echo "Response received:"
+        echo "$response"
+        echo "Processing response..."
+        echo "$response" | jq -r '.data.user.issues.nodes[] | [.title, .url, (.projectCards.nodes[0] | if .column then .column.name else "none" end), (.projectCards.nodes[0] | if .column then .column.project.name else "none" end)] | @tsv' | column -t -s $'\t'
+    }
+
+    # Fetching assigned issues using GraphQL
+    local response=$(execute_graphql_query "$graphql_query")
+    echo "## Assigned Issues for $ASSIGNEE"
+    process_response "$response"
+}
+
+
+
+
+
+gh_projects_and_item_counts() {
+    echo "| Project Name | Project ID | Item Count |"
+    echo "| ------------ | ---------- | ---------- |"
+    gh p list --format json | jq -r '.projects[] | "| \(.title) | \(.number) | \(.items.totalCount) |"'
+}
+
+
+
+
+
+
+
+
+
+
+
 ##  ███████╗██╗███╗   ██╗██╗███████╗██╗  ██╗███████╗██████╗     ██╗      ██████╗  █████╗ ██████╗ ██╗███╗   ██╗ ██████╗      █████╗ ██╗     ██╗ █████╗ ███████╗███████╗███████╗
 ##  ██╔════╝██║████╗  ██║██║██╔════╝██║  ██║██╔════╝██╔══██╗    ██║     ██╔═══██╗██╔══██╗██╔══██╗██║████╗  ██║██╔════╝     ██╔══██╗██║     ██║██╔══██╗██╔════╝██╔════╝██╔════╝
 ##  █████╗  ██║██╔██╗ ██║██║███████╗███████║█████╗  ██║  ██║    ██║     ██║   ██║███████║██║  ██║██║██╔██╗ ██║██║  ███╗    ███████║██║     ██║███████║███████╗█████╗  ███████╗
@@ -899,4 +1045,6 @@ function ppi() {
 
 
 echo "•••••••••••••••• Finished Loading aliases!\n\n"
+
+
 
