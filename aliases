@@ -43,6 +43,7 @@ alias prev-projects="ack  '(\+\+\w.*)'  ~/workspace/foam/prev.md --output '$1'"
 alias foam="cd ~/workspace/foam"
 alias frogs="ack '🐸' ~/workspace/foam/todo.md | sort"
 alias nitty="ack '🧹' ~/workspace/foam/todo.md | sort"
+alias cherry="ack '🍒' ~/workspace/foam/todo.md | sort"
 
 
 # Github CLI
