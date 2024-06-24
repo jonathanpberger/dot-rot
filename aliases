@@ -180,6 +180,11 @@ function ghi() {
   echo -e "\n$title have been copied to the clipboard. There are $count issues. :-) ###"
 }
 
+function ghi2() {
+  gh search issues --assignee=@me --state=open
+}
+
+
 
 ############    ██████╗ ██████╗  █████╗ ██╗   ██╗ ANSI Shadow
 ############   ██╔════╝ ██╔══██╗██╔══██╗╚██╗ ██╔╝
