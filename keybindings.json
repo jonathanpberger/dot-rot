@@ -55,11 +55,8 @@
     "when": "editorTextFocus",
     "command": "moveby.regex",
     "args": {
-      "regex": "Day.init / 🍅 Todo Today",
-      "properties": [
-        "prev",
-        "start"
-      ]
+      "regex": "🍅 Todo Today",
+      "properties": ["prev", "start"]
     }
   },
   {
@@ -68,10 +65,7 @@
     "command": "moveby.regex",
     "args": {
       "regex": "Week.init",
-      "properties": [
-        "prev",
-        "start"
-      ]
+      "properties": ["prev", "start"]
     }
   },
   {

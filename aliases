@@ -180,6 +180,23 @@ function ghi() {
   echo -e "\n$title have been copied to the clipboard. There are $count issues. :-) ###"
 }
 
+function ghepic() {
+  local user=$(gh api /user | jq -r '.login')
+  local header="| EPIC |url|"
+  local separator="|---|---|"
+  local results=$(gh search issues --assignee=@me --state=open --limit 333 --include-prs --json="repository,number,state,title,url" | jq -r '.[] | "| \(.title) | \(.url) |"' | grep EPIC)
+  local count=$(echo "$results" | wc -l | tr -d ' ')
+  local title="### $count Open GitHub Issues for @$user"
+
+  echo "$title"
+  echo "$header"
+  echo "$separator"
+  echo "$results"
+
+  echo -e "$title\n$header\n$separator\n$results" | pbcopy
+  echo -e "\n$title have been copied to the clipboard. There are $count Epics. :-) ###"
+}
+
 function ghi2() {
   gh search issues --assignee=@me --state=open
 }
@@ -624,7 +641,7 @@ function gday-old() {
   local title="## 🪢 Todo Today"
   local table_header="| Time    | Item |"
   local table_separator="|---------|------|"
-  local kicker="\n- 👑 Most Important Thing Today:\n- 1st 🐸 I'll eat:\n- 2nd 🐸 I'll eat:\n- 3rd 🐸 I'll eat:\n\n"
+  local kicker="\n******* DO WHATEVER THE SCHEDULE TELLS ME. AND ONLY THAT.**********\n\n- 👑 Most Important Thing Today:\n- 1st 🐸 I'll eat:\n- 2nd 🐸 I'll eat:\n- 3rd 🐸 I'll eat:\n\n"
 
   ###### Day of week should include 📅 and weeknum on Mondays
   local day_of_week=$(date '+%A')
@@ -707,17 +724,21 @@ function get_project_items {
   project_numbers=("$@")
 
   current_date=$(date +"%m-%d-%Y")
-  limit=333
+  limit=3
   echo "~~~~~~~~~~~~~~~~~~ limit: $limit ~~~~~~~~~~~~~~~~~~\n\n"
 
+  echo "~~~ Assignee filter: $assignee_filter"
   echo -e "\n\n### 👑 Epics (as of $current_date)\n| Project | Title | Status | Story Type | Assignees | URL |\n|---------|-------|--------|------------|-----------|-----|"
   for project in "${project_numbers[@]}"; do
     gh p item-list $project --format json --limit $limit -q ".items[] | select((.status? // \"\") | test(\"In progress|Backlog|Waiting/Review\")) | select(.assignees==\"$assignee_filter\" or \"$assignee_filter\"==\"\") | select(if .[\"story Type\"]? then (.[\"story Type\"] // \"\") | test(\"Epic\") else false end) | \"| $project | \(.title) | \(.status) | \(.[\"story Type\"]) | \(.assignees) | \(.content.url | sub(\"https://github.com/strangelove-ventures/\"; \"\")) |\""
+    echo "~~ Project: $project"
+    break
   done
 
   echo -e "\n\n### ⭐️🐞⚙️🏁 Stories (as of $current_date, excluding Icebox and Done)\n| Project | Title | Status | Story Type | Assignees | URL |\n|---------|-------|--------|------------|-----------|-----|"
   for project in "${project_numbers[@]}"; do
     gh p item-list $project --format json --limit $limit -q ".items[] | select((.status? // \"\") | test(\"In progress|Backlog|Waiting/Review\")) | select(.assignees==\"$assignee_filter\" or \"$assignee_filter\"==\"\") | select(if .[\"story Type\"]? then ((.[\"story Type\"] // \"\") | test(\"Epic\")) | not else true end) | \"| $project | \(.title) | \(.status) | \(.[\"story Type\"]) | \(.assignees) | \(.content.url | sub(\"https://github.com/strangelove-ventures/\"; \"\")) |\""
+    sleep 1
   done
 }
 
