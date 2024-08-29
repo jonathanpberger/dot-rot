@@ -290,6 +290,7 @@ generate_project_table() {
 ########################################
 ########################################
 
+
 extract_h2s() {
   awk '
     BEGIN {
@@ -303,15 +304,16 @@ extract_h2s() {
     /^\| [0-9]/ {
       sub(/^\|[^|]+\| /, "## ");
       gsub(/ \|$/, "");
-      norm = normalize($0);
-      if (!seen[norm]++) {
-        print $0
+      if ($0 !~ /🍅/ && $0 !~ /🍜 Lunch/) {
+        norm = normalize($0);
+        if (!seen[norm]++) {
+          print $0
+        }
       }
     }
     END { print "```" }
   '
 }
-
 
 ########################################
 ########################################
@@ -320,7 +322,7 @@ extract_h2s() {
 
 function gday() {
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞"
-  echo "    🌞🌞🌞   gday Version 2.0.0    🌞🌞🌞"
+  echo "    🌞🌞🌞    gday Version 2.0.1    🌞🌞🌞"
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
   # TODO: Cull pomodoros for times which already have appointments
   # TODO: When splitting long events into multiple pomodoros, duplicate the emoji for each pomodoro
