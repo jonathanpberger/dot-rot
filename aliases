@@ -344,7 +344,7 @@ function gday() {
   local title="## 🪢 Todo Today"
   local table_header="| Time    | Item |"
   local table_separator="|---------|------|"
-  local kicker="\n******* DO WHATEVER THE SCHEDULE TELLS ME. AND ONLY THAT.**********\n\n### Brain Dump (for 👑s)\n\n\n --- \n\n\n- 1st 🐸 I'll eat:\n- 2nd 🐸 I'll eat:\n- 3rd 🐸 I'll eat:\n\n"
+  local kicker="\n******* DO WHATEVER THE SCHEDULE TELLS ME. AND ONLY THAT.**********\n\n\n### Brain Dump (for 👑s)\n\n\n --- \n\n\n- 1st 🐸 I'll eat:\n- 2nd 🐸 I'll eat:\n- 3rd 🐸 I'll eat:\n\n"
 
   ###### Day of week should include 📅 and weeknum on Mondays
   local day_of_week=$(date '+%A')
