@@ -618,9 +618,9 @@ extract_h2s() {
 ########################################
 ########################################
 
-function gday-old() {
+function gday() {
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞"
-  echo "    🌞🌞🌞   gday Version 1.31.1    🌞🌞🌞"
+  echo "    🌞🌞🌞   gday Version 2.0.0    🌞🌞🌞"
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
   # TODO: Cull pomodoros for times which already have appointments
   # TODO: When splitting long events into multiple pomodoros, duplicate the emoji for each pomodoro
