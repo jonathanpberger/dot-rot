@@ -620,7 +620,7 @@ extract_h2s() {
 
 function gday-old() {
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞"
-  echo "    🌞🌞🌞   gday Version 1.31.0    🌞🌞🌞"
+  echo "    🌞🌞🌞   gday Version 1.31.1    🌞🌞🌞"
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
   # TODO: Cull pomodoros for times which already have appointments
   # TODO: When splitting long events into multiple pomodoros, duplicate the emoji for each pomodoro
@@ -659,8 +659,10 @@ function gday-old() {
   calendar_data_no_color=$(echo "$calendar_data_no_color" | sed 's/|/—/g')
 
   local body=""
-  local lines=()
-  local time_count=()
+local lines=()
+local time_count=()
+local prev_time=""
+local prev_item=""
 
 ##### Process the calendar data
 while IFS= read -r line; do
@@ -686,7 +688,13 @@ while IFS= read -r line; do
     local blocks=$((total_minutes / 30))
 
     for ((i=0; i<blocks; i++)); do
-      lines+=("$time|$item")
+      if [[ "$time" != "$prev_time" || ("$item" != "🍅" && "$prev_item" != "🍅") ]]; then
+        lines+=("$time|$item")
+      elif [[ "$item" != "🍅" ]]; then
+        lines[${#lines[@]}-1]="$time|$item"
+      fi
+      prev_time="$time"
+      prev_item="$item"
       time=$(add_pomodoro "$time")
     done
   fi
@@ -704,7 +712,6 @@ for line in "${lines[@]}"; do
 
   body+="| ${time} | ${item} |"$'\n'
 done
-
 
 echo -e "${h1}\n\n${title}\n${table_header}\n${table_separator}\n${body}\n\n${kicker}"
 
