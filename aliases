@@ -322,7 +322,7 @@ extract_h2s() {
 
 function gday() {
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞"
-  echo "    🌞🌞🌞    gday Version 2.0.2    🌞🌞🌞"
+  echo "    🌞🌞🌞    gday Version 2.1.0    🌞🌞🌞"
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
   # TODO: Cull pomodoros for times which already have appointments
   # TODO: When splitting long events into multiple pomodoros, duplicate the emoji for each pomodoro
@@ -390,15 +390,17 @@ while IFS= read -r line; do
     local blocks=$((total_minutes / 30))
 
     for ((i=0; i<blocks; i++)); do
-      if [[ "$time" != "$prev_time" || ("$item" != "🍅" && "$prev_item" != "🍅") ]]; then
-        lines+=("$time|$item")
-      elif [[ "$item" != "🍅" ]]; then
-        lines[${#lines[@]}-1]="$time|$item"
+      new_line="$time|$item"
+      if [[ "$time" != "$prev_time" || "$item" != "🍅" ]]; then
+        lines+=("$new_line")
+      elif [[ "$item" != "🍅" && ${#lines[@]} -gt 0 ]]; then
+        lines[-1]="$new_line"
       fi
       prev_time="$time"
       prev_item="$item"
       time=$(add_pomodoro "$time")
     done
+
   fi
 done <<< "$calendar_data_no_color"
 
