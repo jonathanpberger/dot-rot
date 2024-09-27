@@ -311,7 +311,13 @@ extract_h2s() {
         }
       }
     }
-    END { print "```" }
+    END {
+      print "```"
+      print ""
+      print "## 🚢 What did you ship today?"
+      print ""
+      print ""
+    }
   '
 }
 
@@ -322,7 +328,7 @@ extract_h2s() {
 
 function gday() {
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞"
-  echo "    🌞🌞🌞    gday Version 2.1.0    🌞🌞🌞"
+  echo "    🌞🌞🌞    gday Version 2.2.0    🌞🌞🌞"
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
   # TODO: Cull pomodoros for times which already have appointments
   # TODO: When splitting long events into multiple pomodoros, duplicate the emoji for each pomodoro
