@@ -374,6 +374,45 @@ function ship() {
 ########################################
 ########################################
 ########################################
+
+
+function monthly_review() {
+  # Define the filenames
+  old_file="jpb_notes-$(date -v-1m +%Y-%m).md"
+  new_file="jpb_notes-$(date +%Y-%m).md"
+
+  echo "\n######### DRY RUN: Monthly Review #########"
+  echo "######### prev: $old_file"
+  echo "######### now: $new_file\n"
+
+  # Simulate copy and update filename
+  echo "[DRY RUN] Would copy $old_file to $new_file"
+
+  # Simulate making old file read-only
+  echo "[DRY RUN] Would make $old_file read-only (chmod 444)"
+
+  # Simulate removing and creating symbolic links
+  echo "[DRY RUN] Would remove now.md and create symlink to $new_file"
+  echo "[DRY RUN] Would remove prev.md and create symlink to $old_file"
+
+  # Simulate updating the frontmatter in the new file
+  echo "[DRY RUN] Would update frontmatter in $new_file:"
+  cat <<EOF
+---
+name: JPB Monthly Notes for $(date +'%m')/$(date +'%Y')
+filepath: "$new_file"
+---
+EOF
+
+  # Simulate checking the links
+  echo "\n[DRY RUN] Would check links:"
+  echo "now.md -> $new_file"
+  echo "prev.md -> $old_file"
+
+  echo "\n######### End of DRY RUN #########"
+}
+
+
 function gday() {
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞"
   echo "    🌞🌞🌞    gday Version 2.2.0    🌞🌞🌞"
