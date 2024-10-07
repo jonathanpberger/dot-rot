@@ -37,13 +37,14 @@ alias prev-todos="ack '^.[^|\[]\[[^x]\]\s\w' prev.md -C2"
 alias h2s="ack '^\#{2}\s' ~/workspace/foam/now.md -C1"
 alias projects-w-context="ack  '(\+\+\w.*)'  ~/workspace/foam/now.md --output '$1'"
 alias projects="ack -o '\+\+\w+' ~/workspace/foam/now.md | sort | uniq"
+alias prev-projects="ack -o '\+\+\w+' ~/workspace/foam/prev.md | sort | uniq"
+alias todo-projects="ack -o '\+\+\w+' ~/workspace/foam/todo.md | sort | uniq"
 
-
-alias prev-projects="ack  '(\+\+\w.*)'  ~/workspace/foam/prev.md --output '$1'"
 alias foam="cd ~/workspace/foam"
 alias frogs="ack '🐸' ~/workspace/foam/todo.md | sort"
 alias nitty="ack '🧹' ~/workspace/foam/todo.md | sort"
 alias cherry="ack '🍒' ~/workspace/foam/todo.md | sort"
+alias pom="ack '🍅' ~/workspace/foam/todo.md | sort"
 
 
 # Github CLI
