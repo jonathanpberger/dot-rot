@@ -414,15 +414,37 @@ EOF
 }
 
 
+
 function gday() {
+  case "$1" in
+    auth)
+      echo "Removing gcalcli OAuth token and running agenda..."
+      rm ~/.gcalcli_oauth && gcalcli agenda
+      return
+      ;;
+    prev|yesterday|yday)
+      date_arg="yesterday"
+      display_date=$(date -v -1d "+%m/%d - %A")
+      week_number=$(date -v -1d "+%V")
+      ;;
+    *)
+      date_arg="today"
+      display_date=$(date "+%m/%d - %A")
+      week_number=$(date "+%V")
+      ;;
+  esac
+
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞"
-  echo "    🌞🌞🌞    gday Version 2.2.0    🌞🌞🌞"
+  echo "    🌞🌞🌞    gday Version 2.2.4    🌞🌞🌞"
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
+
   # TODO: Cull pomodoros for times which already have appointments
   # TODO: When splitting long events into multiple pomodoros, duplicate the emoji for each pomodoro
   # TODO: Add tests. Maybe <https://github.com/shellspec/shellspec>?
   # TODO: Parse pseudo-code into Features List / Release Notes
   # TODO: Factor this out into more sane methods. And pull out of `alias` file.
+
+# gday auth should run 'rm ~/.gcalcli_oauth\ngcalcli agenda'
 
 
   ##### Setup
@@ -441,24 +463,24 @@ function gday() {
   local kicker="\n******* DO WHATEVER THE SCHEDULE TELLS ME. AND ONLY THAT.**********\n\n\n### Brain Dump (for 👑s)\n\n\n --- \n\n\n- 1st 🐸 I'll eat:\n- 2nd 🐸 I'll eat:\n- 3rd 🐸 I'll eat:\n\n"
 
   ###### Day of week should include 📅 and weeknum on Mondays
-  local day_of_week=$(date '+%A')
-  local h1="# $(date '+%m/%d') - ${day_of_week}"
+  local h1="# $display_date"
 
-  if [[ $day_of_week == "Monday" ]]; then
-    h1+=" - 📆 Week $(date '+%V')"
+  if [[ $display_date == *"Monday"* ]]; then
+    h1+=" - 📆 Week $week_number"
   fi
   # local calendar_names=("JPB-DW" "Pomo" "JPB SL" "JPB Private" "Jonathan Berger (TripIt)")
-  local calendar_data=$(gcalcli --cal "JPB-DW" --cal "Pomo" --cal "JPB SL" --cal "JPB Private" agenda "1am today" "11pm today" --nocolor --no-military --details length)
+  local calendar_data=$(gcalcli --cal "JPB-DW" --cal "Pomo" --cal "JPB SL" --cal "JPB Private" agenda "1am $date_arg" "11pm $date_arg" --nocolor --no-military --details length)
   local calendar_data_no_color=$(echo "$calendar_data" | sed 's/\x1b\[[0-9;]*m//g')
+
 
   ###### convert pipe characters to an em-dash (bc escaping pipes is hard)
   calendar_data_no_color=$(echo "$calendar_data_no_color" | sed 's/|/—/g')
 
   local body=""
-local lines=()
-local time_count=()
-local prev_time=""
-local prev_item=""
+  local lines=()
+  local time_count=()
+  local prev_time=""
+  local prev_item=""
 
 ##### Process the calendar data
 while IFS= read -r line; do
