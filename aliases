@@ -468,8 +468,8 @@ function gday() {
   if [[ $display_date == *"Monday"* ]]; then
     h1+=" - 📆 Week $week_number"
   fi
-  # local calendar_names=("JPB-DW" "Pomo" "JPB SL" "JPB Private" "Jonathan Berger (TripIt)")
-  local calendar_data=$(gcalcli --cal "JPB-DW" --cal "Pomo" --cal "JPB SL" --cal "JPB Private" agenda "1am $date_arg" "11pm $date_arg" --nocolor --no-military --details length)
+  # local calendar_names=("JPB-DW" "Pomo" "JPB Private" "Jonathan Berger (TripIt)")
+  local calendar_data=$(gcalcli --cal "JPB-DW" --cal "Pomo" --cal "Bergers" --cal "JPB Private" agenda "1am $date_arg" "11pm $date_arg" --nocolor --no-military --details length)
   local calendar_data_no_color=$(echo "$calendar_data" | sed 's/\x1b\[[0-9;]*m//g')
 
 
