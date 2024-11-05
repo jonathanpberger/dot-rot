@@ -6,8 +6,8 @@ echo "•••••••••• Loading aliases ••• $(date "+%a %b %d
 GCAL_CALENDARS=(
   "JPB-DW"
   "Pomo"
-  "Bergers"
   "JPB Private"
+  # "Bergers"
 )
 
 # Generally helpful
