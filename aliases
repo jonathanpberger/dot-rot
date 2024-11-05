@@ -386,41 +386,66 @@ function ship() {
 
 
 function monthly_review() {
+  local for_real=false
+
+  # Check if --for_real flag is passed
+  if [[ "$1" == "--for_real" ]]; then
+    for_real=true
+  fi
+
   # Define the filenames
   old_file="jpb_notes-$(date -v-1m +%Y-%m).md"
   new_file="jpb_notes-$(date +%Y-%m).md"
 
-  echo "\n######### DRY RUN: Monthly Review #########"
+  # Set the header based on whether this is a dry run
+  if [[ "$for_real" == true ]]; then
+    echo "\n######### EXECUTING: Monthly Review #########"
+  else
+    echo "\n######### DRY RUN: Monthly Review #########"
+  fi
+
   echo "######### prev: $old_file"
   echo "######### now: $new_file\n"
 
-  # Simulate copy and update filename
-  echo "[DRY RUN] Would copy $old_file to $new_file"
+  if [[ "$for_real" == true ]]; then
+    # Actually perform the operations
+    cp "$old_file" "$new_file"
+    chmod 444 "$old_file"
+    rm -f now.md prev.md
+    ln -s "$new_file" now.md
+    ln -s "$old_file" prev.md
 
-  # Simulate making old file read-only
-  echo "[DRY RUN] Would make $old_file read-only (chmod 444)"
+    # Update frontmatter in the new file
+    sed -i '' "1,/---/c\\
+---\\
+name: JPB Monthly Notes for $(date +'%m')/$(date +'%Y')\\
+filepath: \"$new_file\"\\
+---" "$new_file"
 
-  # Simulate removing and creating symbolic links
-  echo "[DRY RUN] Would remove now.md and create symlink to $new_file"
-  echo "[DRY RUN] Would remove prev.md and create symlink to $old_file"
-
-  # Simulate updating the frontmatter in the new file
-  echo "[DRY RUN] Would update frontmatter in $new_file:"
-  cat <<EOF
+    # Check the links
+    echo "\nChecking links:"
+    ls -l now.md prev.md
+  else
+    # Dry run output
+    echo "[DRY RUN] Would copy $old_file to $new_file"
+    echo "[DRY RUN] Would make $old_file read-only (chmod 444)"
+    echo "[DRY RUN] Would remove now.md and create symlink to $new_file"
+    echo "[DRY RUN] Would remove prev.md and create symlink to $old_file"
+    echo "[DRY RUN] Would update frontmatter in $new_file:"
+    cat <<EOF
 ---
 name: JPB Monthly Notes for $(date +'%m')/$(date +'%Y')
 filepath: "$new_file"
 ---
 EOF
+    echo "\n[DRY RUN] Would check links:"
+    echo "now.md -> $new_file"
+    echo "prev.md -> $old_file"
 
-  # Simulate checking the links
-  echo "\n[DRY RUN] Would check links:"
-  echo "now.md -> $new_file"
-  echo "prev.md -> $old_file"
-
-  echo "\n######### End of DRY RUN #########"
+    echo "\n######### End of DRY RUN #########"
+    echo "\nTo execute these changes, run: monthly_review --for_real"
+  fi
 }
-
 
 
 function gday() {
