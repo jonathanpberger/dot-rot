@@ -135,4 +135,22 @@ class Gday
 
     table.join("\n")
   end
+
+  def self.run
+    # Hard-coded gcalcli command for now
+    command = 'gcalcli --cal "JPB-DW" --cal "Pomo" --cal "JPB Private" agenda "1am today" "11pm today" --nocolor --no-military --details length --nodeclined --tsv'
+    calendar_data = `#{command}`
+
+    # Print header
+    puts "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞"
+    puts "    🌞🌞🌞    gday RUBY Version 3.0.0    🌞🌞🌞"
+    puts "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
+
+    puts "# #{Time.now.strftime('%m/%d - %A')}"
+    puts "\n## 🪢 Todo Today"
+    puts to_markdown_table(calendar_data)
+  end
 end
+
+# Run if this file is being run directly (not required/imported)
+Gday.run if __FILE__ == $0

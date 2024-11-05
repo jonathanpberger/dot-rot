@@ -40,7 +40,7 @@ RSpec.describe Gday do
   end
 
   describe 'Extract phase' do
-    it 'EXTRACTS calendar data from TSV format' do
+    it 'EXTRACTS calendar data from a fixture' do
       events = Gday.parse_tsv(calendar_fixture)
       expect(events.first).to include(
         time: "08:30",
