@@ -323,9 +323,6 @@ extract_h2s() {
     END {
       print "```"
       print ""
-      print "## 🚢 What did you ship today?"
-      print ""
-      print ""
     }
   '
 }
@@ -341,6 +338,7 @@ extract_h2s() {
 
 function ship() {
     local now_file="$HOME/now.md"
+
 
   echo "| Date       | Shipped Items |"
   echo "|------------|---------------|"
@@ -468,7 +466,7 @@ function gday() {
   esac
 
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞"
-  echo "    🌞🌞🌞    gday Version 2.2.5    🌞🌞🌞"
+  echo "    🌞🌞🌞    gday Version 2.2.6    🌞🌞🌞"
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
 
   # TODO: Cull pomodoros for times which already have appointments
@@ -490,6 +488,7 @@ function gday() {
     [600]="🕕" [630]="🕡" [700]="🕖" [730]="🕢"
   )
 
+  local yday="## 🚢 What did you ship yesterday?"
   local title="## 🪢 Todo Today"
   local table_header="| Time    | Item |"
   local table_separator="|---------|------|"
@@ -573,7 +572,7 @@ for line in "${lines[@]}"; do
   body+="| ${time} | ${item} |"$'\n'
 done
 
-echo -e "${h1}\n\n${title}\n${table_header}\n${table_separator}\n${body}\n\n${kicker}"
+echo -e "${h1}\n\n${yday}\n\n---\n\n\n\n\n\n${title}\n${table_header}\n${table_separator}\n${body}\n\n${kicker}"
 
 echo $body | extract_h2s
 
