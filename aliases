@@ -466,7 +466,7 @@ function gday() {
   esac
 
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞"
-  echo "    🌞🌞🌞    gday Version 2.2.7    🌞🌞🌞"
+  echo "    🌞🌞🌞    gday Version 2.2.8    🌞🌞🌞"
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
 
   # TODO: Cull pomodoros for times which already have appointments
@@ -487,16 +487,6 @@ function gday() {
     [400]="🕓" [430]="🕟" [500]="🕔" [530]="🕠"
     [600]="🕕" [630]="🕡" [700]="🕖" [730]="🕢"
   )
-
-  local wild="## 🃏 What Wildcards are in play today?"
-  local yday="## 🚢 What did you ship yesterday?"
-  local title="## 🪢 Todo Today"
-  local table_header="| Time    | Item |"
-  local table_separator="|---------|------|"
-  local kicker="\n******* DO WHATEVER THE SCHEDULE TELLS ME. AND ONLY THAT.**********\n\n\n### Brain Dump (for 👑s)\n\n\n --- \n\n\n- 1st 🐸 I'll eat:\n- 2nd 🐸 I'll eat:\n- 3rd 🐸 I'll eat:\n\n"
-
-  ###### Day of week should include 📅 and weeknum on Mondays
-  local h1="# $display_date"
 
   if [[ $display_date == *"Monday"* ]]; then
     h1+=" - 📆 Week $week_number"
@@ -573,8 +563,26 @@ for line in "${lines[@]}"; do
   body+="| ${time} | ${item} |"$'\n'
 done
 
-echo -e "${h1}\n\n${wild}\n\n\n\n\n${yday}\n\n---\n\n\n\n\n\n${title}\n${table_header}\n${table_separator}\n${body}\n\n${kicker}"
+  local wild="## 🃏 What Wildcards are in play today?"
+  local yday="## 🚢 What did you ship yesterday?"
+  local braindump="## 🫃 What's on your mind rn? 🐸🧹👑 \n\n\n\n\n--- "
+  local title="## 🪢 Todo Today"
+  local table_header="| Time    | Item |"
+  local table_separator="|---------|------|"
+  local kicker="\n******* DO WHATEVER THE SCHEDULE TELLS ME. AND ONLY THAT.**********\n\n\n"
+  local frogs="\n- 1st 🐸 I'll eat:\n- 2nd 🐸 I'll eat:\n- 3rd 🐸 I'll eat:\n\n"
 
+  ###### Day of week should include 📅 and weeknum on Mondays
+  local h1="# $display_date"
+
+
+echo -e "${h1}\n\n"
+echo -e "${yday}\n\n\n\n\n"
+echo -e "${wild}\n\n\n\n\n"
+echo -e "${braindump}\n\n\n\n\n"
+# echo -e "${frogs}\n\n\n---\n\n\n\n"
+echo -e "${title}\n${table_header}\n${table_separator}\n${body}\n\n"
+echo -e "${kicker}"
 echo $body | extract_h2s
 
 }
