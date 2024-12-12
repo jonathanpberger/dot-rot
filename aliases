@@ -466,7 +466,7 @@ function gday() {
   esac
 
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞"
-  echo "    🌞🌞🌞    gday Version 2.2.9    🌞🌞🌞"
+  echo "    🌞🌞🌞    gday Version 2.2.10    🌞🌞🌞"
   echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
 
   # TODO: Cull pomodoros for times which already have appointments
@@ -563,8 +563,9 @@ for line in "${lines[@]}"; do
   body+="| ${time} | ${item} |"$'\n'
 done
 
-  local wild="## 🃏 What Wildcards are in play today?"
+  local spoons="## 🥄 What did you spend spoons on yesterday?"
   local yday="## 🚢 What did you ship yesterday?"
+  local wild="## 🃏 What Wildcards are in play today?"
   local braindump="## 🫃 What's on your mind rn? 🐸🧹👑 \n\n\n\n\n--- "
   local title="## 🪢 Todo Today"
   local table_header="| Time    | Item |"
@@ -580,8 +581,9 @@ done
 
 
 echo -e "${dateline}\n\n"
-echo -e "${yday}\n\n\n\n\n"
-echo -e "${wild}\n\n\n\n\n"
+echo -e "${spoons}\n\n\n\n"
+echo -e "${yday}\n\n\n\n"
+echo -e "${wild}\n\n\n\n"
 echo -e "${braindump}\n\n\n\n"
 # echo -e "${frogs}\n\n\n---\n\n\n\n"
 echo -e "${title}\n${table_header}\n${table_separator}\n${body}\n\n"
