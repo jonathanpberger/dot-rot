@@ -51,58 +51,58 @@ end
 
 # Function to write data to CSV
 def parse_sections(description)
-  # Define all possible section headers and their variations
-  section_patterns = {
-    'definition' => /^Definition:?\s*/i,
-    'conception' => /^Conception:?\s*/i,
-    'planning' => /^Planning:?\s*/i,
-    'execution' => /^Execution:?\s*/i,
-    'standard' => /^Minimum Standard of Care:?\s*/i
+  return {} if description.nil? || description.empty?
+
+  sections = {
+    'definition' => '',
+    'conception' => '',
+    'planning' => '',
+    'execution' => '',
+    'minimum_standard_of_care' => ''
   }
 
-  # Initialize result hash with nil values for all sections
-  result = section_patterns.keys.map { |k| [k, nil] }.to_h
+  current_section = nil
+  description.split("\n").each do |line|
+    line = line.strip
 
-  return result if description.nil? || description.empty?
-
-  # Split into sections more robustly
-  sections = description.split(/(?:^|\n)(?=[A-Za-z][^:\n]*:)/m)
-
-  sections.each do |section|
-    section = section.strip
-    section_patterns.each do |key, pattern|
-      if section.match?(pattern)
-        # Extract content after the header
-        content = section.sub(pattern, '').strip
-        result[key] = content unless content.empty?
-        break  # Stop checking patterns once we find a match
+    case line
+    when /^Definition/i
+      current_section = 'definition'
+    when /^Conception/i
+      current_section = 'conception'
+    when /^Planning/i
+      current_section = 'planning'
+    when /^Execution/i
+      current_section = 'execution'
+    when /^Minimum Standard of Care/i
+      current_section = 'minimum_standard_of_care'
+    else
+      if current_section && !line.empty?
+        sections[current_section] += sections[current_section].empty? ? line : "\n#{line}"
       end
     end
   end
 
-  result
+  sections
 end
 
-def write_to_csv(cards, filename = 'fairplay_cards.csv')
+def write_to_csv(cards, filename = 'fairplay_cards_new.csv')
   CSV.open(filename, 'w') do |csv|
-    column_headers = %w[Title Description Labels Definition Conception Planning Execution Standard]
-    csv << column_headers
+    csv << ['ID', 'Name', 'Definition', 'Conception', 'Planning', 'Execution', 'Minimum Standard of Care', 'Labels']
 
-    cards.each do |card|
+    Array(cards).each do |card|
+      sections = parse_sections(card['desc'])
       labels = card['labels'] ? card['labels'].map { |label| label['name'] }.join(', ') : ''
 
-      # Parse sections using our new function
-      sections = parse_sections(card['desc'])
-
       csv << [
+        card['id'],
         card['name'],
-        card['desc'],
-        labels,
         sections['definition'],
         sections['conception'],
         sections['planning'],
         sections['execution'],
-        sections['standard']
+        sections['minimum_standard_of_care'],
+        labels
       ]
     end
   end
