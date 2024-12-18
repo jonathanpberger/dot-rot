@@ -1,6 +1,9 @@
 # Version: 1.0.1
 require 'httparty'
 require 'csv'
+require 'json' # Ensure the JSON library is required
+require 'awesome_print'
+
 
 # Function to read .secrets file and parse the keys with a filter for specific services
 def load_secrets(prefix)
@@ -41,20 +44,71 @@ def fetch_board_data(board_id)
   raise "Error fetching data: #{response.message}" unless response.success?
 
   response.parsed_response
+
+  ap response.parsed_response
 end
 
+
 # Function to write data to CSV
-def write_to_csv(cards, filename = 'fairplay_cards.csv')
-  CSV.open(filename, 'w') do |csv|
-    csv << %w[Title Description Labels]
-    cards.each do |card|
-      labels = card['labels'] ? card['labels'].map { |label| label['name'] }.join(', ') : ''
-      csv << [card['name'], card['desc'], labels]
+def parse_sections(description)
+  # Define all possible section headers and their variations
+  section_patterns = {
+    'definition' => /^Definition:?\s*/i,
+    'conception' => /^Conception:?\s*/i,
+    'planning' => /^Planning:?\s*/i,
+    'execution' => /^Execution:?\s*/i,
+    'standard' => /^Minimum Standard of Care:?\s*/i
+  }
+
+  # Initialize result hash with nil values for all sections
+  result = section_patterns.keys.map { |k| [k, nil] }.to_h
+
+  return result if description.nil? || description.empty?
+
+  # Split into sections more robustly
+  sections = description.split(/(?:^|\n)(?=[A-Za-z][^:\n]*:)/m)
+
+  sections.each do |section|
+    section = section.strip
+    section_patterns.each do |key, pattern|
+      if section.match?(pattern)
+        # Extract content after the header
+        content = section.sub(pattern, '').strip
+        result[key] = content unless content.empty?
+        break  # Stop checking patterns once we find a match
+      end
     end
   end
-  puts "*************** Data exported to #{filename}"
+
+  result
 end
-# Main execution block
+
+def write_to_csv(cards, filename = 'fairplay_cards.csv')
+  CSV.open(filename, 'w') do |csv|
+    column_headers = %w[Title Description Labels Definition Conception Planning Execution Standard]
+    csv << column_headers
+
+    cards.each do |card|
+      labels = card['labels'] ? card['labels'].map { |label| label['name'] }.join(', ') : ''
+
+      # Parse sections using our new function
+      sections = parse_sections(card['desc'])
+
+      csv << [
+        card['name'],
+        card['desc'],
+        labels,
+        sections['definition'],
+        sections['conception'],
+        sections['planning'],
+        sections['execution'],
+        sections['standard']
+      ]
+    end
+  end
+  puts "Data exported to #{filename}"
+end
+
 begin
   puts 'Fetching Fairplay Trello board data...'
   cards = fetch_board_data(TRELLO_BOARD_ID)
