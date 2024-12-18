@@ -39,13 +39,13 @@ BASE_URL = "https://api.trello.com/1"
 
 # Function to fetch board data
 def fetch_board_data(board_id)
-  url = "#{BASE_URL}/boards/#{board_id}/cards?fields=name,desc&labels=all&key=#{TRELLO_API_KEY}&token=#{TRELLO_TOKEN}"
+  url = "#{BASE_URL}/boards/#{board_id}/cards?fields=name,desc,labels&key=#{TRELLO_API_KEY}&token=#{TRELLO_TOKEN}"
   response = HTTParty.get(url)
   raise "Error fetching data: #{response.message}" unless response.success?
 
   response.parsed_response
 
-  ap response.parsed_response
+  ap response.first(2).parsed_response
 end
 
 
