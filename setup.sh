@@ -10,13 +10,16 @@ git config --global pull.rebase true
 echo "#### Setting up symlinks"
 rm -f ~/.oh-my-zsh/custom/aliases.zsh
 rm -f ~/.oh-my-zsh/custom/plugins/gday/gday.plugin.zsh
+rm -f ~/.oh-my-zsh/custom/plugins/gh_project/gh_project.plugin.zsh
 
 # Create directories if they don't exist
 mkdir -p ~/.oh-my-zsh/custom/plugins/gday
+mkdir -p ~/.oh-my-zsh/custom/plugins/gh_project
 
 # Create new symlinks
 ln -s ~/workspace/dot-rot/aliases.zsh ~/.oh-my-zsh/custom/aliases.zsh
 ln -s ~/workspace/dot-rot/plugins/gday/gday.plugin.zsh ~/.oh-my-zsh/custom/plugins/gday/gday.plugin.zsh
+ln -s ~/workspace/dot-rot/plugins/gh_project/gh_project.plugin.zsh ~/.oh-my-zsh/custom/plugins/gh_project/gh_project.plugin.zsh
 
 # Enable gday plugin
 if ! grep -q "plugins=(.*gday.*)" ~/.zshrc; then

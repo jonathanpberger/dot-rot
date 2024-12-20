@@ -17,6 +17,15 @@ local table_header="| Time    | Item |"
 local table_separator="|---------|------|"
 local kicker="\n******* DO WHATEVER THE SCHEDULE TELLS ME. AND ONLY THAT.**********\n\n\n"
 
+# Add calendar configuration
+GCAL_CALENDARS=(
+  "JPB-DW"
+  "Pomo"
+  "JPB Private"
+  "Bergers"
+)
+
+
 # Filtered appointments
 FILTERED_APPOINTMENTS=(
   "🍜 Lunch"  # Lunch
@@ -202,3 +211,69 @@ done
   echo -e "${kicker}"
   echo $body | generate_later_today_h2s
 }
+
+
+
+############    ██████╗ ██████╗  █████╗ ██╗   ██╗ ANSI Shadow
+############   ██╔════╝ ██╔══██╗██╔══██╗╚██╗ ██╔╝
+############   ██║  ███╗██║  ██║███████║ ╚████╔╝
+############   ██║   ██║██║  ██║██╔══██║  ╚██╔╝
+############   ╚██████╔╝██████╔╝██║  ██║   ██║
+############    ╚═════╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
+############    TODO: extend lines in 30m increments, by duration
+############    ╚═════╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
+
+
+########################################
+# ChatGPT Pseudo-code
+## Header Creation: Generates a header for the output, including the current date and week number (for Mondays).
+#
+## Table Headers: Prepares headers for the table that will display the calendar events.
+#
+## Fetching Calendar Data: Uses gcalcli to fetch today's agenda from Google Calendar. The --details length flag is used to include the duration of each event.
+#
+## Emoji Mapping: Defines a map of emojis for different times of the day. This is used to add a visual cue (emoji) to each event based on its start time.
+#
+## Processing Calendar Output: The main part of the script processes the output from gcalcli. It involves several steps:
+#
+## Removing ANSI color codes for plain text processing.
+## Parsing each line to extract the time, duration, and description of events.
+## Adding an emoji to the event if it doesn't start with one.
+## Converting the event duration from hours and minutes to a total in minutes.
+## Storing the processed information for each event.
+## Expanding Events Longer than 30 Minutes: For events longer than 30 minutes, the script splits them into multiple 30-minute blocks. It uses a custom function add_pomodoro to increment the time by 30 minutes for each block.
+#
+## Handling Pomodoros and Event Conflicts: The script aims to remove pomodoro (🍅) events that conflict with longer events. This step seems to need refinement based on the issues you're experiencing.
+#
+## Final Output Assembly: Constructs the final output table with the processed event data.
+## ------------
+
+## # Gday is a script to integrate my gCal with my daily notes. To help organize my time, the day should be broken into pomodoros wheverer I don't have existing appointments
+
+## As JPB
+## I want to connect my gCal to my daily notes
+## Because I prefer to work in plaintext and markdown
+
+## When I run gday
+## Then all my gcal appointments should come in
+## And any appointments longer than a pomodoro should be broken into 30m chunks
+## And any appointments without an emoji should be assigned one based on their start time
+## And their emoji should be duplicated for each chunk, ie the first Most Important Thing should start with 👑 and the second with 👑👑, etc
+## And any unscheduled time should be broken into pomodoros
+## And any pomodoros that conflict with other events should be removed
+
+## ## Pseudo-code
+## - Create Table Headers and define clock Emoji Map
+## - Fetch Calendar Data from Google Calendar
+## - Remove ANSI color codes from Cal data
+## - extract time, duration, and description of events from each line of Cal data
+## - Add clock emoji to Cal data lines lacking emoji
+## - Expand Events Longer than 30 Minutes into multiple lines, 30m each
+## - Remove Pomodoro lines that conflict with other events
+## - Render the final markdown table
+#
+
+########################################
+########################################
+########################################
+########################################
