@@ -6,9 +6,14 @@ echo " ######################################### Starting JPB custom stuff"
 echo "#### `git pull` strategy should be `rebase`"
 git config pull.rebase true
 
-# symlink aliases
-echo "#### symlink aliases"
+# symlink aliases and enable plugins
+echo "#### symlink aliases and enable plugins"
 ln -s ~/workspace/dot-rot/aliases.zsh ~/.oh-my-zsh/custom/aliases.zsh
+
+# Enable gday plugin
+if ! grep -q "plugins=(.*gday.*)" ~/.zshrc; then
+  sed -i '' 's/plugins=(/plugins=(gday /' ~/.zshrc
+fi
 
 # install vscode extensions
 echo "##### install vscode extensions"
