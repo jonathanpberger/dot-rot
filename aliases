@@ -463,9 +463,9 @@ EOF
 }
 
 
-function gday() {
-  echo "•••••••• gday has moved to ~/.oh-my-zsh/custom/plugins/gday/gday.plugin.zsh"
-}
+# function gday() {
+#   echo "•••••••• gday has moved to ~/.oh-my-zsh/custom/plugins/gday/gday.plugin.zsh"
+# }
 
 ############################    ___|  ____| __ __|       _ \    _ \    _ \       |  ____|   ___| __ __|     _ _| __ __|  ____|   \  |   ___|  ###################
 ############################   |      __|      |        |   |  |   |  |   |      |  __|    |        |         |     |    __|    |\/ | \___ \  ################### Get project items, done w/ copilot.
