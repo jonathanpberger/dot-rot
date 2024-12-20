@@ -1,6 +1,6 @@
 # This probably wants to go in ~/.oh-my-zsh/custom/aliases.zsh
 
-echo "•••••••••• Loading aliases ••• $(date "+%a %b %d %H:%M:%S") "
+echo "\n\n•••••••••• Loading aliases ••• $(date "+%a %b %d %H:%M:%S") "
 
 # Generally helpful
 alias hg="history | grep"
@@ -198,7 +198,7 @@ function ship() {
 ##  ╚═╝     ╚═╝╚═╝  ╚═══╝╚═╝╚══════╝╚═╝  ╚═╝╚══════╝╚═════╝     ╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚═════╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝     ╚═╝  ╚═╝╚══════╝╚═╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝
 
 
-echo "•••••••••••••••• Finished Loading aliases!\n\n"
+echo "•••••••••• Finished Loading aliases!\n\n"
 
 
 
