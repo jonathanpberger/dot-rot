@@ -1,12 +1,30 @@
 # gday plugin for oh-my-zsh
 
+# Banner and version
+local GDAY_BANNER="
+    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞
+    🌞🌞🌞    gday Version 3.0.1    🌞🌞🌞
+    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
+
+# Prompts and sections
+local spoons="## 🥄 What did you spend spoons on yesterday?"
+local yday="## 🚢 What did you ship yesterday?"
+local wild="## 🃏 What Wildcards are in play today?"
+local braindump="## 🫃 What's on your mind rn? 🐸🧹👑 \n\n\n\n\n--- "
+local frogs="\n- 1st 🐸 I'll eat:\n- 2nd 🐸 I'll eat:\n- 3rd 🐸 I'll eat:\n\n"
+local title="## 🪢 Todo Today"
+local table_header="| Time    | Item |"
+local table_separator="|---------|------|"
+local kicker="\n******* DO WHATEVER THE SCHEDULE TELLS ME. AND ONLY THAT.**********\n\n\n"
+
+# Filtered appointments
 FILTERED_APPOINTMENTS=(
   "🍜 Lunch"  # Lunch
   "📓 Boys do homework while adult cooks"
   "🍅"
 )
 
-extract_h2s() {
+generate_later_today_h2s() {
   awk -v appointments="${FILTERED_APPOINTMENTS[*]}" '
     BEGIN {
       print "## Later Today..."
@@ -64,9 +82,7 @@ function gday() {
       ;;
   esac
 
-  echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞"
-  echo "    🌞🌞🌞    gday Version 3.0.0    🌞🌞🌞"
-  echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
+  echo -e "$GDAY_BANNER"
 
   ##### Setup
   declare -A emoji_map=(
@@ -172,17 +188,6 @@ for line in "${lines[@]}"; do
   body+="| ${time} | ${item} |"$'\n'
 done
 
-  local spoons="## 🥄 What did you spend spoons on yesterday?"
-  local yday="## 🚢 What did you ship yesterday?"
-  local wild="## 🃏 What Wildcards are in play today?"
-  local braindump="## 🫃 What's on your mind rn? 🐸🧹👑 \n\n\n\n\n--- "
-  local title="## 🪢 Todo Today"
-  local table_header="| Time    | Item |"
-  local table_separator="|---------|------|"
-  local kicker="\n******* DO WHATEVER THE SCHEDULE TELLS ME. AND ONLY THAT.**********\n\n\n"
-  local frogs="\n- 1st 🐸 I'll eat:\n- 2nd 🐸 I'll eat:\n- 3rd 🐸 I'll eat:\n\n"
-
-###### Day of week should include 📅 and weeknum on Mondays
   local dateline="# $display_date"
   if [[ $display_date == *"Monday"* ]]; then
     dateline="# $display_date - 📆 Week $week_number"
@@ -195,5 +200,5 @@ done
   echo -e "${braindump}\n\n\n\n"
   echo -e "${title}\n${table_header}\n${table_separator}\n${body}\n\n"
   echo -e "${kicker}"
-  echo $body | extract_h2s
+  echo $body | generate_later_today_h2s
 }
