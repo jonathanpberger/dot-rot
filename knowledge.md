@@ -5,6 +5,7 @@
 - All oh-my-zsh plugins are stored in `plugins/` directory
 - Plugins are symlinked to `~/.oh-my-zsh/custom/plugins/` during setup
 - gday plugin is managed in dot-rot repo and symlinked to oh-my-zsh
+- Only edit plugin files in dot-rot repo, never edit symlinked versions directly
 
 ## Setup Process
 
