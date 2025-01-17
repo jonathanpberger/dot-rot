@@ -124,7 +124,7 @@ function gday() {
   # Banner and version
   local GDAY_BANNER="
     🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞
-    🌞🌞🌞    gday Version 3.0.2    🌞🌞🌞
+    🌞🌞🌞    gday Version 3.0.3    🌞🌞🌞
     🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
 
   # Prompts and sections
@@ -179,7 +179,11 @@ function gday() {
   done
 
   # Use the calendar_args in the gcalcli command
-  local calendar_data=$(eval "gcalcli $calendar_args agenda \"1am $date_arg\" \"11pm $date_arg\" --nocolor --no-military --details length")
+  local gcalcli_cmd="gcalcli $calendar_args agenda \"1am $date_arg\" \"11pm $date_arg\" --nocolor --no-military --details length"
+
+  echo "~~~ running this gcalcli command ~~~\n\n    $gcalcli_cmd\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n\n"
+
+  local calendar_data=$(eval "$gcalcli_cmd")
   local calendar_data_no_color=$(echo "$calendar_data" | sed 's/\x1b\[[0-9;]*m//g')
 
   ###### convert pipe characters to an em-dash (bc escaping pipes is hard)
