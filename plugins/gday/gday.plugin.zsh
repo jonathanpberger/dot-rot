@@ -240,13 +240,10 @@ while IFS= read -r line; do
 
       for ((i=0; i<blocks; i++)); do
         new_line="$time|$item"
-        if [[ "$time" != "$prev_time" || "$item" != "🍅" ]]; then
+        if [[ "$item" != "🍅" || "$time" != "$prev_time" ]]; then
           lines+=("$new_line")
-        elif [[ "$item" != "🍅" && ${#lines[@]} -gt 0 ]]; then
-          lines[-1]="$new_line"
         fi
         prev_time="$time"
-        prev_item="$item"
         time=$(add_pomodoro "$time")
       done
     fi
