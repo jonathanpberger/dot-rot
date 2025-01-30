@@ -12,26 +12,26 @@
 
 ########################################
 # ChatGPT Pseudo-code
-## Header Creation: Generates a header for the output, including the current date and week number (for Mondays).
+## [x] Header Creation: Generates a header for the output, including the current date and week number (for Mondays).
 #
-## Table Headers: Prepares headers for the table that will display the calendar events.
+## [x] Table Headers: Prepares headers for the table that will display the calendar events.
 #
-## Fetching Calendar Data: Uses gcalcli to fetch today's agenda from Google Calendar. The --details length flag is used to include the duration of each event.
+## [x] Fetching Calendar Data: Uses gcalcli to fetch today's agenda from Google Calendar. The --details length flag is used to include the duration of each event.
 #
-## Emoji Mapping: Defines a map of emojis for different times of the day. This is used to add a visual cue (emoji) to each event based on its start time.
+## [x] Emoji Mapping: Defines a map of emojis for different times of the day. This is used to add a visual cue (emoji) to each event based on its start time.
 #
-## Processing Calendar Output: The main part of the script processes the output from gcalcli. It involves several steps:
+## [-] Processing Calendar Output: The main part of the script processes the output from gcalcli. It involves several steps:
 #
-## Removing ANSI color codes for plain text processing.
-## Parsing each line to extract the time, duration, and description of events.
-## Adding an emoji to the event if it doesn't start with one.
-## Converting the event duration from hours and minutes to a total in minutes.
-## Storing the processed information for each event.
-## Expanding Events Longer than 30 Minutes: For events longer than 30 minutes, the script splits them into multiple 30-minute blocks. It uses a custom function add_pomodoro to increment the time by 30 minutes for each block.
+## [x] Removing ANSI color codes for plain text processing.
+## [x] Parsing each line to extract the time, duration, and description of events.
+## [x] Adding an emoji to the event if it doesn't start with one.
+## [x] Converting the event duration from hours and minutes to a total in minutes.
+## [x] Storing the processed information for each event.
+## [x] Expanding Events Longer than 30 Minutes: For events longer than 30 minutes, the script splits them into multiple 30-minute blocks. It uses a custom function add_pomodoro to increment the time by 30 minutes for each block.
 #
-## Handling Pomodoros and Event Conflicts: The script aims to remove pomodoro (🍅) events that conflict with longer events. This step seems to need refinement based on the issues you're experiencing.
+## [-] Handling Pomodoros and Event Conflicts: The script aims to remove pomodoro (🍅) events that conflict with longer events. This step seems to need refinement based on the issues you're experiencing.
 #
-## Final Output Assembly: Constructs the final output table with the processed event data.
+## [x] Final Output Assembly: Constructs the final output table with the processed event data.
 ## ------------
 
 ## # Gday is a script to integrate my gCal with my daily notes. To help organize my time, the day should be broken into pomodoros wheverer I don't have existing appointments
