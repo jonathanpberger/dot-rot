@@ -3,3 +3,4 @@ backups/*
 .swp
 .secrets
 token.yaml
+.aider*
