@@ -109,20 +109,20 @@ generate_later_today_h2s() {
 GCAL_CALENDARS=(
   "JPB-DW"
   "Pomo"
-  "JPB Private"
-  "Berger"
+  "Private"
+  "Berger Appointments"
 )
 
 # Helper function to validate calendars
 validate_calendars() {
   # Get available calendars - extract just the Title column, one per line
-  local available_calendars=$(gcalcli list --nocolor | awk 'NR > 1 {print $NF}')
+  local available_calendars=$(gcalcli list | awk 'NR > 1 {print $NF}')
   local missing_calendars=()
   local found=0
 
   echo "Checking configured calendars..."
   echo "\nAvailable calendars:"
-  echo "$available_calendars" | sed 's/^/   - /'
+  echo "$available_calendars" # | sed 's/^/   - /'
 
   echo "\nConfigured calendars:"
   for cal in "${GCAL_CALENDARS[@]}"; do
