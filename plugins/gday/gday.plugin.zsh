@@ -115,8 +115,14 @@ GCAL_CALENDARS=(
 
 # Helper function to validate calendars
 validate_calendars() {
-  # Get available calendars - extract just the Title column, one per line
-  local available_calendars=$(gcalcli list | awk 'NR > 1 {print $NF}')
+  # Get available calendars - extract the entire calendar name, preserving spaces
+  local available_calendars=$(gcalcli list --nocolor | awk 'NR > 1 {
+    # Remove the first two columns (Owner and Access)
+    $1=""; $2="";
+    # Print the rest of the line (the calendar name)
+    sub(/^[ \t]+/, "");
+    print
+  }')
   local missing_calendars=()
   local found=0
 
@@ -325,5 +331,3 @@ done
   echo -e "${kicker}"
   echo $body | generate_later_today_h2s
 }
-
-
