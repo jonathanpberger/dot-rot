@@ -19,8 +19,8 @@ extract_h2s() {
     }
     /^\| [0-9]/ {
       line = $0
-      sub(/^\|[^|]+\| /, "## ", line)
-      gsub(/ \|$/, "", line)
+      sub(/^\|[^|]+\| /, "", line)  # Remove everything up to the title
+      sub(/ \|$/, "", line)  # Remove trailing pipe
 
       # Check against our list of filtered appointments
       skip = 0
