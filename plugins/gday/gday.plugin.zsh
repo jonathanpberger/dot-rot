@@ -110,8 +110,51 @@ GCAL_CALENDARS=(
   "JPB-DW"
   "Pomo"
   "JPB Private"
-  "Bergers"
+  "Berger"
 )
+
+# Helper function to validate calendars
+validate_calendars() {
+  # Get available calendars - extract just the Title column, one per line
+  local available_calendars=$(gcalcli list --nocolor | awk 'NR > 1 {for (i=3; i<=NF; i++) printf $i " "; print ""}')
+  local missing_calendars=()
+  local found=0
+
+  echo "Checking configured calendars..."
+  echo "\nAvailable calendars:"
+  echo "$available_calendars" | sed 's/^/   - /'
+
+  echo "\nConfigured calendars:"
+  for cal in "${GCAL_CALENDARS[@]}"; do
+    # First check if calendar exists in available list
+    if echo "$available_calendars" | tr -d '\n' | grep -wq "$cal"; then
+      # Then verify we can actually use it with gcalcli
+      if gcalcli --cal "$cal" agenda "today" "today" --nocolor --no-military >/dev/null 2>&1; then
+        echo "   - ✅ $cal"
+        ((found++))
+      else
+        echo "   - ❌ $cal (exists but gcalcli cannot access it)"
+        missing_calendars+=("$cal")
+      fi
+    else
+      echo "   - ❌ $cal (not found in available calendars)"
+      missing_calendars+=("$cal")
+    fi
+  done
+
+  echo "\nValidation results:"
+  if [[ ${#missing_calendars[@]} -gt 0 ]]; then
+    echo "⚠️  The following calendars are configured but not usable:"
+    printf "   - %s\n" "${missing_calendars[@]}"
+    if [[ $found -eq 0 ]]; then
+      echo "❌ No configured calendars were found. Exiting."
+      return 1
+    fi
+  else
+    echo "✅ All configured calendars found!"
+  fi
+  return 0
+}
 
 # Filtered appointments
 FILTERED_APPOINTMENTS=(
@@ -121,6 +164,11 @@ FILTERED_APPOINTMENTS=(
 )
 
 function gday() {
+  # Validate calendars first
+  if ! validate_calendars; then
+    return 1
+  fi
+
   # Banner and version
   local GDAY_BANNER="
     🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞
@@ -140,7 +188,7 @@ function gday() {
 
   case "$1" in
     auth)
-      echo "Removing gcalcli OAuth token and running agenda..."
+      echo "Removing gcalcli OAuth token and running agenda. If this fails, try `gcalcli init` to force the auth flow"
       rm ~/.gcalcli_oauth && gcalcli agenda
       return
       ;;
@@ -178,7 +226,7 @@ function gday() {
     calendar_args+="--cal \"$cal\" "
   done
 
-  # Use the calendar_args in the gcalcli command
+  # Use pipx-installed gcalcli
   local gcalcli_cmd="gcalcli $calendar_args agenda \"1am $date_arg\" \"11pm $date_arg\" --nocolor --no-military --details length"
 
   echo "~~~ running this gcalcli command ~~~\n\n    $gcalcli_cmd\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n\n"
