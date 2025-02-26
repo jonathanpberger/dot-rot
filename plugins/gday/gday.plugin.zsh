@@ -116,7 +116,7 @@ GCAL_CALENDARS=(
 # Helper function to validate calendars
 validate_calendars() {
   # Get available calendars - extract just the Title column, one per line
-  local available_calendars=$(gcalcli list --nocolor | awk 'NR > 1 {for (i=3; i<=NF; i++) printf $i " "; print ""}')
+  local available_calendars=$(gcalcli list --nocolor | awk 'NR > 1 {print $NF}')
   local missing_calendars=()
   local found=0
 
@@ -126,8 +126,8 @@ validate_calendars() {
 
   echo "\nConfigured calendars:"
   for cal in "${GCAL_CALENDARS[@]}"; do
-    # First check if calendar exists in available list
-    if echo "$available_calendars" | tr -d '\n' | grep -wq "$cal"; then
+    # Check if calendar exists EXACTLY in available list (not as substring)
+    if echo "$available_calendars" | grep -Fx "$cal" > /dev/null; then
       # Then verify we can actually use it with gcalcli
       if gcalcli --cal "$cal" agenda "today" "today" --nocolor --no-military >/dev/null 2>&1; then
         echo "   - ✅ $cal"
@@ -325,6 +325,5 @@ done
   echo -e "${kicker}"
   echo $body | generate_later_today_h2s
 }
-
 
 
