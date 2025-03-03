@@ -197,8 +197,17 @@ function gday() {
 
   case "$1" in
     auth)
-      echo "Removing gcalcli OAuth token and running agenda. If this fails, try `gcalcli init` to force the auth flow"
-      rm ~/.gcalcli_oauth && gcalcli agenda
+      echo "Removing gcalcli OAuth token and running agenda. If this fails, try \`gcalcli init\` to force the auth flow"
+      if rm ~/.gcalcli_oauth; then
+        echo "OAuth token removed successfully."
+        if gcalcli agenda; then
+          echo "gcalcli agenda executed successfully."
+        else
+          echo "Failed to execute gcalcli agenda. Please check your gcalcli configuration."
+        fi
+      else
+        echo "Failed to remove OAuth token. Please check if the file exists and you have the necessary permissions."
+      fi
       return
       ;;
     prev|yesterday|yday|then)
