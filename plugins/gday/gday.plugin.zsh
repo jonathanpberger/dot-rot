@@ -170,9 +170,12 @@ FILTERED_APPOINTMENTS=(
 )
 
 function gday() {
-  # Validate calendars first
-  if ! validate_calendars; then
-    return 1
+  # Skip calendar validation for auth command
+  if [[ "$1" != "auth" ]]; then
+    # Validate calendars first
+    if ! validate_calendars; then
+      return 1
+    fi
   fi
 
   # Banner and version
