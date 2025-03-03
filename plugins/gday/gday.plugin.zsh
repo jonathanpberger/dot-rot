@@ -170,48 +170,18 @@ FILTERED_APPOINTMENTS=(
 )
 
 function gday() {
-  # Skip calendar validation for auth command
-  if [[ "$1" != "auth" ]]; then
-    # Validate calendars first
-    if ! validate_calendars; then
-      return 1
-    fi
-  fi
-
-  # Banner and version
-  local GDAY_BANNER="
-    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞
-    🌞🌞🌞    gday Version 3.1.0    🌞🌞🌞
-    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
-
-  # Prompts and sections
-  local spoons="## 🥄 What did you spend spoons on yesterday?"
-  local yday="## 🚢 What did you ship yesterday?"
-  local wild="## 🃏 What Wildcards are in play today?"
-  local braindump="## 🫃 What's on your mind rn? 🐸🧹👑 \n\n\n\n\n--- "
-  local frogs="\n- 1st 🐸 I'll eat:\n- 2nd 🐸 I'll eat:\n- 3rd 🐸 I'll eat:\n\n"
-  local title="## 🪢 Todo Today"
-  local table_header="| Time    | Item |"
-  local table_separator="|---------|------|"
-  local kicker="\n******* DO WHATEVER THE SCHEDULE TELLS ME. AND ONLY THAT.**********\n\n\n"
 
   case "$1" in
+    foo)
+      echo "FOOOOOOOOOOOOOOOOOOOOOOO"
+      return
+      ;;
     auth)
-      echo "Removing gcalcli OAuth token and running agenda. If this fails, try \`gcalcli init\` to force the auth flow"
-      if [ -f ~/.gcalcli_oauth ]; then
-        if rm ~/.gcalcli_oauth; then
-          echo "OAuth token removed successfully."
-          if gcalcli agenda; then
-            echo "gcalcli agenda executed successfully."
-          else
-            echo "Failed to execute gcalcli agenda. Please check your gcalcli configuration."
-          fi
-        else
-          echo "Failed to remove OAuth token. Please check if you have the necessary permissions."
-        fi
-      else
-        echo "OAuth token file does not exist. You may need to run \`gcalcli init\` to authenticate."
-      fi
+      echo "Removing gcalcli OAuth token..."
+      touch ~/.gcalcli_oauth
+      rm ~/.gcalcli_oauth
+      echo "running \`gcalcli agenda\`. If this fails, try \`gcalcli init\` to force the auth flow"
+      gcalcli init
       return
       ;;
     prev|yesterday|yday|then)
@@ -225,6 +195,29 @@ function gday() {
       week_number=$(date "+%V")
       ;;
   esac
+
+  # Banner and version
+  local GDAY_BANNER="
+    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞
+    🌞🌞🌞    gday Version 3.2.0    🌞🌞🌞
+    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
+
+  # Prompts and sections
+  local spoons="## 🥄 What did you spend spoons on yesterday?"
+  local yday="## 🚢 What did you ship yesterday?"
+  local wild="## 🃏 What Wildcards are in play today?"
+  local braindump="## 🫃 What's on your mind rn? 🐸🧹👑 \n\n\n\n\n--- "
+  local frogs="\n- 1st 🐸 I'll eat:\n- 2nd 🐸 I'll eat:\n- 3rd 🐸 I'll eat:\n\n"
+  local title="## 🪢 Todo Today"
+  local table_header="| Time    | Item |"
+  local table_separator="|---------|------|"
+  local kicker="\n******* DO WHATEVER THE SCHEDULE TELLS ME. AND ONLY THAT.**********\n\n\n"
+
+
+  # Validate calendars first
+  if ! validate_calendars; then
+    return 1
+  fi
 
   echo -e "$GDAY_BANNER"
 
