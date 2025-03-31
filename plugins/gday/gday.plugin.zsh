@@ -189,6 +189,47 @@ function gday() {
       display_date=$(date -v -1d "+%m/%d - %A")
       week_number=$(date -v -1d "+%V")
       ;;
+    monday|tuesday|wednesday|thursday|friday|saturday|sunday)
+      # Convert input to lowercase and capitalize first letter for display
+      day_lower=$(echo "$1" | tr '[:upper:]' '[:lower:]')
+      day_display=$(echo "${day_lower^}")
+      
+      # Find the most recent occurrence of the specified day
+      # On macOS, we use date -v to adjust the date
+      current_day=$(date "+%A" | tr '[:upper:]' '[:lower:]')
+      
+      if [[ "$current_day" == "$day_lower" ]]; then
+        # If today is the requested day, just use today
+        date_arg="today"
+        display_date=$(date "+%m/%d - %A")
+        week_number=$(date "+%V")
+      else
+        # Calculate days ago - first get day numbers (0=Sunday, 6=Saturday)
+        current_day_num=$(date "+%w")
+        target_day_num=0
+        
+        case "$day_lower" in
+          monday) target_day_num=1 ;;
+          tuesday) target_day_num=2 ;;
+          wednesday) target_day_num=3 ;;
+          thursday) target_day_num=4 ;;
+          friday) target_day_num=5 ;;
+          saturday) target_day_num=6 ;;
+          sunday) target_day_num=0 ;;
+        esac
+        
+        # Calculate days to go back
+        days_ago=$(( ($current_day_num - $target_day_num + 7) % 7 ))
+        if [[ $days_ago -eq 0 ]]; then
+          days_ago=7  # If calculated as 0, we want the previous week
+        fi
+        
+        # Set the date argument
+        date_arg="$days_ago days ago"
+        display_date=$(date -v "-${days_ago}d" "+%m/%d - %A")
+        week_number=$(date -v "-${days_ago}d" "+%V")
+      fi
+      ;;
     *)
       date_arg="today"
       display_date=$(date "+%m/%d - %A")
@@ -199,7 +240,7 @@ function gday() {
   # Banner and version
   local GDAY_BANNER="
     🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞
-    🌞🌞🌞    gday Version 3.2.0    🌞🌞🌞
+    🌞🌞🌞    gday Version 3.3.0    🌞🌞🌞
     🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
 
   # Prompts and sections
@@ -244,7 +285,7 @@ function gday() {
   # Use pipx-installed gcalcli
   local gcalcli_cmd="gcalcli $calendar_args agenda \"1am $date_arg\" \"11pm $date_arg\" --nocolor --no-military --details length"
 
-  echo "~~~ running this gcalcli command ~~~\n\n    $gcalcli_cmd\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n\n"
+  echo "~~~ running this gcalcli command for $date_arg ~~~\n\n    $gcalcli_cmd\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n\n"
 
   local calendar_data=$(eval "$gcalcli_cmd")
   local calendar_data_no_color=$(echo "$calendar_data" | sed 's/\x1b\[[0-9;]*m//g')
