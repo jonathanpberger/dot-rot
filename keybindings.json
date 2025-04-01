@@ -1,20 +1,6 @@
 // Place your key bindings in this file to override the defaultsauto[]
 [
   {
-    "key": "ctrl+cmd+a ctrl+cmd",
-    "command": "extension.incrementSelection",
-    "when": "editorTextFocus"
-  },
-  {
-    "key": "alt+cmd+i",
-    "command": "-extension.incrementSelection",
-    "when": "editorTextFocus"
-  },
-  {
-    "key": "ctrl+shift+cmd+a",
-    "command": "extension.incrementSelection"
-  },
-  {
     "key": "ctrl+cmd+a",
     "command": "editor.emmet.action.incrementNumberByOne"
   },
@@ -125,5 +111,9 @@
   {
     "key": "alt+d",
     "command": "-foam-vscode.open-daily-note"
+  },
+  {
+    "key": "cmd+i",
+    "command": "composerMode.agent"
   }
 ]
