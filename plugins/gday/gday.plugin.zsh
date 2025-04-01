@@ -167,6 +167,8 @@ FILTERED_APPOINTMENTS=(
   "🍜 Lunch"  # Lunch
   "📓 Boys do homework while adult cooks"
   "🍅"
+  " Elias Allergy Shots"
+  "🤼‍♀️ Elias tap outs"
 )
 
 function gday() {
