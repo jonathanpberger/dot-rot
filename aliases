@@ -32,7 +32,7 @@ alias tl='reminders show Reminders'
 
 # `Now.md` convenience methods
 export FOAM_HOME=~/workspace/foam
-alias todos="ack '^.[^|\[]\[[ x]\]\s+.*' ~/workspace/foam/now.md -C2"
+alias todos="ack '^.[^|\[]\[[ x]\]\s+[^\w\s]' ~/workspace/foam/now.md -C2"
 alias prev-todos="ack '^.[^|\[]\[[^x]\]\s\w' prev.md -C2"
 alias h2s="ack '^\#{2}\s' ~/workspace/foam/now.md -C1"
 alias projects-w-context="ack  '(\+\+\w.*)'  ~/workspace/foam/now.md --output '$1'"
@@ -46,7 +46,9 @@ alias nitty="ack '🧹' ~/workspace/foam/todo.md | sort"
 alias cherry="ack '🍒' ~/workspace/foam/todo.md | sort"
 alias pom="ack '🍅' ~/workspace/foam/todo.md | sort"
 
-
+vibes() {
+  cursor --status | grep "^|    Folder" | awk '{gsub(/[():]/, "", $3); print "- " $3}' | sort
+}
 
 # path/filename: ~/scripts/todo_project_count.sh
 # This script generates a markdown table with a list of unique projects and their counts from the todo.md file.
