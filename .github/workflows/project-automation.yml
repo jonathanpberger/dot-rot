@@ -11,7 +11,13 @@ jobs:
     name: Add issue to project
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/add-to-project@v0.5.0
-        with:
-          project-url: https://github.com/users/jonathanpberger/projects/14
-          github-token: \${{ secrets.PROJECT_TOKEN }}
+      - name: Test Token Authentication with gh cli
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+        run: |
+          echo "Attempting gh auth status with provided token..."
+          gh auth status -t
+          echo "Attempting to fetch user info with gh..."
+          gh api user
+          echo "gh commands finished."
+        shell: bash # Ensure bash is used if not default
