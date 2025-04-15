@@ -1,0 +1,23 @@
+# Add issues to GitHub project automatically
+name: Add to Project
+
+on:
+  issues:
+    types:
+      - opened
+
+jobs:
+  add-to-project:
+    name: Add issue to project
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test Token Authentication with gh cli
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+        run: |
+          echo "Attempting gh auth status with provided token..."
+          gh auth status -t
+          echo "Attempting to fetch user info with gh..."
+          gh api user
+          echo "gh commands finished."
+        shell: bash # Ensure bash is used if not default
