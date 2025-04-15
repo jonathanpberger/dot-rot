@@ -45,6 +45,9 @@ alias frogs="ack '🐸' ~/workspace/foam/todo.md | sort"
 alias nitty="ack '🧹' ~/workspace/foam/todo.md | sort"
 alias cherry="ack '🍒' ~/workspace/foam/todo.md | sort"
 alias pom="ack '🍅' ~/workspace/foam/todo.md | sort"
+alias unremote="no_remote"
+alias yday="git_yesterday_report"
+alias projectsinprojects="github_project_repos"
 
 vibes() {
   cursor --status | grep "^|    Folder" | awk '{gsub(/[():]/, "", $3); print "- " $3}' | sort
@@ -201,6 +204,600 @@ function ship() {
 
 
 echo "•••••••••• Finished Loading aliases!\n\n"
+
+# Find git repos without GitHub remotes
+git_no_remote() {
+  echo "Searching for git repos without GitHub remotes in ~/workspace..."
+  local found=0
+
+  for repo in $(find ~/workspace -type d -name ".git" -maxdepth 3 | sort); do
+    local repo_dir=$(dirname "$repo")
+
+    # Check if repo has any remote
+    if ! git -C "$repo_dir" remote -v | grep -q "github.com"; then
+      echo "- $(basename "$repo_dir") (${repo_dir/#$HOME/~})"
+      ((found++))
+    fi
+  done
+
+  if [[ $found -eq 0 ]]; then
+    echo "All git repositories have GitHub remotes."
+  else
+    echo "\nFound $found repositories without GitHub remotes."
+  fi
+}
+
+# Alias for the function
+alias no_remote="git_no_remote"
+
+# Function to review yesterday's git commits and return a per-project status report
+git_yesterday_report() {
+  local yesterday=$(date -v-1d +"%Y-%m-%d")
+  local today=$(date +"%Y-%m-%d")
+  local found=0
+  local all_projects=()
+  local all_commits=()
+  local all_summaries=()
+  local max_project_len=7  # "Project" header length
+  local max_commits_len=7  # "Commits" header length
+
+  echo "Git Activity Report for $yesterday:"
+
+  # First pass - collect data and determine column widths
+  for repo in $(find ~/workspace -type d -name ".git" -maxdepth 3 | sort); do
+    local repo_dir=$(dirname "$repo")
+    local project=$(basename "$repo_dir")
+
+    # Get yesterday's commits
+    local commits=$(git -C "$repo_dir" log --oneline --after="$yesterday 00:00" --before="$today 00:00" 2>/dev/null)
+
+    if [[ -n "$commits" ]]; then
+      local commit_count=$(echo "$commits" | wc -l | tr -d ' ')
+      local summary=$(echo "$commits" | head -3 | sed 's/^[^ ]* //' | sed 's/^/• /' | tr '\n' ' ')
+
+      # Truncate if too long
+      if [[ ${#summary} -gt 80 ]]; then
+        summary="${summary:0:77}..."
+      fi
+
+      all_projects+=("$project")
+      all_commits+=("$commit_count")
+      all_summaries+=("$summary")
+
+      # Update max widths
+      if [[ ${#project} -gt $max_project_len ]]; then
+        max_project_len=${#project}
+      fi
+      if [[ ${#commit_count} -gt $max_commits_len ]]; then
+        max_commits_len=${#commit_count}
+      fi
+
+      ((found++))
+    fi
+  done
+
+  # Print table with proper formatting
+  local project_header=$(printf "%-${max_project_len}s" "Project")
+  local commits_header=$(printf "%-${max_commits_len}s" "Commits")
+  echo "| $project_header | $commits_header | Summary |"
+
+  local separator_project=$(printf '%0.s-' $(seq 1 $max_project_len))
+  local separator_commits=$(printf '%0.s-' $(seq 1 $max_commits_len))
+  echo "| $separator_project | $separator_commits | --------- |"
+
+  if [[ $found -eq 0 ]]; then
+    local empty_project=$(printf "%-${max_project_len}s" "-")
+    local empty_commits=$(printf "%-${max_commits_len}s" "-")
+    echo "| $empty_project | $empty_commits | No commits found for yesterday |"
+  else
+    for i in $(seq 0 $(($found - 1))); do
+      local padded_project=$(printf "%-${max_project_len}s" "${all_projects[$i]}")
+      local padded_commits=$(printf "%-${max_commits_len}s" "${all_commits[$i]}")
+      echo "| $padded_project | $padded_commits | ${all_summaries[$i]} |"
+    done
+  fi
+
+  echo "\nTotal projects with activity: $found"
+}
+
+# Function to extract unique repositories referenced in a GitHub project
+github_project_repos() {
+  local project_url="https://github.com/users/jonathanpberger/projects/14"
+  local project_number="14"
+  local username="jonathanpberger"
+
+  echo "Fetching repositories from GitHub project: $project_url"
+
+  # Check if GitHub CLI is installed
+  if ! command -v gh &> /dev/null; then
+    echo "Error: GitHub CLI not found. Please install it with: brew install gh"
+    return 1
+  fi
+
+  # Check if logged in
+  if ! gh auth status &> /dev/null; then
+    echo "Error: Not logged in to GitHub CLI. Please run: gh auth login"
+    return 1
+  fi
+
+  # GraphQL query to get repositories from project
+  local query='
+  query {
+    user(login: "'$username'") {
+      projectV2(number: '$project_number') {
+        items(first: 100) {
+          nodes {
+            content {
+              ... on Issue {
+                repository {
+                  name
+                  owner {
+                    login
+                  }
+                }
+              }
+              ... on PullRequest {
+                repository {
+                  name
+                  owner {
+                    login
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }'
+
+  # Make the GraphQL request using GitHub CLI
+  local result=$(gh api graphql -f query="${query}")
+
+  # Process with jq to extract and format repository names
+  echo "$result" | jq -r '.data.user.projectV2.items.nodes[] |
+    select(.content != null and .content.repository != null) |
+    .content.repository.owner.login + "/" + .content.repository.name' |
+    sort | uniq
+
+  echo "\nNote: Only repositories from issues and PRs are shown. Draft issues may not have repository references."
+}
+
+# Function to add all issues from a repository to a GitHub project
+add_repo_to_project() {
+  local repo="$1"
+  local project_number="14"
+  local username="jonathanpberger"
+
+  if [[ -z "$repo" ]]; then
+    echo "Usage: add_repo_to_project owner/repository"
+    echo "Example: add_repo_to_project discoveryworks/hueshift"
+    return 1
+  fi
+
+  local owner=$(echo "$repo" | cut -d '/' -f1)
+  local repo_name=$(echo "$repo" | cut -d '/' -f2)
+
+  echo "Adding issues from $owner/$repo_name to GitHub project #$project_number..."
+
+  # Get all open issues from the repository
+  local issues=$(gh issue list --repo "$repo" --state open --json number --jq '.[].number')
+
+  if [[ -z "$issues" ]]; then
+    echo "No open issues found in $repo"
+    return 0
+  fi
+
+  # Count the issues
+  local issue_count=$(echo "$issues" | wc -l | tr -d ' ')
+  echo "Found $issue_count open issues to add..."
+
+  # For each issue, add it to the project
+  local added=0
+  for issue_number in $issues; do
+    echo "Adding issue #$issue_number..."
+    gh api graphql -f query='
+      mutation {
+        addProjectV2ItemById(input: {
+          projectId: "'$(gh api graphql -f query='query{ user(login: "'$username'") { projectV2(number: '$project_number') { id } } }' --jq '.data.user.projectV2.id')'"
+          contentId: "'$(gh api graphql -f query='query{ repository(owner: "'$owner'", name: "'$repo_name'") { issue(number: '$issue_number') { id } } }' --jq '.data.repository.issue.id')'"
+        }) {
+          item {
+            id
+          }
+        }
+      }
+    ' >/dev/null 2>&1 && ((added++)) || echo "Failed to add issue #$issue_number"
+  done
+
+  echo "Added $added issues from $repo to project #$project_number"
+}
+
+# Alias for adding repos to project
+alias addrepo="add_repo_to_project"
+
+# Path to the project repos manifest file
+PROJECTS_MANIFEST="$HOME/.github_project_repos.json"
+
+# Function to create/update the project repos manifest
+gh_project_manifest() {
+  # Create default manifest if it doesn't exist
+  if [[ ! -f "$PROJECTS_MANIFEST" ]]; then
+    cat > "$PROJECTS_MANIFEST" << EOF
+{
+  "project_number": 14,
+  "username": "jonathanpberger",
+  "repositories": [
+    "discoveryworks/hueshift",
+    "jonathanpberger/ios-claude-astroid",
+    "jonathanpberger/ios-claude-space_invaders",
+    "discoveryworks/discoveryworks.github.io",
+    "jonathanpberger/dot-rot",
+    "jonathanpberger/foam",
+    "jonathanpberger/mottypouth",
+    "jonathanpberger/pizza-pong-ios",
+    "jonathanpberger/port-of-call",
+    "jonathanpberger/scanventory"
+  ]
+}
+EOF
+    echo "Created default project manifest at $PROJECTS_MANIFEST"
+  fi
+
+  # Open the manifest for editing
+  ${EDITOR:-vi} "$PROJECTS_MANIFEST"
+}
+
+# Function to set up project automation rules based on manifest
+gh_project_automate() {
+  if [[ ! -f "$PROJECTS_MANIFEST" ]]; then
+    echo "Manifest file not found. Creating default..."
+    gh_project_manifest
+  fi
+
+  # Read data from manifest
+  local project_number=$(jq -r '.project_number' "$PROJECTS_MANIFEST")
+  local username=$(jq -r '.username' "$PROJECTS_MANIFEST")
+  local repos=$(jq -r '.repositories[]' "$PROJECTS_MANIFEST")
+
+  echo "Setting up automation for project #$project_number..."
+
+  # Get project ID
+  local project_id=$(gh api graphql -f query='
+    query {
+      user(login: "'$username'") {
+        projectV2(number: '$project_number') {
+          id
+        }
+      }
+    }' --jq '.data.user.projectV2.id')
+
+  # First, list existing automation rules to avoid duplicates
+  local existing_rules=$(gh api graphql -f query='
+    query {
+      user(login: "'$username'") {
+        projectV2(number: '$project_number') {
+          workflows {
+            nodes {
+              id
+              name
+            }
+          }
+        }
+      }
+    }' --jq '.data.user.projectV2.workflows.nodes')
+
+  echo "Setting up automation rules for repositories:"
+
+  # For each repository, create an automation rule if it doesn't exist
+  for repo in $repos; do
+    local owner=$(echo "$repo" | cut -d '/' -f1)
+    local name=$(echo "$repo" | cut -d '/' -f2)
+
+    echo "- $owner/$name"
+
+    # Check if a rule for this repo already exists
+    local rule_name="Auto-add from $owner/$name"
+    if echo "$existing_rules" | jq -e '.[] | select(.name=="'"$rule_name"'")' >/dev/null; then
+      echo "  ✓ Automation rule already exists"
+      continue
+    fi
+
+    # Create automation rule for this repository
+    gh api graphql -f query='
+      mutation {
+        createProjectV2Workflow(input: {
+          projectId: "'$project_id'"
+          name: "'"$rule_name"'"
+          enabled: true
+        }) {
+          projectWorkflow {
+            id
+          }
+        }
+      }' >/dev/null
+
+    # Get the newly created workflow ID
+    local workflow_id=$(gh api graphql -f query='
+      query {
+        user(login: "'$username'") {
+          projectV2(number: '$project_number') {
+            workflows {
+              nodes {
+                id
+                name
+              }
+            }
+          }
+        }
+      }' --jq '.data.user.projectV2.workflows.nodes[] | select(.name=="'"$rule_name"'") | .id')
+
+    # Add the trigger to the workflow (issues from the specified repository)
+    gh api graphql -f query='
+      mutation {
+        createProjectV2WorkflowTrigger(input: {
+          workflowId: "'$workflow_id'"
+          type: ISSUE_ADDED
+          filters: [{
+            key: "repository.name",
+            values: ["'$name'"]
+          }, {
+            key: "repository.owner.login",
+            values: ["'$owner'"]
+          }]
+        }) {
+          clientMutationId
+        }
+      }' >/dev/null
+
+    # Add the action to the workflow (add to project)
+    gh api graphql -f query='
+      mutation {
+        createProjectV2WorkflowAction(input: {
+          workflowId: "'$workflow_id'"
+          type: ADD_TO_PROJECT
+        }) {
+          clientMutationId
+        }
+      }' >/dev/null
+
+    echo "  ✓ Created automation rule"
+  done
+
+  echo "Automation setup complete. All issues from specified repositories will be automatically added to your project."
+  echo "To manage repositories, edit the manifest with: gh_project_manifest"
+}
+
+# Aliases for project automation management
+alias gh_manifest="gh_project_manifest"
+alias gh_automate="gh_project_automate"
+
+# Function to add workflow files to repos for auto-adding issues to projects
+gh_project_add_workflows() {
+  # Check for necessary tools
+  for cmd in gh jq git mktemp; do
+    if ! command -v $cmd &> /dev/null; then
+      echo "Error: Required command '$cmd' not found."
+      return 1
+    fi
+  done
+
+  if [[ ! -f "$PROJECTS_MANIFEST" ]]; then
+    echo "Manifest file not found. Please run gh_project_manifest first."
+    return 1
+  fi
+
+  # Read data from manifest
+  local project_number=$(jq -r '.project_number' "$PROJECTS_MANIFEST")
+  local username=$(jq -r '.username' "$PROJECTS_MANIFEST")
+  local repos=$(jq -r '.repositories[]' "$PROJECTS_MANIFEST")
+  local project_url="https://github.com/users/$username/projects/$project_number"
+
+  # Create a temporary working directory
+  local temp_dir=$(mktemp -d)
+  echo "Created temporary directory: $temp_dir"
+  echo "Adding workflow files to repositories..."
+
+  # Process each repository
+  for repo in ${(f)repos}; do
+    # Skip empty lines if any
+    [[ -z "$repo" ]] && continue
+
+    # Owner and name are implicitly handled by gh repo clone with owner/name format
+    echo "Processing $repo..."
+
+    # Extract repo name for path creation
+    local name=$(echo "$repo" | cut -d '/' -f2)
+    local repo_path="$temp_dir/$name"
+
+    # Clone the repository using the full owner/name
+    # Ensure gh repo clone uses the correct 'repo' variable
+    if ! gh repo clone "$repo" "$repo_path" -- --quiet 2>/dev/null; then
+      echo "  ✗ Failed to clone repository '$repo'. Skipping."
+      # Attempt to capture clone error
+      local clone_error=$(gh repo clone "$repo" "$repo_path" -- --quiet 2>&1 >/dev/null)
+      if [[ -n "$clone_error" ]]; then
+          echo "    Error: $clone_error"
+      fi
+      continue
+    fi
+
+    pushd "$repo_path" > /dev/null
+
+    # Create the workflow directory if it doesn't exist
+    mkdir -p .github/workflows
+    local workflow_file=".github/workflows/project-automation.yml"
+
+    # Create the workflow file content
+    local workflow_content
+    workflow_content="$(cat <<EOF
+# Add issues to GitHub project automatically
+name: Add to Project
+
+on:
+  issues:
+    types:
+      - opened
+
+jobs:
+  add-to-project:
+    name: Add issue to project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/add-to-project@v0.5.0
+        with:
+          project-url: $project_url
+          github-token: \\\${{ secrets.PROJECT_TOKEN }}
+EOF
+)"
+
+    # Check if the workflow file already exists with the exact content
+    if [[ -f "$workflow_file" ]] && diff -q <(echo "$workflow_content") "$workflow_file" &> /dev/null; then
+      echo "  ✓ Workflow file already exists and is up-to-date."
+      popd > /dev/null
+      continue
+    fi
+
+    # Write the workflow file
+    echo "$workflow_content" > "$workflow_file"
+
+    # Create a new branch
+    local branch_name="bot/add-project-automation-$(date +%s)"
+    git checkout -b "$branch_name"
+
+    # Add and commit the file
+    git add "$workflow_file"
+    git commit -m "Add GitHub Project automation workflow"
+
+    # Push and create PR
+    if git push -u origin "$branch_name"; then
+      if gh pr create --title "Add GitHub Project automation workflow" --body "Automatically adds new issues to the project $project_url" --head "$branch_name"; then
+        echo "  ✓ Created PR for project automation workflow"
+      else
+        echo "  ✗ Failed to create PR"
+      fi
+    else
+      echo "  ✗ Failed to push changes"
+    fi
+
+    # Go back to original directory
+    popd > /dev/null
+  done
+
+  # Clean up
+  echo "Cleaning up temporary directory..."
+  rm -rf "$temp_dir"
+
+  echo "Done! PRs have been created for repositories that needed the workflow file."
+  echo
+  echo "IMPORTANT: You need to add a PROJECT_TOKEN secret to each repository."
+  echo "1. Create a Personal Access Token at https://github.com/settings/tokens"
+  echo "   with 'project' scope permissions"
+  echo "2. Add this token as a secret named 'PROJECT_TOKEN' in each repository's settings"
+}
+
+# Alias for adding workflow files
+alias gh_workflows="gh_project_add_workflows"
+
+# Function to set the PROJECT_TOKEN secret in multiple repositories
+gh_project_set_token() {
+  # Check for necessary tools
+  for cmd in gh jq read; do
+    if ! command -v $cmd &> /dev/null; then
+      echo "Error: Required command '$cmd' not found."
+      return 1
+    fi
+  done
+
+  if [[ ! -f "$PROJECTS_MANIFEST" ]]; then
+    echo "Manifest file not found. Please run gh_project_manifest first."
+    return 1
+  fi
+
+  echo "Reading repositories from $PROJECTS_MANIFEST..."
+
+  # Read the full JSON content
+  local manifest_content=$(cat "$PROJECTS_MANIFEST")
+
+  # Get unique owners
+  local owners=$(echo "$manifest_content" | jq -r '.repositories[] | split("/")[0]' | sort | uniq)
+
+  if [[ -z "$owners" ]]; then
+    echo "No repositories found in the manifest."
+    return 1
+  fi
+
+  local total_success_count=0
+  local total_fail_count=0
+
+  # Process each owner separately
+  for owner in ${(f)owners}; do
+    echo "\nProcessing repositories for owner: $owner"
+
+    # Prompt for the Personal Access Token for this owner
+    local project_token
+    echo -n "Please enter the GitHub PAT for owner '$owner' (with 'repo' and 'project' scopes): "
+    # Read the token securely without echoing to the terminal
+    read -s project_token
+    echo # Add a newline after the user presses Enter
+
+    if [[ -z "$project_token" ]]; then
+      echo "Error: No token provided for owner '$owner'. Skipping."
+      continue
+    fi
+
+    # Get repositories for the current owner
+    local repos_for_owner=$(echo "$manifest_content" | jq -r --arg current_owner "$owner" '.repositories[] | select(startswith($current_owner + "/"))')
+
+    if [[ -z "$repos_for_owner" ]]; then
+        echo "No repositories found for owner '$owner' in the manifest."
+        continue
+    fi
+
+    echo "Setting PROJECT_TOKEN secret for '$owner' repositories..."
+
+    local owner_success_count=0
+    local owner_fail_count=0
+
+    # Process each repository for this owner
+    for repo in ${(f)repos_for_owner}; do
+      echo -n "  Setting secret for $repo... "
+      # Use gh secret set. The token value is passed via stdin for security.
+      # Use the specific token for this owner
+      if echo "$project_token" | gh secret set PROJECT_TOKEN --repo "$repo" --body - &> /dev/null; then
+        echo "✓ Success"
+        ((owner_success_count++))
+      else
+        echo "✗ Failed"
+        # Attempt to capture potential error message from stderr
+        local error_message=$(echo "$project_token" | gh secret set PROJECT_TOKEN --repo "$repo" --body - 2>&1 >/dev/null)
+        if [[ -n "$error_message" ]]; then
+            echo "    Error: $error_message"
+        fi
+        ((owner_fail_count++))
+      fi
+    done
+
+    echo "Finished setting secrets for owner '$owner'."
+    echo "  Successful: $owner_success_count"
+    echo "  Failed:     $owner_fail_count"
+
+    ((total_success_count += owner_success_count))
+    ((total_fail_count += owner_fail_count))
+
+  done # End of owner loop
+
+  echo "\nTotal Secret Setting Summary:"
+  echo "Successful: $total_success_count"
+  echo "Failed:     $total_fail_count"
+
+  if [[ $total_fail_count -gt 0 ]]; then
+    echo "\nFailures might be due to incorrect permissions for the token provided for that owner, the repository not existing, or other API issues."
+  fi
+}
+
+# Alias for setting the project token
+alias gh_token="gh_project_set_token"
 
 
 
