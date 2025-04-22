@@ -1,5 +1,43 @@
 #!/bin/sh
 
+# Install mas (Mac App Store CLI) if not already installed
+if ! command -v mas &> /dev/null; then
+    echo "Installing mas (Mac App Store CLI)..."
+    brew install mas
+fi
+
+# Check if Xcode Command Line Tools are installed
+if ! xcode-select -p &>/dev/null; then
+    echo "Installing Xcode Command Line Tools..."
+    xcode-select --install
+    
+    # Wait for Xcode Command Line Tools installation to complete
+    echo "Waiting for Xcode Command Line Tools installation to complete..."
+    while ! xcode-select -p &>/dev/null; do
+        sleep 5
+    done
+else
+    echo "Xcode Command Line Tools already installed"
+fi
+
+# Check if Xcode is installed
+if [ ! -d "/Applications/Xcode.app" ]; then
+    echo "Installing Xcode..."
+    mas install 497799835
+    
+    # Wait for Xcode installation to complete
+    echo "Waiting for Xcode installation to complete..."
+    while [ ! -d "/Applications/Xcode.app" ]; do
+        sleep 5
+    done
+else
+    echo "Xcode already installed"
+fi
+
+# Accept Xcode license
+echo "Accepting Xcode license..."
+sudo xcodebuild -license accept
+
 brew install --cask telegram
 brew install ack
 brew install cocoapods
