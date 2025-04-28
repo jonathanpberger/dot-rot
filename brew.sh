@@ -38,22 +38,29 @@ fi
 echo "Accepting Xcode license..."
 sudo xcodebuild -license accept
 
+brew install --cask diffusionbee
 brew install --cask telegram
+brew install --cask visual-studio-code
 brew install ack
 brew install cocoapods
 brew install cowsay
+brew install docker
 brew install emojify
 brew install firefox
 brew install flycut
+brew install font-meslo-for-powerline
 brew install font-noto
 brew install font-noto-sans
 brew install font-noto-serif
 brew install font-san-francisco
 brew install font-sanfrancisco
 brew install font-sf
+brew install gcalcli
 brew install imageoptim
-brew install iterm2
+brew install keith/formulae/reminders-cli
 brew install keycastr
+brew install mise
+brew install nvim
 brew install pd
 brew install phoenix
 brew install powerline-go
@@ -62,18 +69,16 @@ brew install signal
 brew install skitch
 brew install slack
 brew install tree
+brew install warp
+brew install wget
 brew install whatsapp
 brew install zoom
-brew install --cask visual-studio-code
-brew install docker
 brew tap homebrew/cask-fonts         # You only need to do this once!
-brew install font-meslo-for-powerline
-brew install --cask diffusionbee
-brew install nvim
-brew install wget
-brew install gcalcli
-brew install keith/formulae/reminders-cli
 
 echo " ****\n ****** don't forget to install https://www.lazyvim.org/installation \n ****\n"
 echo " ****\n ****** brew install chromeless is broken. DL the dmg: https://github.com/webcatalog/chromeless/releases \n ****\n"
 echo " ****\n ****** go get -u github.com/open-pomodoro/openpomodoro-cli/cmd/pomodoro \n ****\n"
+
+defaults delete com.apple.HIToolbox AppleEnabledInputSources
+defaults delete com.apple.HIToolbox AppleInputSourceHistory
+defaults delete com.apple.HIToolbox AppleSelectedInputSources

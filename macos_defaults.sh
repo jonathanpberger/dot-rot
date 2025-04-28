@@ -124,21 +124,44 @@ echo "###### Setting System prefs"
 # Keyboard & Input                                                            #
 ###############################################################################
 
+# First, clear out all existing input sources to prevent duplicates
+defaults delete com.apple.HIToolbox AppleEnabledInputSources 2>/dev/null
+defaults delete com.apple.HIToolbox AppleInputSourceHistory 2>/dev/null
+defaults delete com.apple.HIToolbox AppleSelectedInputSources 2>/dev/null
+
 # Set Caps Lock to Control
 defaults write -g TISInputSourceManager -dict-add "AppleGlobalTextInputProperties" -dict-add "TextInputGlobalPropertyPerContextInput" -bool true
+
+# Set up keyboard layouts (US and Dvorak) - using a clean single array
+defaults write com.apple.HIToolbox AppleEnabledInputSources -array \
+    '<dict>
+        <key>InputSourceKind</key>
+        <string>Keyboard Layout</string>
+        <key>KeyboardLayout ID</key>
+        <integer>0</integer>
+        <key>KeyboardLayout Name</key>
+        <string>U.S.</string>
+    </dict>' \
+    '<dict>
+        <key>InputSourceKind</key>
+        <string>Keyboard Layout</string>
+        <key>KeyboardLayout ID</key>
+        <integer>16300</integer>
+        <key>KeyboardLayout Name</key>
+        <string>Dvorak</string>
+    </dict>'
+
+# Set the current input source to U.S.
 defaults write com.apple.HIToolbox AppleCurrentKeyboardLayoutInputSourceID -string "com.apple.keylayout.US"
-defaults write com.apple.HIToolbox AppleInputSourceHistory -array-add '<dict><key>InputSourceKind</key><string>Keyboard Layout</string><key>KeyboardLayout ID</key><integer>0</integer><key>KeyboardLayout Name</key><string>U.S.</string></dict>'
-defaults write com.apple.HIToolbox AppleSelectedInputSources -array-add '<dict><key>InputSourceKind</key><string>Keyboard Layout</string><key>KeyboardLayout ID</key><integer>0</integer><key>KeyboardLayout Name</key><string>U.S.</string></dict>'
-defaults write com.apple.HIToolbox AppleEnabledInputSources -array-add '<dict><key>InputSourceKind</key><string>Keyboard Layout</string><key>KeyboardLayout ID</key><integer>0</integer><key>KeyboardLayout Name</key><string>U.S.</string></dict>'
-defaults write com.apple.HIToolbox AppleModifierMapping -array-add '<dict><key>HIDKeyboardModifierMappingSrc</key><integer>0</integer><key>HIDKeyboardModifierMappingDst</key><integer>2</integer></dict>'
 
-# Disable smart quotes and dashes as they're annoying when typing code
-# defaults write NSGlobalDomain NSAutomaticQuoteSubstitutionEnabled -bool false
-# defaults write NSGlobalDomain NSAutomaticDashSubstitutionEnabled -bool false
-
-# Enable full keyboard access for all controls
-# (e.g. enable Tab in modal dialogs)
-defaults write NSGlobalDomain AppleKeyboardUIMode -int 3
+# Set the modifier mapping for Caps Lock to Control
+defaults write com.apple.HIToolbox AppleModifierMapping -array \
+    '<dict>
+        <key>HIDKeyboardModifierMappingSrc</key>
+        <integer>0</integer>
+        <key>HIDKeyboardModifierMappingDst</key>
+        <integer>2</integer>
+    </dict>'
 
 # Disable press-and-hold for keys in favor of key repeat
 defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
@@ -153,21 +176,9 @@ defaults write com.apple.BezelServices kDim -bool true
 # Turn off keyboard illumination when computer is not used for 5 minutes
 defaults write com.apple.BezelServices kDimTime -int 300
 
-# Disable auto-correct
-# defaults write NSGlobalDomain NSAutomaticSpellingCorrectionEnabled -bool false
-
-###############################################################################
-# Set keyboard to Dvorak // from https://apple.stackexchange.com/questions/127246/mavericks-how-to-add-input-source-via-plists-defaults
-###############################################################################
-
-  # From  `$ defaults find keyboard | less`
-  #        InputSourceKind = "Keyboard Layout";
-  #           "KeyboardLayout ID" = 16300;
-  #           "KeyboardLayout Name" = Dvorak;
-
-defaults write com.apple.HIToolbox AppleEnabledInputSources -array-add '<dict><key>InputSourceKind</key><string>Keyboard Layout</string><key>KeyboardLayout ID</key><integer>16300</integer><key>KeyboardLayout Name</key><string>Dvorak</string></dict>'
-
 echo "###### Setting Keyboard & Input"
+
+# Note: You'll need to log out and back in for these changes to take full effect
 
 ###############################################################################
 # Trackpad, mouse, Bluetooth accessories                                      #
