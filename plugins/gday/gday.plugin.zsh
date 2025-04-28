@@ -246,6 +246,12 @@ function gday() {
     🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
 
   # Prompts and sections
+  local hearts_desire_EOB="## 🧞‍♂️ What is top-of-mind for 🐲? What do the want rn?"
+  local hearts_desire_EAB="## 🧞‍♂️ What is top-of-mind for 🦅🦁? What do the want rn?"
+  local hearts_desire_EMB="## 🧞‍♂️ What is top-of-mind for 🦄? What do the want rn?"
+  local hearts_desire_ELB="## 🧞‍♂️ What is top-of-mind for 🐴🪽? What do the want rn?"
+  local hearts_desire_KWB="## 🧞‍♂️ What is top-of-mind for KWB? What do the want rn?"
+  local hearts_desire_JPB="## 🧞‍♂️ What is top-of-mind for JPB? What do the want rn?"
   local spoons="## 🥄 What did you spend spoons on yesterday?"
   local yday="## 🚢 What did you ship yesterday?"
   local wild="## 🃏 What Wildcards are in play today?"
@@ -375,6 +381,12 @@ done
   fi
 
   echo -e "${dateline}\n\n"
+  echo -e "${hearts_desire_EOB}\n\n"
+  echo -e "${hearts_desire_EAB}\n\n"
+  echo -e "${hearts_desire_EMB}\n\n"
+  echo -e "${hearts_desire_ELB}\n\n"
+  echo -e "${hearts_desire_KWB}\n\n"
+  echo -e "${hearts_desire_JPB}\n\n"
   echo -e "${spoons}\n\n\n\n"
   echo -e "${yday}\n\n\n\n"
   echo -e "${wild}\n\n\n\n"
