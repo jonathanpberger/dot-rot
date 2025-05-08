@@ -111,6 +111,7 @@ GCAL_CALENDARS=(
   "Pomo"
   "JPB Private"
   "Berger Appointments"
+  "Wildcards"
 )
 
 # Helper function to validate calendars
@@ -195,11 +196,11 @@ function gday() {
       # Convert input to lowercase and capitalize first letter for display
       day_lower=$(echo "$1" | tr '[:upper:]' '[:lower:]')
       day_display=$(echo "${day_lower^}")
-      
+
       # Find the most recent occurrence of the specified day
       # On macOS, we use date -v to adjust the date
       current_day=$(date "+%A" | tr '[:upper:]' '[:lower:]')
-      
+
       if [[ "$current_day" == "$day_lower" ]]; then
         # If today is the requested day, just use today
         date_arg="today"
@@ -209,7 +210,7 @@ function gday() {
         # Calculate days ago - first get day numbers (0=Sunday, 6=Saturday)
         current_day_num=$(date "+%w")
         target_day_num=0
-        
+
         case "$day_lower" in
           monday) target_day_num=1 ;;
           tuesday) target_day_num=2 ;;
@@ -219,13 +220,13 @@ function gday() {
           saturday) target_day_num=6 ;;
           sunday) target_day_num=0 ;;
         esac
-        
+
         # Calculate days to go back
         days_ago=$(( ($current_day_num - $target_day_num + 7) % 7 ))
         if [[ $days_ago -eq 0 ]]; then
           days_ago=7  # If calculated as 0, we want the previous week
         fi
-        
+
         # Set the date argument
         date_arg="$days_ago days ago"
         display_date=$(date -v "-${days_ago}d" "+%m/%d - %A")
