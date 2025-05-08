@@ -243,7 +243,7 @@ function gday() {
   # Banner and version
   local GDAY_BANNER="
     🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞
-    🌞🌞🌞    gday Version 3.4.2    🌞🌞🌞
+    🌞🌞🌞    gday Version 3.4.5    🌞🌞🌞
     🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
 
   # Prompts and sections
@@ -291,7 +291,30 @@ function gday() {
     calendar_args+="--cal \"$cal\" "
   done
 
-  # Use pipx-installed gcalcli
+  # Calculate target date for filtering events
+  local target_day=""
+  local target_month=""
+  local target_date=""
+  
+  if [[ "$date_arg" == "today" ]]; then
+    target_day=$(date "+%a")     # Day of week (e.g., "Thu")
+    target_month=$(date "+%b")   # Month (e.g., "May")
+    target_date=$(date "+%d")    # Day number (e.g., "08")
+  elif [[ "$date_arg" == "yesterday" ]]; then
+    target_day=$(date -v -1d "+%a")
+    target_month=$(date -v -1d "+%b")
+    target_date=$(date -v -1d "+%d")
+  elif [[ "$date_arg" =~ ([0-9]+)\ days\ ago ]]; then
+    local days_ago=${BASH_REMATCH[1]}
+    target_day=$(date -v "-${days_ago}d" "+%a")
+    target_month=$(date -v "-${days_ago}d" "+%b")
+    target_date=$(date -v "-${days_ago}d" "+%d")
+  fi
+
+  # Create day format for comparison
+  local day_format="$target_day $target_month $target_date"
+
+  # Use pipx-installed gcalcli with wider date range to capture multi-day events
   local gcalcli_cmd="gcalcli $calendar_args agenda \"1am $date_arg\" \"11pm $date_arg\" --nocolor --no-military --details length"
 
   echo "~~~ running this gcalcli command for $date_arg ~~~\n\n    $gcalcli_cmd\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n\n"
@@ -321,12 +344,52 @@ while IFS= read -r line; do
     echo $new_time | sed 's/^0//' | tr '[:upper:]' '[:lower:]'
   }
 
-  # Check for all-day events that don't start with a time
-  # They typically start with the date and have "******" marker
+  # Check for all-day events in various formats
+  
+  # First, directly check if the line contains asterisks (common all-day event marker)
   if [[ $line == *"******"* ]]; then
     local item=$(echo "$line" | sed -E 's/^[A-Za-z]+ [A-Za-z]+ [0-9]+[[:space:]]+\*+[[:space:]]+//')
     all_day_events+=("all-day|📅 $item (All-day)")
     continue
+  fi
+  
+  # Check if this line has our target date format (e.g., "Wed May 07")
+  # After a date line, there might be all-day events without time stamps
+  if [[ $line == "$target_day $target_month $target_date"* || $line == *"$target_month $target_date"* ]]; then
+    # Debug output
+    echo "DEBUG: Found matching date line: $line" >&2
+    
+    # Keep reading subsequent lines until we find a time-based event
+    while IFS= read -r next_line; do
+      next_line=$(echo "$next_line" | sed 's/^[ \t]*//') # trim whitespace
+      
+      # Debug output
+      echo "DEBUG: Reading subsequent line: $next_line" >&2
+      
+      # If we find a line with asterisks, it's an all-day event
+      if [[ $next_line == *"******"* ]]; then
+        local item=$(echo "$next_line" | sed 's/^[[:space:]]*\*\+[[:space:]]*//')
+        all_day_events+=("all-day|📅 $item (All-day)")
+        continue
+      fi
+      
+      # If we find a line without a time stamp, it could be an all-day event
+      if [[ ! $next_line =~ ^[0-9]{1,2}:[0-9]{2}[apm]{2} && -n "$next_line" && $next_line != *"No Events"* ]]; then
+        # Check if it's not a date line for a different day
+        if [[ ! $next_line =~ ^[A-Za-z]{3}\ [A-Za-z]{3}\ [0-9]{2} ]]; then
+          # It's probably an all-day event
+          all_day_events+=("all-day|📅 $next_line (All-day)")
+        else
+          # It's a date line for a different day, stop processing
+          line="$next_line"
+          break
+        fi
+      else
+        # We found a time-based event or empty line, so we're done with all-day events
+        line="$next_line"
+        break
+      fi
+    done
   fi
 
   if [[ $line =~ ^[0-9]{1,2}:[0-9]{2}[apm]{2} ]]; then # if line starts with time
