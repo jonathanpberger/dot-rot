@@ -49,6 +49,11 @@ alias unremote="no_remote"
 alias yday="git_yesterday_report"
 alias projectsinprojects="github_project_repos"
 
+# Define the function silently using function keyword
+function claude {
+  "/Users/jpb/.claude/local/claude" "$@"
+}
+
 vibes() {
   cursor --status | grep "^|    Folder" | awk '{gsub(/[():]/, "", $3); print "- " $3}' | sort
 }
@@ -798,6 +803,3 @@ gh_project_set_token() {
 
 # Alias for setting the project token
 alias gh_token="gh_project_set_token"
-
-
-
