@@ -75,17 +75,23 @@ generate_later_today_h2s() {
     }
     function normalize(str) {
       gsub(/[^a-zA-Z0-9 ]/, "", str)
-      return str
+      gsub(/^ +| +$/, "", str)  # Trim leading/trailing whitespace
+      gsub(/ +/, " ", str)      # Normalize spaces
+      return tolower(str)       # Case-insensitive comparison
     }
     /^\| [0-9]/ {
       line = $0
       sub(/^\|[^|]+\| /, "## ", line)  # Remove everything up to the title
       sub(/ \|$/, "", line)  # Remove trailing pipe
 
-      # Check against our list of filtered appointments
+      # Extract appointment title for exact matching
+      title = line
+      sub(/^## /, "", title)  # Remove the ## prefix
+
+      # Check against our list of filtered appointments with exact matching
       skip = 0
       for (i in appts) {
-        if (index(line, appts[i]) > 0) {
+        if (normalize(title) == normalize(appts[i])) {
           skip = 1
           break
         }
@@ -178,10 +184,6 @@ FILTERED_APPOINTMENTS=(
 function gday() {
 
   case "$1" in
-    foo)
-      echo "FOOOOOOOOOOOOOOOOOOOOOOO"
-      return
-      ;;
     auth)
       echo "Removing gcalcli OAuth token..."
       touch ~/.gcalcli_oauth
@@ -246,7 +248,7 @@ function gday() {
   # Banner and version
   local GDAY_BANNER="
     🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞
-    🌞🌞🌞    gday Version 3.4.5    🌞🌞🌞
+    🌞🌞🌞    gday Version 3.5.0    🌞🌞🌞
     🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
 
   # Prompts and sections
@@ -298,7 +300,7 @@ function gday() {
   local target_day=""
   local target_month=""
   local target_date=""
-  
+
   if [[ "$date_arg" == "today" ]]; then
     target_day=$(date "+%a")     # Day of week (e.g., "Thu")
     target_month=$(date "+%b")   # Month (e.g., "May")
@@ -348,34 +350,34 @@ while IFS= read -r line; do
   }
 
   # Check for all-day events in various formats
-  
+
   # First, directly check if the line contains asterisks (common all-day event marker)
   if [[ $line == *"******"* ]]; then
     local item=$(echo "$line" | sed -E 's/^[A-Za-z]+ [A-Za-z]+ [0-9]+[[:space:]]+\*+[[:space:]]+//')
     all_day_events+=("all-day|📅 $item (All-day)")
     continue
   fi
-  
+
   # Check if this line has our target date format (e.g., "Wed May 07")
   # After a date line, there might be all-day events without time stamps
   if [[ $line == "$target_day $target_month $target_date"* || $line == *"$target_month $target_date"* ]]; then
     # Debug output
-    echo "DEBUG: Found matching date line: $line" >&2
-    
+    # echo "DEBUG: Found matching date line: $line" >&2
+
     # Keep reading subsequent lines until we find a time-based event
     while IFS= read -r next_line; do
       next_line=$(echo "$next_line" | sed 's/^[ \t]*//') # trim whitespace
-      
+
       # Debug output
-      echo "DEBUG: Reading subsequent line: $next_line" >&2
-      
+      # echo "DEBUG: Reading subsequent line: $next_line" >&2
+
       # If we find a line with asterisks, it's an all-day event
       if [[ $next_line == *"******"* ]]; then
         local item=$(echo "$next_line" | sed 's/^[[:space:]]*\*\+[[:space:]]*//')
         all_day_events+=("all-day|📅 $item (All-day)")
         continue
       fi
-      
+
       # If we find a line without a time stamp, it could be an all-day event
       if [[ ! $next_line =~ ^[0-9]{1,2}:[0-9]{2}[apm]{2} && -n "$next_line" && $next_line != *"No Events"* ]]; then
         # Check if it's not a date line for a different day
