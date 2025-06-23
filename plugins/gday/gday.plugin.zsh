@@ -165,10 +165,13 @@ validate_calendars() {
 
 # Filtered appointments
 FILTERED_APPOINTMENTS=(
-  "🍜 Lunch"  # Lunch
-  "📓 Boys do homework while adult cooks"
-  "🍅"
   " Elias Allergy Shots"
+  "Somatic Call with Jenna"
+  "☀️❤️😘 after maria takes Esz: JPB / KW standup"
+  "🍅"
+  "🍜 Lunch"
+  "🏋️ JPB workout / 📔 morning pages"
+  "📓 Boys do homework while adult cooks"
   "🤼‍♀️ Elias tap outs"
 )
 
