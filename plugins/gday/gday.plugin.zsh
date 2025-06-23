@@ -105,6 +105,7 @@ generate_later_today_h2s() {
       }
     }
     END {
+      print "## Been Reading..."
       print "```"
       print ""
     }
@@ -248,7 +249,7 @@ function gday() {
   # Banner and version
   local GDAY_BANNER="
     🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞
-    🌞🌞🌞    gday Version 3.5.0    🌞🌞🌞
+    🌞🌞🌞    gday Version 3.6.0    🌞🌞🌞
     🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
 
   # Prompts and sections
