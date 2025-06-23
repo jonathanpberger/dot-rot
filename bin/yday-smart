@@ -1,0 +1,176 @@
+#!/bin/zsh
+# yday-smart - Smart git activity reporter
+# Shows previous day's activity normally, but on Mondays shows the whole previous week
+
+# Check if today is Monday (1 = Monday in date's %u format)
+is_monday=0
+if [ $(date +"%u") -eq 1 ]; then
+  is_monday=1
+
+  # On Mondays, run areview to show weekly digest in Alastair Method format
+  # But show the previous week (not the current week)
+  echo "It's Monday! Showing weekly digest for last week using Alastair Method format..."
+
+  # Create a temporary script to show the previous week's activity
+  TMP_SCRIPT=$(mktemp)
+  cat ~/workspace/dot-rot/bin/alastair-review > $TMP_SCRIPT
+
+  # Modify the temp script to look at the previous week (add 7 to days_back)
+  sed -i '' 's/days_back=$((day_of_week - 1))/days_back=$((day_of_week - 1 + 7))/' $TMP_SCRIPT
+
+  # Run the modified script
+  chmod +x $TMP_SCRIPT
+  $TMP_SCRIPT
+
+  # Clean up
+  rm $TMP_SCRIPT
+  exit 0
+fi
+
+# Set date ranges based on whether it's Monday or not
+today=$(date +"%Y-%m-%d")
+yesterday=$(date -v-1d +"%Y-%m-%d")
+last_week_start=""
+last_week_end=""
+date_range=""
+
+if [ $is_monday -eq 1 ]; then
+  # For Mondays, get the entire previous week (Monday through Sunday)
+  last_week_start=$(date -v-1w -v-mon +"%Y-%m-%d")
+  last_week_end=$(date -v-1d +"%Y-%m-%d") # Yesterday (Sunday)
+  date_range="$last_week_start to $last_week_end"
+else
+  # For other days, just use yesterday
+  last_week_start=$yesterday
+  last_week_end=$today
+  date_range=$yesterday
+fi
+
+# Initialize variables
+found=0
+all_projects=()
+all_commits=()
+all_summaries=()
+max_project_len=12  # "Project [WT]" header length
+max_commits_len=7   # "Commits" header length
+
+# Print report header
+if [ $is_monday -eq 1 ]; then
+  echo "Weekly Git Activity Report ($date_range):"
+else
+  echo "Git Activity Report for $date_range:"
+fi
+
+# First pass - collect data from standard git repositories (directories with .git directory)
+for repo in $(find ~/workspace -type d -name ".git" -maxdepth 3 | sort); do
+  repo_dir=$(dirname "$repo")
+  project=$(basename "$repo_dir")
+
+  # Get commits for the specified date range
+  commits=$(git -C "$repo_dir" log --oneline --after="$last_week_start 00:00" --before="$last_week_end 00:00" 2>/dev/null)
+
+  if [[ -n "$commits" ]]; then
+    commit_count=$(echo "$commits" | wc -l | tr -d ' ')
+    summary=""
+
+    # For weekly reports, show more commits in the summary
+    if [ $is_monday -eq 1 ]; then
+      summary=$(echo "$commits" | head -5 | sed 's/^[^ ]* //' | sed 's/^/• /' | tr '\n' ' ')
+    else
+      summary=$(echo "$commits" | head -3 | sed 's/^[^ ]* //' | sed 's/^/• /' | tr '\n' ' ')
+    fi
+
+    # Truncate if too long
+    if [[ ${#summary} -gt 80 ]]; then
+      summary="${summary:0:77}..."
+    fi
+
+    all_projects+=("$project")
+    all_commits+=("$commit_count")
+    all_summaries+=("$summary")
+
+    # Update max widths
+    if [[ ${#project} -gt $max_project_len ]]; then
+      max_project_len=${#project}
+    fi
+    if [[ ${#commit_count} -gt $max_commits_len ]]; then
+      max_commits_len=${#commit_count}
+    fi
+
+    ((found++))
+  fi
+done
+
+# Second pass - collect data from git worktrees (directories with .git file)
+for git_file in $(find ~/workspace -type f -name ".git" -maxdepth 3 | sort); do
+  repo_dir=$(dirname "$git_file")
+  project=$(basename "$repo_dir")
+
+  # Get commits for the specified date range
+  commits=$(git -C "$repo_dir" log --oneline --after="$last_week_start 00:00" --before="$last_week_end 00:00" 2>/dev/null)
+
+  if [[ -n "$commits" ]]; then
+    commit_count=$(echo "$commits" | wc -l | tr -d ' ')
+    summary=""
+
+    # For weekly reports, show more commits in the summary
+    if [ $is_monday -eq 1 ]; then
+      summary=$(echo "$commits" | head -5 | sed 's/^[^ ]* //' | sed 's/^/• /' | tr '\n' ' ')
+    else
+      summary=$(echo "$commits" | head -3 | sed 's/^[^ ]* //' | sed 's/^/• /' | tr '\n' ' ')
+    fi
+
+    # Truncate if too long
+    if [[ ${#summary} -gt 80 ]]; then
+      summary="${summary:0:77}..."
+    fi
+
+    # Add "[WT]" suffix to indicate it's a worktree
+    wt_project="$project [WT]"
+
+    all_projects+=("$wt_project")
+    all_commits+=("$commit_count")
+    all_summaries+=("$summary")
+
+    # Update max widths
+    if [[ ${#wt_project} -gt $max_project_len ]]; then
+      max_project_len=${#wt_project}
+    fi
+    if [[ ${#commit_count} -gt $max_commits_len ]]; then
+      max_commits_len=${#commit_count}
+    fi
+
+    ((found++))
+  fi
+done
+
+# Print table with proper formatting
+project_header=$(printf "%-${max_project_len}s" "Project")
+commits_header=$(printf "%-${max_commits_len}s" "Commits")
+echo "| $project_header | $commits_header | Summary |"
+
+separator_project=$(printf '%0.s-' $(seq 1 $max_project_len))
+separator_commits=$(printf '%0.s-' $(seq 1 $max_commits_len))
+echo "| $separator_project | $separator_commits | --------- |"
+
+if [[ $found -eq 0 ]]; then
+  empty_project=$(printf "%-${max_project_len}s" "-")
+  empty_commits=$(printf "%-${max_commits_len}s" "-")
+  if [ $is_monday -eq 1 ]; then
+    echo "| $empty_project | $empty_commits | No commits found for last week |"
+  else
+    echo "| $empty_project | $empty_commits | No commits found for yesterday |"
+  fi
+else
+  for i in $(seq 0 $(($found - 1))); do
+    padded_project=$(printf "%-${max_project_len}s" "${all_projects[$i]}")
+    padded_commits=$(printf "%-${max_commits_len}s" "${all_commits[$i]}")
+    echo "| $padded_project | $padded_commits | ${all_summaries[$i]} |"
+  done
+fi
+
+if [ $is_monday -eq 1 ]; then
+  echo "\nTotal projects with activity last week: $found"
+else
+  echo "\nTotal projects with activity: $found"
+fi

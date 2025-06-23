@@ -1,0 +1,204 @@
+#!/bin/zsh
+# alastair-review - Generate a weekly review in Alastair Method format
+# Based on git activity for the past 7 days
+
+# Set error handling
+set -o pipefail
+
+# Config
+WORKSPACE="$HOME/workspace"
+DAYS_TO_ANALYZE=7
+
+# Get date information
+echo "Calculating date range..."
+today=$(date +"%Y-%m-%d")
+day_of_week=$(date +"%u") # 1=Monday, 7=Sunday
+
+# Calculate days back to Monday (start of week)
+days_back=$((day_of_week - 1))
+[[ $days_back -lt 0 ]] && days_back=0
+
+# Calculate week dates
+monday=$(date -v-${days_back}d +"%Y-%m-%d")
+sunday=$(date -v-${days_back}d -v+6d +"%Y-%m-%d")
+
+# Format for display
+start_date=$(date -v-${days_back}d +"%b %d")
+end_date=$(date -v-${days_back}d -v+6d +"%b %d, %Y")
+
+echo "Generating Alastair Method weekly review for $start_date - $end_date..."
+
+# Initialize data structures
+typeset -A project_activity       # Tracks if project has activity
+typeset -A project_days           # Tracks activity by day
+typeset -A project_display_names  # Formatted project names
+typeset -A project_summaries      # Commit summaries
+typeset -A project_day_counts     # Count of active days
+
+# Function to check if repository is valid
+is_valid_repo() {
+  local repo_path="$1"
+
+  # Skip missing directories
+  [[ ! -d "$repo_path" ]] && return 1
+
+  # Skip if it's the current directory (".")
+  [[ "$repo_path" == "." || "$repo_path" == ".." ]] && return 1
+
+  # Try git status to see if it's a valid repo
+  (cd "$repo_path" && git rev-parse --is-inside-work-tree &>/dev/null)
+  return $?
+}
+
+# Function to process a git repository
+process_repo() {
+  local repo_path="$1"
+  local project_name="$2"
+
+  # Verify repo exists and is a git repository
+  if ! is_valid_repo "$repo_path"; then
+    return 1
+  fi
+
+  # Initialize tracking for this project
+  project_display_names[$project_name]="++${project_name//-/_}"
+  project_day_counts[$project_name]=0
+
+  # Get all commits for the week
+  local week_start="$monday"
+  local week_end=$(date -v+1d -j -f "%Y-%m-%d" "$sunday" +"%Y-%m-%d")
+
+  local weekly_commits=$(cd "$repo_path" && git log --date=short --pretty=format:"%ad %s" --after="$week_start 00:00" --before="$week_end 00:00" 2>/dev/null)
+
+  # Skip if no activity
+  if [[ -z "$weekly_commits" ]]; then
+    return 1
+  fi
+
+  # Store weekly commits for details section
+  project_activity[$project_name]=1
+  project_summaries[$project_name]="$weekly_commits"
+
+  # Check activity for each day of the week
+  for day_offset in {0..6}; do
+    local day_date=$(date -v-${days_back}d -v+${day_offset}d +"%Y-%m-%d")
+    local next_date=$(date -v-${days_back}d -v+$((day_offset+1))d +"%Y-%m-%d")
+
+    local day_commits=$(cd "$repo_path" && git log --oneline --after="$day_date 00:00" --before="$next_date 00:00" 2>/dev/null)
+
+    if [[ -n "$day_commits" ]]; then
+      project_days[$project_name,$day_offset]="/"
+      project_day_counts[$project_name]=$((project_day_counts[$project_name] + 1))
+    else
+      project_days[$project_name,$day_offset]="·"
+    fi
+  done
+
+  echo "✓ Found activity in: $project_name"
+  return 0
+}
+
+# Process your two specific repositories first
+echo "Checking specific repositories..."
+process_repo "$WORKSPACE/ios-claude-pong" "ios-claude-pong"
+process_repo "$WORKSPACE/bad_friend-jumpstart_pro" "bad_friend-jumpstart_pro"
+
+# Process standard git repositories
+echo "Scanning for git repositories..."
+for repo_path in $(find "$WORKSPACE" -type d -name ".git" -maxdepth 3 2>/dev/null | grep -v "/\.git/" | sort); do
+  dir_path=$(dirname "$repo_path")
+  project=$(basename "$dir_path")
+
+  # Skip if it's dot-rot and we're running from within dot-rot
+  if [[ "$project" == "dot-rot" && "$PWD" == *"dot-rot"* ]]; then
+    continue
+  fi
+
+  # Skip if already processed
+  if [[ -n "${project_activity[$project]}" ]]; then
+    continue
+  fi
+
+  process_repo "$dir_path" "$project"
+done
+
+# Process git worktrees
+echo "Scanning for git worktrees..."
+for git_file in $(find "$WORKSPACE" -type f -name ".git" -maxdepth 3 2>/dev/null | sort); do
+  dir_path=$(dirname "$git_file")
+  project=$(basename "$dir_path")
+
+  # Skip if already processed
+  if [[ -n "${project_activity[$project]}" ]]; then
+    continue
+  fi
+
+  process_repo "$dir_path" "$project"
+done
+
+# Create sorted list of projects by activity
+echo "Sorting projects by activity level..."
+typeset -a sorted_projects
+for project in ${(k)project_activity}; do
+  activity_count=${project_day_counts[$project]}
+  if (( activity_count > 0 )); then
+    # Format with leading zeros for proper sorting
+    padded_count=$(printf "%02d" $activity_count)
+    sorted_projects+=("$padded_count:$project")
+  fi
+done
+
+# Sort by activity (most active first)
+if (( ${#sorted_projects} > 0 )); then
+  sorted_projects=(${(f)"$(printf '%s\n' "${sorted_projects[@]}" | sort -r)"})
+fi
+
+# Output the Alastair Method markdown table
+echo
+echo "## Weekly Review: $start_date - $end_date"
+echo
+echo "| MTWRFSs | Pri | RACI | Project | Pyramid |"
+echo "|---------|-----|------|---------|---------|"
+
+# Generate rows for each project
+for entry in "${sorted_projects[@]}"; do
+  project=${entry#*:}
+
+  # Create the MTWRFSs column
+  days_column=""
+  for day in {0..6}; do
+    symbol=${project_days[$project,$day]:-"·"}
+    days_column="${days_column}${symbol}"
+  done
+
+  display_name=${project_display_names[$project]}
+  echo "| $days_column | | | $display_name | |"
+done
+
+# Output commit details
+if (( ${#sorted_projects} > 0 )); then
+  echo
+  echo "## Commit Details"
+  echo
+
+  for entry in "${sorted_projects[@]}"; do
+    project=${entry#*:}
+    display_name=${project_display_names[$project]}
+
+    echo "### $display_name"
+    echo '```'
+    echo "${project_summaries[$project]}" | sort -r
+    echo '```'
+    echo
+  done
+fi
+
+# Legend
+echo "## Legend"
+echo "- \`/\` = worked on, not complete"
+echo "- \`x\` = completed"
+echo "- \`·\` = nothing happened"
+echo "- \`o\` = scheduled"
+echo "- \`>\` = migrated to next period"
+echo "- \`?\` = unclear what happened"
+echo "- \`-\` = notes/events"
