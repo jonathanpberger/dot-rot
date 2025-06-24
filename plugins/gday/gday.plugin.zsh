@@ -480,4 +480,8 @@ done
   echo -e "${title}\n${table_header}\n${table_separator}\n${body}\n\n"
   echo -e "${kicker}"
   echo $body | generate_later_today_h2s
+
+  # Show git activity report after calendar
+  echo -e "\n\n"
+  ~/workspace/dot-rot/bin/yday-smart
 }

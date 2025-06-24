@@ -15,7 +15,7 @@ max_project_len=7  # "Project" header length
 max_commits_len=7  # "Commits" header length
 current_dir=$(basename "$PWD")
 
-echo "Git Activity Report for $yesterday:"
+echo "## Git Activity Report for $yesterday:"
 
 # Function to generate semantic summaries
 generate_semantic_summary() {
