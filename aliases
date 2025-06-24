@@ -367,8 +367,6 @@ git_yesterday_report() {
       fi
     done
   fi
-
-  echo "\nTotal projects with activity: $found"
 }
 
 # Function to extract unique repositories referenced in a GitHub project
