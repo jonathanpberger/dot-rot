@@ -217,17 +217,18 @@ for git_file in $(find ~/workspace -type f -name ".git" -maxdepth 3 2>/dev/null 
   fi
 done
 
-# Print table with simple formatting
-echo "| Project | Commits | Summary                               |"
-echo "|---------|---------|---------------------------------------|"
+# Print table with properly formatted columns
+echo "| Project | Commits | Summary                                |"
+echo "|---------|---------|----------------------------------------|"
 
 if [[ $found -eq 0 ]]; then
-  echo "| -       | -       | No commits found for yesterday         |"
+  echo "| -       | -       | No commits found for yesterday          |"
 else
   for i in $(seq 0 $(($found - 1))); do
     # Skip empty entries
     if [[ -n "${all_projects[$i]}" && -n "${all_commits[$i]}" ]]; then
-      echo "| ${all_projects[$i]} | ${all_commits[$i]} | ${all_summaries[$i]} |"
+      # Format each column to ensure proper alignment
+      printf "| %-7s | %-7s | %-38s |\n" "${all_projects[$i]}" "${all_commits[$i]}" "${all_summaries[$i]}"
     fi
   done
 fi

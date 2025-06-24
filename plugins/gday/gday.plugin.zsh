@@ -480,8 +480,7 @@ done
   echo -e "${title}\n${table_header}\n${table_separator}\n${body}\n\n"
   echo -e "${kicker}"
 
-  # Show the DO WHATEVER message followed by git activity report
-  echo -e "\n******** DO WHATEVER THE SCHEDULE TELLS ME. AND ONLY THAT.********\n"
+  # Show git activity report
   ~/workspace/dot-rot/bin/yday-semantic
 
   # Now show the Later Today section
