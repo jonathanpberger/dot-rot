@@ -266,12 +266,7 @@ git_yesterday_report() {
 
     if [[ -n "$commits" ]]; then
       local commit_count=$(echo "$commits" | wc -l | tr -d ' ')
-      local summary=$(echo "$commits" | head -3 | sed 's/^[^ ]* //' | sed 's/^/• /' | tr '\n' ' ')
-
-      # Truncate if too long
-      if [[ ${#summary} -gt 80 ]]; then
-        summary="${summary:0:77}..."
-      fi
+      local summary=$(smart_summarize "$commits")
 
       # Mark this project as processed
       unique_projects[$project]=1
@@ -315,12 +310,7 @@ git_yesterday_report() {
 
     if [[ -n "$commits" ]]; then
       local commit_count=$(echo "$commits" | wc -l | tr -d ' ')
-      local summary=$(echo "$commits" | head -3 | sed 's/^[^ ]* //' | sed 's/^/• /' | tr '\n' ' ')
-
-      # Truncate if too long
-      if [[ ${#summary} -gt 80 ]]; then
-        summary="${summary:0:77}..."
-      fi
+      local summary=$(smart_summarize "$commits")
 
       # Mark this project as processed
       unique_projects[$project]=1
@@ -367,6 +357,69 @@ git_yesterday_report() {
       fi
     done
   fi
+}
+
+# Function to intelligently summarize git commits
+smart_summarize() {
+  local commits="$1"
+  local max_length=80
+  local result=""
+
+  # Get all commit messages without hashes
+  local messages=$(echo "$commits" | sed 's/^[^ ]* //')
+
+  # Count total commits
+  local total_count=$(echo "$messages" | wc -l | tr -d ' ')
+
+  # Look for patterns
+  local feature_count=$(echo "$messages" | grep -i -E 'feat|feature|add|new|implement' | wc -l | tr -d ' ')
+  local fix_count=$(echo "$messages" | grep -i -E 'fix|bug|issue|error|crash|resolve' | wc -l | tr -d ' ')
+  local refactor_count=$(echo "$messages" | grep -i -E 'refactor|clean|improve|enhance|optimiz|simplif' | wc -l | tr -d ' ')
+  local docs_count=$(echo "$messages" | grep -i -E 'doc|comment|readme|wiki' | wc -l | tr -d ' ')
+  local test_count=$(echo "$messages" | grep -i -E 'test|spec|assert|verify' | wc -l | tr -d ' ')
+
+  # Build a smart summary
+  if [[ $total_count -eq 1 ]]; then
+    # For single commits, just use the message
+    result=$(echo "$messages" | sed 's/^/• /')
+  else
+    # For multiple commits, build a categorized summary
+    if [[ $feature_count -gt 0 ]]; then
+      result+="• Added $feature_count features "
+    fi
+    if [[ $fix_count -gt 0 ]]; then
+      result+="• Fixed $fix_count issues "
+    fi
+    if [[ $refactor_count -gt 0 ]]; then
+      result+="• Refactored $refactor_count items "
+    fi
+    if [[ $docs_count -gt 0 ]]; then
+      result+="• Updated docs ($docs_count) "
+    fi
+    if [[ $test_count -gt 0 ]]; then
+      result+="• Added/updated $test_count tests "
+    fi
+
+    # If we didn't categorize everything, mention the remainder
+    local categorized=$((feature_count + fix_count + refactor_count + docs_count + test_count))
+    if [[ $categorized -lt $total_count ]]; then
+      local other_count=$((total_count - categorized))
+      result+="• $other_count other changes "
+    fi
+
+    # Add sample commit if we have space
+    if [[ ${#result} -lt $((max_length - 30)) && $total_count -gt 0 ]]; then
+      local sample=$(echo "$messages" | head -1 | cut -c 1-25)
+      result+="• e.g. \"$sample\""
+    fi
+  fi
+
+  # Truncate if still too long
+  if [[ ${#result} -gt $max_length ]]; then
+    result="${result:0:$((max_length-3))}..."
+  fi
+
+  echo "$result"
 }
 
 # Function to extract unique repositories referenced in a GitHub project
