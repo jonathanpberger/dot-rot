@@ -232,4 +232,5 @@ else
   done
 fi
 
-# End of script
+# Add blank line after the table
+echo ""

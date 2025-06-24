@@ -479,9 +479,11 @@ done
   echo -e "${braindump}\n\n\n\n"
   echo -e "${title}\n${table_header}\n${table_separator}\n${body}\n\n"
   echo -e "${kicker}"
-  echo $body | generate_later_today_h2s
 
-  # Show git activity report in custom format
+  # Show the DO WHATEVER message followed by git activity report
   echo -e "\n******** DO WHATEVER THE SCHEDULE TELLS ME. AND ONLY THAT.********\n"
   ~/workspace/dot-rot/bin/yday-semantic
+
+  # Now show the Later Today section
+  echo $body | generate_later_today_h2s
 }
