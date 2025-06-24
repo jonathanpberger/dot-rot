@@ -46,9 +46,7 @@ alias nitty="ack '🧹' ~/workspace/foam/todo.md | sort"
 alias cherry="ack '🍒' ~/workspace/foam/todo.md | sort"
 alias pom="ack '🍅' ~/workspace/foam/todo.md | sort"
 alias unremote="no_remote"
-alias yday="~/workspace/dot-rot/bin/yday-smart"
-alias yweek="~/workspace/dot-rot/bin/git-weekly"
-alias areview="~/workspace/dot-rot/bin/alastair-review"
+alias yday="git_yesterday_report"
 alias projectsinprojects="github_project_repos"
 
 # Define the function silently using function keyword
@@ -239,65 +237,48 @@ alias no_remote="git_no_remote"
 
 # Function to review yesterday's git commits and return a per-project status report
 git_yesterday_report() {
-  # Check if today is Monday (1 = Monday in date's %u format)
-  local is_monday=0
-  if [ $(date +"%u") -eq 1 ]; then
-    is_monday=1
-  fi
-
-  local today=$(date +"%Y-%m-%d")
   local yesterday=$(date -v-1d +"%Y-%m-%d")
-  local last_week_start=""
-  local last_week_end=""
-  local date_range=""
-
-  if [ $is_monday -eq 1 ]; then
-    # For Mondays, get the entire previous week (Monday through Sunday)
-    last_week_start=$(date -v-1w -v-mon +"%Y-%m-%d")
-    last_week_end=$(date -v-1d +"%Y-%m-%d") # Yesterday (Sunday)
-    date_range="$last_week_start to $last_week_end"
-  else
-    # For other days, just use yesterday
-    last_week_start=$yesterday
-    last_week_end=$today
-    date_range=$yesterday
-  fi
-
+  local today=$(date +"%Y-%m-%d")
   local found=0
   local all_projects=()
   local all_commits=()
   local all_summaries=()
-  local max_project_len=12  # "Project [WT]" header length
-  local max_commits_len=7   # "Commits" header length
+  local max_project_len=7  # "Project" header length
+  local max_commits_len=7  # "Commits" header length
+  local -A unique_projects  # Associative array to track unique projects
+  local current_dir=$(basename "$PWD")
 
-  if [ $is_monday -eq 1 ]; then
-    echo "Weekly Git Activity Report ($date_range):"
-  else
-    echo "Git Activity Report for $date_range:"
-  fi
+  echo "Git Activity Report for $yesterday:"
 
-  # First pass - collect data from standard git repositories (directories with .git directory)
+  # First pass - collect data and determine column widths
   for repo in $(find ~/workspace -type d -name ".git" -maxdepth 3 | sort); do
     local repo_dir=$(dirname "$repo")
     local project=$(basename "$repo_dir")
 
-    # Get commits for the specified date range
-    local commits=$(git -C "$repo_dir" log --oneline --after="$last_week_start 00:00" --before="$last_week_end 00:00" 2>/dev/null)
+    # Skip if we've already processed this project name
+    # Or if it's "." but we're in a named directory that will be processed separately
+    if [[ -n "${unique_projects[$project]}" ]] || [[ "$project" == "." && "$current_dir" != "." ]]; then
+      continue
+    fi
+
+    # Get yesterday's commits
+    local commits=$(git -C "$repo_dir" log --oneline --after="$yesterday 00:00" --before="$today 00:00" 2>/dev/null)
 
     if [[ -n "$commits" ]]; then
       local commit_count=$(echo "$commits" | wc -l | tr -d ' ')
-      local summary=""
-
-      # For weekly reports, show more commits in the summary
-      if [ $is_monday -eq 1 ]; then
-        summary=$(echo "$commits" | head -5 | sed 's/^[^ ]* //' | sed 's/^/• /' | tr '\n' ' ')
-      else
-        summary=$(echo "$commits" | head -3 | sed 's/^[^ ]* //' | sed 's/^/• /' | tr '\n' ' ')
-      fi
+      local summary=$(echo "$commits" | head -3 | sed 's/^[^ ]* //' | sed 's/^/• /' | tr '\n' ' ')
 
       # Truncate if too long
       if [[ ${#summary} -gt 80 ]]; then
         summary="${summary:0:77}..."
+      fi
+
+      # Mark this project as processed
+      unique_projects[$project]=1
+
+      # Use the proper name for the current directory
+      if [[ "$project" == "." ]]; then
+        project="$current_dir"
       fi
 
       all_projects+=("$project")
@@ -316,212 +297,38 @@ git_yesterday_report() {
     fi
   done
 
-  # Second pass - collect data from git worktrees (directories with .git file)
-  for git_file in $(find ~/workspace -type f -name ".git" -maxdepth 3 | sort); do
+  # Also check for git worktrees
+  for git_file in $(find ~/workspace -type f -name ".git" -maxdepth 3 2>/dev/null | sort); do
     local repo_dir=$(dirname "$git_file")
     local project=$(basename "$repo_dir")
 
-    # Get commits for the specified date range
-    local commits=$(git -C "$repo_dir" log --oneline --after="$last_week_start 00:00" --before="$last_week_end 00:00" 2>/dev/null)
-
-    if [[ -n "$commits" ]]; then
-      local commit_count=$(echo "$commits" | wc -l | tr -d ' ')
-      local summary=""
-
-      # For weekly reports, show more commits in the summary
-      if [ $is_monday -eq 1 ]; then
-        summary=$(echo "$commits" | head -5 | sed 's/^[^ ]* //' | sed 's/^/• /' | tr '\n' ' ')
-      else
-        summary=$(echo "$commits" | head -3 | sed 's/^[^ ]* //' | sed 's/^/• /' | tr '\n' ' ')
-      fi
-
-      # Truncate if too long
-      if [[ ${#summary} -gt 80 ]]; then
-        summary="${summary:0:77}..."
-      fi
-
-      # Add "[WT]" suffix to indicate it's a worktree
-      local wt_project="$project [WT]"
-
-      all_projects+=("$wt_project")
-      all_commits+=("$commit_count")
-      all_summaries+=("$summary")
-
-      # Update max widths
-      if [[ ${#wt_project} -gt $max_project_len ]]; then
-        max_project_len=${#wt_project}
-      fi
-      if [[ ${#commit_count} -gt $max_commits_len ]]; then
-        max_commits_len=${#commit_count}
-      fi
-
-      ((found++))
+    # Skip if we've already processed this project
+    if [[ -n "${unique_projects[$project]}" ]]; then
+      continue
     fi
-  done
 
-  # Second pass - collect data from git worktrees (directories with .git file)
-  for git_file in $(find ~/workspace -type f -name ".git" -maxdepth 3 | sort); do
-    local repo_dir=$(dirname "$git_file")
-    local project=$(basename "$repo_dir")
-
-    # Get commits for the specified date range
-    local commits=$(git -C "$repo_dir" log --oneline --after="$last_week_start 00:00" --before="$last_week_end 00:00" 2>/dev/null)
+    # Get yesterday's commits
+    local commits=$(git -C "$repo_dir" log --oneline --after="$yesterday 00:00" --before="$today 00:00" 2>/dev/null)
 
     if [[ -n "$commits" ]]; then
       local commit_count=$(echo "$commits" | wc -l | tr -d ' ')
-      local summary=""
-
-      # For weekly reports, show more commits in the summary
-      if [ $is_monday -eq 1 ]; then
-        summary=$(echo "$commits" | head -5 | sed 's/^[^ ]* //' | sed 's/^/• /' | tr '\n' ' ')
-      else
-        summary=$(echo "$commits" | head -3 | sed 's/^[^ ]* //' | sed 's/^/• /' | tr '\n' ' ')
-      fi
+      local summary=$(echo "$commits" | head -3 | sed 's/^[^ ]* //' | sed 's/^/• /' | tr '\n' ' ')
 
       # Truncate if too long
       if [[ ${#summary} -gt 80 ]]; then
         summary="${summary:0:77}..."
       fi
 
-      # Add "[WT]" suffix to indicate it's a worktree
-      local wt_project="$project [WT]"
+      # Mark this project as processed
+      unique_projects[$project]=1
 
-      all_projects+=("$wt_project")
+      all_projects+=("$project")
       all_commits+=("$commit_count")
       all_summaries+=("$summary")
 
       # Update max widths
-      if [[ ${#wt_project} -gt $max_project_len ]]; then
-        max_project_len=${#wt_project}
-      fi
-      if [[ ${#commit_count} -gt $max_commits_len ]]; then
-        max_commits_len=${#commit_count}
-      fi
-
-      ((found++))
-    fi
-  done
-
-  # Second pass - collect data from git worktrees (directories with .git file)
-  for git_file in $(find ~/workspace -type f -name ".git" -maxdepth 3 | sort); do
-    local repo_dir=$(dirname "$git_file")
-    local project=$(basename "$repo_dir")
-
-    # Get commits for the specified date range
-    local commits=$(git -C "$repo_dir" log --oneline --after="$last_week_start 00:00" --before="$last_week_end 00:00" 2>/dev/null)
-
-    if [[ -n "$commits" ]]; then
-      local commit_count=$(echo "$commits" | wc -l | tr -d ' ')
-      local summary=""
-
-      # For weekly reports, show more commits in the summary
-      if [ $is_monday -eq 1 ]; then
-        summary=$(echo "$commits" | head -5 | sed 's/^[^ ]* //' | sed 's/^/• /' | tr '\n' ' ')
-      else
-        summary=$(echo "$commits" | head -3 | sed 's/^[^ ]* //' | sed 's/^/• /' | tr '\n' ' ')
-      fi
-
-      # Truncate if too long
-      if [[ ${#summary} -gt 80 ]]; then
-        summary="${summary:0:77}..."
-      fi
-
-      # Add "[WT]" suffix to indicate it's a worktree
-      local wt_project="$project [WT]"
-
-      all_projects+=("$wt_project")
-      all_commits+=("$commit_count")
-      all_summaries+=("$summary")
-
-      # Update max widths
-      if [[ ${#wt_project} -gt $max_project_len ]]; then
-        max_project_len=${#wt_project}
-      fi
-      if [[ ${#commit_count} -gt $max_commits_len ]]; then
-        max_commits_len=${#commit_count}
-      fi
-
-      ((found++))
-    fi
-  done
-
-  # Second pass - collect data from git worktrees (directories with .git file)
-  for git_file in $(find ~/workspace -type f -name ".git" -maxdepth 3 | sort); do
-    local repo_dir=$(dirname "$git_file")
-    local project=$(basename "$repo_dir")
-
-    # Get commits for the specified date range
-    local commits=$(git -C "$repo_dir" log --oneline --after="$last_week_start 00:00" --before="$last_week_end 00:00" 2>/dev/null)
-
-    if [[ -n "$commits" ]]; then
-      local commit_count=$(echo "$commits" | wc -l | tr -d ' ')
-      local summary=""
-
-      # For weekly reports, show more commits in the summary
-      if [ $is_monday -eq 1 ]; then
-        summary=$(echo "$commits" | head -5 | sed 's/^[^ ]* //' | sed 's/^/• /' | tr '\n' ' ')
-      else
-        summary=$(echo "$commits" | head -3 | sed 's/^[^ ]* //' | sed 's/^/• /' | tr '\n' ' ')
-      fi
-
-      # Truncate if too long
-      if [[ ${#summary} -gt 80 ]]; then
-        summary="${summary:0:77}..."
-      fi
-
-      # Add "[WT]" suffix to indicate it's a worktree
-      local wt_project="$project [WT]"
-
-      all_projects+=("$wt_project")
-      all_commits+=("$commit_count")
-      all_summaries+=("$summary")
-
-      # Update max widths
-      if [[ ${#wt_project} -gt $max_project_len ]]; then
-        max_project_len=${#wt_project}
-      fi
-      if [[ ${#commit_count} -gt $max_commits_len ]]; then
-        max_commits_len=${#commit_count}
-      fi
-
-      ((found++))
-    fi
-  done
-
-  # Second pass - collect data from git worktrees (directories with .git file)
-  for git_file in $(find ~/workspace -type f -name ".git" -maxdepth 3 | sort); do
-    local repo_dir=$(dirname "$git_file")
-    local project=$(basename "$repo_dir")
-
-    # Get commits for the specified date range
-    local commits=$(git -C "$repo_dir" log --oneline --after="$last_week_start 00:00" --before="$last_week_end 00:00" 2>/dev/null)
-
-    if [[ -n "$commits" ]]; then
-      local commit_count=$(echo "$commits" | wc -l | tr -d ' ')
-      local summary=""
-
-      # For weekly reports, show more commits in the summary
-      if [ $is_monday -eq 1 ]; then
-        summary=$(echo "$commits" | head -5 | sed 's/^[^ ]* //' | sed 's/^/• /' | tr '\n' ' ')
-      else
-        summary=$(echo "$commits" | head -3 | sed 's/^[^ ]* //' | sed 's/^/• /' | tr '\n' ' ')
-      fi
-
-      # Truncate if too long
-      if [[ ${#summary} -gt 80 ]]; then
-        summary="${summary:0:77}..."
-      fi
-
-      # Add "[WT]" suffix to indicate it's a worktree
-      local wt_project="$project [WT]"
-
-      all_projects+=("$wt_project")
-      all_commits+=("$commit_count")
-      all_summaries+=("$summary")
-
-      # Update max widths
-      if [[ ${#wt_project} -gt $max_project_len ]]; then
-        max_project_len=${#wt_project}
+      if [[ ${#project} -gt $max_project_len ]]; then
+        max_project_len=${#project}
       fi
       if [[ ${#commit_count} -gt $max_commits_len ]]; then
         max_commits_len=${#commit_count}
@@ -543,26 +350,7 @@ git_yesterday_report() {
   if [[ $found -eq 0 ]]; then
     local empty_project=$(printf "%-${max_project_len}s" "-")
     local empty_commits=$(printf "%-${max_commits_len}s" "-")
-    if [ $is_monday -eq 1 ]; then
-      echo "| $empty_project | $empty_commits | No commits found for last week |"
-    else
-      echo "| $empty_project | $empty_commits | No commits found for yesterday |"
-    fi
-    else
-      if [ $is_monday -eq 1 ]; then
-        echo "| $empty_project | $empty_commits | No commits found for last week |"
-      else
-        if [ $is_monday -eq 1 ]; then
-          echo "| $empty_project | $empty_commits | No commits found for last week |"
-        else
-          if [ $is_monday -eq 1 ]; then
-            echo "| $empty_project | $empty_commits | No commits found for last week |"
-          else
-            echo "| $empty_project | $empty_commits | No commits found for yesterday |"
-          fi
-        fi
-      fi
-    fi
+    echo "| $empty_project | $empty_commits | No commits found for yesterday |"
   else
     for i in $(seq 0 $(($found - 1))); do
       local padded_project=$(printf "%-${max_project_len}s" "${all_projects[$i]}")
@@ -571,79 +359,7 @@ git_yesterday_report() {
     done
   fi
 
-  if [ $is_monday -eq 1 ]; then
-    echo "\nTotal projects with activity last week: $found"
-  else
-    echo "\nTotal projects with activity: $found"
-  fi
-}
-  # Now find git worktrees (directories with .git file)
-  local worktree_count=0
-  for repo_dir in $(find ~/workspace -type f -name ".git" -maxdepth 3 -exec dirname {} \; | sort); do
-    local project=$(basename "$repo_dir")
-
-    # Get commits for the specified date range using the worktree
-    local commits=$(git -C "$repo_dir" log --oneline --after="$last_week_start 00:00" --before="$last_week_end 00:00" 2>/dev/null)
-
-    if [[ -n "$commits" ]]; then
-      local commit_count=$(echo "$commits" | wc -l | tr -d ' ')
-      local summary=""
-
-      # For weekly reports, show more commits in the summary
-      if [ $is_monday -eq 1 ]; then
-        summary=$(echo "$commits" | head -5 | sed 's/^[^ ]* //' | sed 's/^/• /' | tr '\n' ' ')
-      else
-        summary=$(echo "$commits" | head -3 | sed 's/^[^ ]* //' | sed 's/^/• /' | tr '\n' ' ')
-      fi
-
-      # Truncate if too long
-      if [[ ${#summary} -gt 80 ]]; then
-        summary="${summary:0:77}..."
-      fi
-
-      # Print the worktree result directly
-      local padded_project=$(printf "%-${max_project_len}s" "$project [WT]")
-      local padded_commits=$(printf "%-${max_commits_len}s" "$commit_count")
-      echo "| $padded_project | $padded_commits | $summary |"
-
-      ((worktree_count++))
-      ((found++))
-    fi
-  done
-
-    # Get commits for the specified date range using the worktree
-    local commits=$(git -C "$repo_dir" log --oneline --after="$last_week_start 00:00" --before="$last_week_end 00:00" 2>/dev/null)
-
-    if [[ -n "$commits" ]]; then
-      local commit_count=$(echo "$commits" | wc -l | tr -d ' ')
-      local summary=""
-
-      # For weekly reports, show more commits in the summary
-      if [ $is_monday -eq 1 ]; then
-        summary=$(echo "$commits" | head -5 | sed 's/^[^ ]* //' | sed 's/^/• /' | tr '\n' ' ')
-      else
-        summary=$(echo "$commits" | head -3 | sed 's/^[^ ]* //' | sed 's/^/• /' | tr '\n' ' ')
-      fi
-
-      # Truncate if too long
-      if [[ ${#summary} -gt 80 ]]; then
-        summary="${summary:0:77}..."
-      fi
-
-      # Print the worktree result directly
-      local padded_project=$(printf "%-${max_project_len}s" "$project [worktree]")
-      local padded_commits=$(printf "%-${max_commits_len}s" "$commit_count")
-      echo "| $padded_project | $padded_commits | $summary |"
-
-      ((found++))
-    fi
-  done
-
-  if [ $is_monday -eq 1 ]; then
-    echo "\nTotal projects with activity last week: $found"
-  else
-    echo "\nTotal projects with activity: $found"
-  fi
+  echo "\nTotal projects with activity: $found"
 }
 
 # Function to extract unique repositories referenced in a GitHub project
