@@ -30,52 +30,88 @@ if [[ "$project" == "dot-rot" ]]; then
   if echo "$messages" | grep -i -q -E 'now.md|now|meta|readme'; then
     topics+="now.md meta, "
   fi
-  topics+="dot-rot maintenance"
+  topics+="dot-rot maintainence"
 
 # For foam repository
 elif [[ "$project" == "foam" ]]; then
-  # Look for notes topics
+  # Look for specific project topics
+  forensic_match=0
+  pacifica_match=0
+  thinking_match=0
+
   if echo "$messages" | grep -i -q -E 'forensic|architecture|11W'; then
     topics+="11W Forensic Architecture, "
+    forensic_match=1
   fi
   if echo "$messages" | grep -i -q -E 'pacifica|grey|gray'; then
     topics+="grey pacifica, "
+    pacifica_match=1
   fi
   if echo "$messages" | grep -i -q -E 'now.md|thinking|thoughts|reflect'; then
     topics+="lots of thinking about now.md"
-  else
+    thinking_match=1
+  fi
+
+  # If none of the specific topics matched, use a generic description
+  if [[ $forensic_match -eq 0 && $pacifica_match -eq 0 && $thinking_match -eq 0 ]]; then
     topics+="note updates"
   fi
 
 # For bad_friend repository
 elif [[ "$project" == "bad_friend-jumpstart_pro" ]]; then
+  # Initialize a match flag
+  has_match=0
+
   if echo "$messages" | grep -i -q -E 'design|UI|UX'; then
     topics+="design system, "
+    has_match=1
   fi
   if echo "$messages" | grep -i -q -E 'deploy|render|staging'; then
     topics+="deployment setup, "
+    has_match=1
   fi
   if echo "$messages" | grep -i -q -E 'friend|contact|relationship'; then
     topics+="friendship features, "
+    has_match=1
   fi
   if echo "$messages" | grep -i -q -E 'test|fix|bug'; then
-    topics+="bug fixes"
-  else
+    topics+="bug fixes, "
+    has_match=1
+  fi
+
+  # Add app development only if no other topics matched or as a final item
+  if [[ $has_match -eq 0 ]]; then
     topics+="app development"
+  else
+    # Remove trailing comma and space if present
+    topics=$(echo "$topics" | sed 's/, $//')
   fi
 
 # For ios-claude-pong repository
 elif [[ "$project" == "ios-claude-pong" ]]; then
+  # Track which specific topics we've found
+  has_topic=0
+
   if echo "$messages" | grep -i -q -E 'haptic|touch|feel'; then
     topics+="haptics, "
+    has_topic=1
   fi
   if echo "$messages" | grep -i -q -E 'menu|UI|layout'; then
     topics+="menu layout, "
+    has_topic=1
   fi
   if echo "$messages" | grep -i -q -E 'player|multiplayer'; then
     topics+="player controls, "
+    has_topic=1
   fi
-  topics+="game enhancements"
+
+  # Only add generic "game enhancements" if no specific topics matched
+  if [[ $has_topic -eq 0 ]]; then
+    topics+="game enhancements"
+  else
+    # Remove trailing comma and space
+    topics=$(echo "$topics" | sed 's/, $//')
+  fi
 
 # Generic fallback for other projects
 else
