@@ -8,26 +8,31 @@ if [ $(date +"%u") -eq 1 ]; then
   is_monday=1
 
   # On Mondays, run areview to show weekly digest in Alastair Method format
-  # But show the previous week (not the current week)
-  echo "It's Monday! Showing weekly digest for last week using Alastair Method format..."
+    # But show the previous week (not the current week)
+    echo "It's Monday! Showing weekly digest for last week using Alastair Method format..."
 
-  # Create a temporary script to show the previous week's activity
-  TMP_SCRIPT=$(mktemp)
-  cat ~/workspace/dot-rot/bin/alastair-review > $TMP_SCRIPT
+    # Create a temporary script to show the previous week's activity
+    TMP_SCRIPT=$(mktemp)
+    cat ~/workspace/dot-rot/bin/alastair-review > $TMP_SCRIPT
 
-  # Modify the temp script to look at the previous week (add 7 to days_back)
-  sed -i '' 's/days_back=$((day_of_week - 1))/days_back=$((day_of_week - 1 + 7))/' $TMP_SCRIPT
+    # Modify the temp script to look at the previous week (add 7 to days_back)
+    sed -i '' 's/days_back=$((day_of_week - 1))/days_back=$((day_of_week - 1 + 7))/' $TMP_SCRIPT
 
-  # Run the modified script
-  chmod +x $TMP_SCRIPT
-  $TMP_SCRIPT
+    # Run the modified script
+    chmod +x $TMP_SCRIPT
+    $TMP_SCRIPT
 
-  # Clean up
-  rm $TMP_SCRIPT
+    # Clean up
+    rm $TMP_SCRIPT
+    exit 0
+  fi
+
+  # For non-Mondays, use the semantic summary script
+  ~/workspace/dot-rot/bin/yday-semantic
   exit 0
-fi
 
-# Set date ranges based on whether it's Monday or not
+  # The section below is kept for reference but not used anymore
+  # Set date ranges based on whether it's Monday or not
 today=$(date +"%Y-%m-%d")
 yesterday=$(date -v-1d +"%Y-%m-%d")
 last_week_start=""

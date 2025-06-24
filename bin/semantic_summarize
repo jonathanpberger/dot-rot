@@ -1,0 +1,96 @@
+#!/bin/zsh
+# semantic_summarize - Generate meaningful semantic summaries of git commits
+
+# Get inputs from stdin or arguments
+if [ -p /dev/stdin ]; then
+  commits=$(cat)
+else
+  commits="$1"
+fi
+project="$2"
+
+# Exit if no input
+if [[ -z "$commits" ]]; then
+  echo "No commits provided"
+  exit 1
+fi
+
+# Extract commit messages without hashes
+messages=$(echo "$commits" | sed 's/^[^ ]* //')
+
+# Define project-specific topic patterns
+topics=""
+
+# For dot-rot repository
+if [[ "$project" == "dot-rot" ]]; then
+  # Look for scripts, aliases, configs
+  if echo "$messages" | grep -i -q -E 'script|alias|yday|yweek|review|areview'; then
+    topics+="yday script, "
+  fi
+  if echo "$messages" | grep -i -q -E 'now.md|now|meta|readme'; then
+    topics+="now.md meta, "
+  fi
+  topics+="dot-rot maintenance"
+
+# For foam repository
+elif [[ "$project" == "foam" ]]; then
+  # Look for notes topics
+  if echo "$messages" | grep -i -q -E 'forensic|architecture|11W'; then
+    topics+="11W Forensic Architecture, "
+  fi
+  if echo "$messages" | grep -i -q -E 'pacifica|grey|gray'; then
+    topics+="grey pacifica, "
+  fi
+  if echo "$messages" | grep -i -q -E 'now.md|thinking|thoughts|reflect'; then
+    topics+="lots of thinking about now.md"
+  else
+    topics+="note updates"
+  fi
+
+# For bad_friend repository
+elif [[ "$project" == "bad_friend-jumpstart_pro" ]]; then
+  if echo "$messages" | grep -i -q -E 'design|UI|UX'; then
+    topics+="design system, "
+  fi
+  if echo "$messages" | grep -i -q -E 'deploy|render|staging'; then
+    topics+="deployment setup, "
+  fi
+  if echo "$messages" | grep -i -q -E 'friend|contact|relationship'; then
+    topics+="friendship features, "
+  fi
+  if echo "$messages" | grep -i -q -E 'test|fix|bug'; then
+    topics+="bug fixes"
+  else
+    topics+="app development"
+  fi
+
+# For ios-claude-pong repository
+elif [[ "$project" == "ios-claude-pong" ]]; then
+  if echo "$messages" | grep -i -q -E 'haptic|touch|feel'; then
+    topics+="haptics, "
+  fi
+  if echo "$messages" | grep -i -q -E 'menu|UI|layout'; then
+    topics+="menu layout, "
+  fi
+  if echo "$messages" | grep -i -q -E 'player|multiplayer'; then
+    topics+="player controls, "
+  fi
+  topics+="game enhancements"
+
+# Generic fallback for other projects
+else
+  # Extract meaningful keywords from commit messages
+  keywords=$(echo "$messages" | grep -o -E '\b[a-zA-Z]{5,}\b' | sort | uniq -c | sort -nr | head -3 | awk '{print $2}' | tr '\n' ', ' | sed 's/,$//')
+  if [[ -n "$keywords" ]]; then
+    topics+="$keywords"
+  else
+    # If no keywords, use the first line as summary
+    topics+=$(echo "$messages" | head -1 | cut -c 1-40)
+  fi
+fi
+
+# Trim trailing commas and spaces
+topics=$(echo "$topics" | sed 's/, $//')
+
+# Return the summary
+echo "$topics"

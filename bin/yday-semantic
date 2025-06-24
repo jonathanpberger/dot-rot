@@ -1,0 +1,204 @@
+#!/bin/zsh
+# yday-semantic - Show git activity with semantic summaries
+
+# Get yesterday's date
+yesterday=$(date -v-1d +"%Y-%m-%d")
+today=$(date +"%Y-%m-%d")
+
+# Initialize arrays and variables
+declare -A unique_projects
+found=0
+all_projects=()
+all_commits=()
+all_summaries=()
+max_project_len=7  # "Project" header length
+max_commits_len=7  # "Commits" header length
+current_dir=$(basename "$PWD")
+
+echo "Git Activity Report for $yesterday:"
+
+# Function to generate semantic summaries
+generate_semantic_summary() {
+  local messages="$1"
+  local project="$2"
+  local topics=""
+
+  # For dot-rot repository
+  if [[ "$project" == "dot-rot" ]]; then
+    if echo "$messages" | grep -i -q -E 'script|alias|yday|yweek|review|areview'; then
+      topics+="yday script, "
+    fi
+    if echo "$messages" | grep -i -q -E 'now.md|now|meta|readme'; then
+      topics+="now.md meta, "
+    fi
+    topics+="dot-rot maintenance"
+
+  # For foam repository
+  elif [[ "$project" == "foam" ]]; then
+    if echo "$messages" | grep -i -q -E 'forensic|architecture|11W'; then
+      topics+="11W Forensic Architecture, "
+    fi
+    if echo "$messages" | grep -i -q -E 'pacifica|grey|gray'; then
+      topics+="grey pacifica, "
+    fi
+    if echo "$messages" | grep -i -q -E 'now.md|thinking|thoughts|reflect'; then
+      topics+="lots of thinking about now.md"
+    else
+      topics+="note updates"
+    fi
+
+  # For bad_friend repository
+  elif [[ "$project" == "bad_friend-jumpstart_pro" ]]; then
+    if echo "$messages" | grep -i -q -E 'design|UI|UX'; then
+      topics+="design system, "
+    fi
+    if echo "$messages" | grep -i -q -E 'deploy|render|staging'; then
+      topics+="deployment setup, "
+    fi
+    if echo "$messages" | grep -i -q -E 'friend|contact|relationship'; then
+      topics+="friendship features, "
+    fi
+    if echo "$messages" | grep -i -q -E 'test|fix|bug'; then
+      topics+="bug fixes"
+    else
+      topics+="app development"
+    fi
+
+  # For ios-claude-pong repository
+  elif [[ "$project" == "ios-claude-pong" ]]; then
+    if echo "$messages" | grep -i -q -E 'haptic|touch|feel'; then
+      topics+="haptics, "
+    fi
+    if echo "$messages" | grep -i -q -E 'menu|UI|layout'; then
+      topics+="menu layout, "
+    fi
+    if echo "$messages" | grep -i -q -E 'player|multiplayer'; then
+      topics+="player controls, "
+    fi
+    topics+="game enhancements"
+
+  # Generic fallback for other projects
+  else
+    # Extract meaningful keywords from commit messages
+    keywords=$(echo "$messages" | grep -o -E '\b[a-zA-Z]{5,}\b' | sort | uniq -c | sort -nr | head -3 | awk '{print $2}' | tr '\n' ', ' | sed 's/,$//')
+    if [[ -n "$keywords" ]]; then
+      topics+="$keywords"
+    else
+      # If no keywords, use the first line as summary
+      topics+=$(echo "$messages" | head -1 | cut -c 1-40)
+    fi
+  fi
+
+  # Trim trailing commas and spaces
+  echo "$topics" | sed 's/, $//'
+}
+
+# First pass - collect data from standard git repositories
+for repo in $(find ~/workspace -type d -name ".git" -maxdepth 3 | sort); do
+  repo_dir=$(dirname "$repo")
+  project=$(basename "$repo_dir")
+
+  # Skip if we've already processed this project name
+  # Or if it's "." but we're in a named directory that will be processed separately
+  if [[ -n "${unique_projects[$project]}" ]] || [[ "$project" == "." && "$current_dir" != "." ]]; then
+    continue
+  fi
+
+  # Get yesterday's commits
+  commits=$(git -C "$repo_dir" log --oneline --after="$yesterday 00:00" --before="$today 00:00" 2>/dev/null)
+
+  if [[ -n "$commits" ]]; then
+    commit_count=$(echo "$commits" | wc -l | tr -d ' ')
+    commit_messages=$(echo "$commits" | sed 's/^[^ ]* //')
+    summary=$(generate_semantic_summary "$commit_messages" "$project")
+
+    # Mark this project as processed
+    unique_projects[$project]=1
+
+    # Use the proper name for the current directory
+    if [[ "$project" == "." ]]; then
+      project="$current_dir"
+    fi
+
+    # Only add non-empty projects
+    if [[ -n "$project" && -n "$commit_count" && -n "$summary" ]]; then
+      all_projects+=("$project")
+      all_commits+=("$commit_count")
+      all_summaries+=("$summary")
+
+      # Update max widths
+      if [[ ${#project} -gt $max_project_len ]]; then
+        max_project_len=${#project}
+      fi
+      if [[ ${#commit_count} -gt $max_commits_len ]]; then
+        max_commits_len=${#commit_count}
+      fi
+
+      ((found++))
+    fi
+  fi
+done
+
+# Second pass - collect data from git worktrees
+for git_file in $(find ~/workspace -type f -name ".git" -maxdepth 3 2>/dev/null | sort); do
+  repo_dir=$(dirname "$git_file")
+  project=$(basename "$repo_dir")
+
+  # Skip if we've already processed this project
+  if [[ -n "${unique_projects[$project]}" ]]; then
+    continue
+  fi
+
+  # Get yesterday's commits
+  commits=$(git -C "$repo_dir" log --oneline --after="$yesterday 00:00" --before="$today 00:00" 2>/dev/null)
+
+  if [[ -n "$commits" ]]; then
+    commit_count=$(echo "$commits" | wc -l | tr -d ' ')
+    commit_messages=$(echo "$commits" | sed 's/^[^ ]* //')
+    summary=$(generate_semantic_summary "$commit_messages" "$project")
+
+    # Mark this project as processed
+    unique_projects[$project]=1
+
+    # Only add non-empty projects
+    if [[ -n "$project" && -n "$commit_count" && -n "$summary" ]]; then
+      all_projects+=("$project")
+      all_commits+=("$commit_count")
+      all_summaries+=("$summary")
+
+      # Update max widths
+      if [[ ${#project} -gt $max_project_len ]]; then
+        max_project_len=${#project}
+      fi
+      if [[ ${#commit_count} -gt $max_commits_len ]]; then
+        max_commits_len=${#commit_count}
+      fi
+
+      ((found++))
+    fi
+  fi
+done
+
+# Print table with proper formatting
+project_header=$(printf "%-${max_project_len}s" "Project")
+commits_header=$(printf "%-${max_commits_len}s" "Commits")
+echo "| $project_header | $commits_header | Summary |"
+
+separator_project=$(printf '%0.s-' $(seq 1 $max_project_len))
+separator_commits=$(printf '%0.s-' $(seq 1 $max_commits_len))
+echo "| $separator_project | $separator_commits | --------- |"
+
+if [[ $found -eq 0 ]]; then
+  empty_project=$(printf "%-${max_project_len}s" "-")
+  empty_commits=$(printf "%-${max_commits_len}s" "-")
+  echo "| $empty_project | $empty_commits | No commits found for yesterday |"
+else
+  for i in $(seq 0 $(($found - 1))); do
+    # Skip empty entries
+    if [[ -n "${all_projects[$i]}" && -n "${all_commits[$i]}" ]]; then
+      padded_project=$(printf "%-${max_project_len}s" "${all_projects[$i]}")
+      padded_commits=$(printf "%-${max_commits_len}s" "${all_commits[$i]}")
+      echo "| $padded_project | $padded_commits | ${all_summaries[$i]} |"
+    fi
+  done
+fi
