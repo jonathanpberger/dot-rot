@@ -164,5 +164,8 @@
   "print.folder.maxLines": 1200,
   "print.folder.maxFiles": 30,
   "print.folder.includeFileList": false,
-  "MarkdownPaste.imageRules": []
+  "MarkdownPaste.imageRules": [],
+  "files.associations": {
+    "*.md": "markdown"
+  }
 }
