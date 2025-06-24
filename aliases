@@ -46,7 +46,7 @@ alias nitty="ack '🧹' ~/workspace/foam/todo.md | sort"
 alias cherry="ack '🍒' ~/workspace/foam/todo.md | sort"
 alias pom="ack '🍅' ~/workspace/foam/todo.md | sort"
 alias unremote="no_remote"
-alias yday="git_yesterday_report"
+alias yday="~/workspace/dot-rot/bin/yday-smart"
 alias projectsinprojects="github_project_repos"
 
 # Define the function silently using function keyword
