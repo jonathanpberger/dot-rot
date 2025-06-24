@@ -15,7 +15,8 @@ max_project_len=7  # "Project" header length
 max_commits_len=7  # "Commits" header length
 current_dir=$(basename "$PWD")
 
-echo "## Git Activity Report for $yesterday:"
+echo "## Yesterday in Git ($yesterday)..."
+echo "Format | Project | Commits | Summary | Re-sort"
 
 # Function to generate semantic summaries
 generate_semantic_summary() {
@@ -216,26 +217,19 @@ for git_file in $(find ~/workspace -type f -name ".git" -maxdepth 3 2>/dev/null 
   fi
 done
 
-# Print table with proper formatting
-project_header=$(printf "%-${max_project_len}s" "Project")
-commits_header=$(printf "%-${max_commits_len}s" "Commits")
-echo "| $project_header | $commits_header | Summary |"
-
-separator_project=$(printf '%0.s-' $(seq 1 $max_project_len))
-separator_commits=$(printf '%0.s-' $(seq 1 $max_commits_len))
-echo "| $separator_project | $separator_commits | --------- |"
+# Print table with simple formatting
+echo "| Project | Commits | Summary                               |"
+echo "|---------|---------|---------------------------------------|"
 
 if [[ $found -eq 0 ]]; then
-  empty_project=$(printf "%-${max_project_len}s" "-")
-  empty_commits=$(printf "%-${max_commits_len}s" "-")
-  echo "| $empty_project | $empty_commits | No commits found for yesterday |"
+  echo "| -       | -       | No commits found for yesterday         |"
 else
   for i in $(seq 0 $(($found - 1))); do
     # Skip empty entries
     if [[ -n "${all_projects[$i]}" && -n "${all_commits[$i]}" ]]; then
-      padded_project=$(printf "%-${max_project_len}s" "${all_projects[$i]}")
-      padded_commits=$(printf "%-${max_commits_len}s" "${all_commits[$i]}")
-      echo "| $padded_project | $padded_commits | ${all_summaries[$i]} |"
+      echo "| ${all_projects[$i]} | ${all_commits[$i]} | ${all_summaries[$i]} |"
     fi
   done
 fi
+
+# End of script

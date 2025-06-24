@@ -481,7 +481,7 @@ done
   echo -e "${kicker}"
   echo $body | generate_later_today_h2s
 
-  # Show git activity report after calendar
-  echo -e "\n\n"
-  ~/workspace/dot-rot/bin/yday-smart
+  # Show git activity report in custom format
+  echo -e "\n******** DO WHATEVER THE SCHEDULE TELLS ME. AND ONLY THAT.********\n"
+  ~/workspace/dot-rot/bin/yday-semantic
 }
