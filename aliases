@@ -281,19 +281,22 @@ git_yesterday_report() {
         project="$current_dir"
       fi
 
-      all_projects+=("$project")
-      all_commits+=("$commit_count")
-      all_summaries+=("$summary")
+      # Only add non-empty projects
+      if [[ -n "$project" && -n "$commit_count" && -n "$summary" ]]; then
+        all_projects+=("$project")
+        all_commits+=("$commit_count")
+        all_summaries+=("$summary")
 
-      # Update max widths
-      if [[ ${#project} -gt $max_project_len ]]; then
-        max_project_len=${#project}
-      fi
-      if [[ ${#commit_count} -gt $max_commits_len ]]; then
-        max_commits_len=${#commit_count}
-      fi
+        # Update max widths
+        if [[ ${#project} -gt $max_project_len ]]; then
+          max_project_len=${#project}
+        fi
+        if [[ ${#commit_count} -gt $max_commits_len ]]; then
+          max_commits_len=${#commit_count}
+        fi
 
-      ((found++))
+        ((found++))
+      fi
     fi
   done
 
@@ -322,19 +325,22 @@ git_yesterday_report() {
       # Mark this project as processed
       unique_projects[$project]=1
 
-      all_projects+=("$project")
-      all_commits+=("$commit_count")
-      all_summaries+=("$summary")
+      # Only add non-empty projects
+      if [[ -n "$project" && -n "$commit_count" && -n "$summary" ]]; then
+        all_projects+=("$project")
+        all_commits+=("$commit_count")
+        all_summaries+=("$summary")
 
-      # Update max widths
-      if [[ ${#project} -gt $max_project_len ]]; then
-        max_project_len=${#project}
-      fi
-      if [[ ${#commit_count} -gt $max_commits_len ]]; then
-        max_commits_len=${#commit_count}
-      fi
+        # Update max widths
+        if [[ ${#project} -gt $max_project_len ]]; then
+          max_project_len=${#project}
+        fi
+        if [[ ${#commit_count} -gt $max_commits_len ]]; then
+          max_commits_len=${#commit_count}
+        fi
 
-      ((found++))
+        ((found++))
+      fi
     fi
   done
 
@@ -353,9 +359,12 @@ git_yesterday_report() {
     echo "| $empty_project | $empty_commits | No commits found for yesterday |"
   else
     for i in $(seq 0 $(($found - 1))); do
-      local padded_project=$(printf "%-${max_project_len}s" "${all_projects[$i]}")
-      local padded_commits=$(printf "%-${max_commits_len}s" "${all_commits[$i]}")
-      echo "| $padded_project | $padded_commits | ${all_summaries[$i]} |"
+      # Skip empty entries
+      if [[ -n "${all_projects[$i]}" && -n "${all_commits[$i]}" ]]; then
+        local padded_project=$(printf "%-${max_project_len}s" "${all_projects[$i]}")
+        local padded_commits=$(printf "%-${max_commits_len}s" "${all_commits[$i]}")
+        echo "| $padded_project | $padded_commits | ${all_summaries[$i]} |"
+      fi
     done
   fi
 
