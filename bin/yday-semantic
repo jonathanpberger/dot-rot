@@ -16,7 +16,7 @@ max_commits_len=7  # "Commits" header length
 current_dir=$(basename "$PWD")
 
 echo "## Yesterday in Git ($yesterday)..."
-echo "Format | Project | Commits | Summary | Re-sort"
+echo ""
 
 # Function to generate semantic summaries
 generate_semantic_summary() {
