@@ -249,7 +249,7 @@ function gday() {
   # Banner and version
   local GDAY_BANNER="
     🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞
-    🌞🌞🌞    gday Version 3.6.0    🌞🌞🌞
+    🌞🌞🌞    gday Version 3.7.0    🌞🌞🌞
     🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
 
   # Prompts and sections
@@ -383,8 +383,10 @@ while IFS= read -r line; do
       if [[ ! $next_line =~ ^[0-9]{1,2}:[0-9]{2}[apm]{2} && -n "$next_line" && $next_line != *"No Events"* ]]; then
         # Check if it's not a date line for a different day
         if [[ ! $next_line =~ ^[A-Za-z]{3}\ [A-Za-z]{3}\ [0-9]{2} ]]; then
-          # It's probably an all-day event
-          all_day_events+=("all-day|📅 $next_line (All-day)")
+          # Skip "Length:" lines as they're just duration information, not events
+          if [[ ! $next_line =~ ^Length: ]]; then
+            all_day_events+=("all-day|📅 $next_line (All-day)")
+          fi
         else
           # It's a date line for a different day, stop processing
           line="$next_line"
@@ -412,7 +414,25 @@ while IFS= read -r line; do
 
     # Check for all-day events (typically 24 hours)
     if [[ $total_minutes -eq 1440 || ($time == "12:00am" && $total_minutes -gt 720) ]]; then
-      all_day_events+=("all-day|📅 $item (All-day)")
+      # Exclude "Length:" entries but include all other all-day events
+      if [[ ! $item =~ ^Length: ]]; then
+        all_day_events+=("all-day|📅 $item (All-day)")
+      else
+        # Handle as regular events by splitting into 30-minute blocks
+        local blocks=$((total_minutes / 30))
+        if [[ $blocks -eq 0 ]]; then
+          blocks=1
+        fi
+
+        for ((i=0; i<blocks && i<48; i++)); do  # Cap at 48 blocks (24 hours)
+          new_line="$time|$item"
+          if [[ "$item" != "🍅" || "$time" != "$prev_time" ]]; then
+            lines+=("$new_line")
+          fi
+          prev_time="$time"
+          time=$(add_pomodoro "$time")
+        done
+      fi
     # Handle 15-minute appointments
     elif [[ $total_minutes -eq 15 ]]; then
       # For appointments ending in :15, snap to previous :00
@@ -445,8 +465,16 @@ while IFS= read -r line; do
   fi
 done <<< "$calendar_data_no_color"
 
-# Add all-day events to the beginning of the lines array
-lines=("${all_day_events[@]}" "${lines[@]}")
+# Filter out any "Length:" entries from all-day events
+local filtered_all_day_events=()
+for event in "${all_day_events[@]}"; do
+  if [[ ! $event =~ Length: ]]; then
+    filtered_all_day_events+=("$event")
+  fi
+done
+
+# Add filtered all-day events to the beginning of the lines array
+lines=("${filtered_all_day_events[@]}" "${lines[@]}")
 
 ##### Add emoji to items lacking emoji and construct the final table
 for line in "${lines[@]}"; do
