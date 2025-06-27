@@ -13,31 +13,51 @@ found=0
 echo "## Yesterday in Git ($yesterday)..."
 echo ""
 
-# Function to generate semantic summaries using Claude
+# Function to generate semantic summaries
 generate_semantic_summary() {
   local messages="$1"
   local project="$2"
   
-  # For now, disable claude CLI due to timeout issues
-  # Just use improved keyword extraction
-  if false; then
-    # Claude CLI disabled for now
-    :
-  else
-    # Fallback: extract meaningful keywords
-    keywords=$(echo "$messages" | \
-      grep -o -E '\b[a-zA-Z]{4,}\b' | \
-      grep -v -E '^(with|from|into|this|that|have|been|were|will|your|their|them|they|when|where|what|which|update|updated|commit|added|fixed|changed)$' | \
-      sort | uniq -c | sort -nr | head -3 | \
-      awk '{print $2}' | tr '\n' ' ' | sed 's/ $//')
-    
-    if [[ -n "$keywords" ]]; then
-      echo "$keywords"
-    else
-      # Use first commit message
-      echo "$messages" | head -1 | cut -c 1-30
-    fi
+  # First try using the semantic_summarize script if available
+  if [[ -x ~/workspace/dot-rot/bin/semantic_summarize ]]; then
+    summary=$(echo "$messages" | ~/workspace/dot-rot/bin/semantic_summarize "$project")
+    echo "$summary"
+    return
   fi
+  
+  # Fallback: better keyword extraction
+  # Look for action words and meaningful terms
+  action_words=$(echo "$messages" | grep -o -E '\b(add|added|fix|fixed|update|updated|implement|implemented|create|created|remove|removed|refactor|refactored|improve|improved|enhance|enhanced|setup|configure|configured|deploy|deployed|integrate|integrated|optimize|optimized|debug|debugged|test|tested|build|built)\b' -i | head -1)
+  
+  # Extract meaningful keywords, excluding common words and the action words
+  keywords=$(echo "$messages" | \
+    grep -o -E '\b[a-zA-Z]{4,}\b' | \
+    grep -v -E '^(with|from|into|this|that|have|been|were|will|your|their|them|they|when|where|what|which|also|some|work|more)$' -i | \
+    grep -v -E "^${action_words}$" -i | \
+    sort | uniq -c | sort -nr | head -2 | \
+    awk '{print $2}' | tr '\n' ' ')
+  
+  # Combine action with keywords
+  if [[ -n "$action_words" && -n "$keywords" ]]; then
+    echo "${action_words} ${keywords}" | tr '[:upper:]' '[:lower:]' | sed 's/ $//'
+  elif [[ -n "$keywords" ]]; then
+    echo "$keywords" | sed 's/ $//'
+  else
+    # Use first commit message
+    echo "$messages" | head -1 | cut -c 1-30
+  fi
+}
+
+# Function to check if a path is a git worktree
+is_worktree() {
+  local repo_dir="$1"
+  [[ -f "$repo_dir/.git" ]]
+}
+
+# Function to get the current branch for a worktree or regular repo
+get_current_branch() {
+  local repo_dir="$1"
+  git -C "$repo_dir" rev-parse --abbrev-ref HEAD 2>/dev/null
 }
 
 # Function to process a git repository
@@ -45,53 +65,84 @@ process_repo() {
   local repo_dir="$1"
   local repo_name="$2"
   
-  # Get all local branches using git -C to avoid changing directories
-  branches=$(git -C "$repo_dir" for-each-ref --format='%(refname:short)' refs/heads/ 2>/dev/null)
-  
-  while IFS= read -r branch; do
-    # Skip empty branch names
-    [[ -z "$branch" ]] && continue
+  # For worktrees, check all branches but prefix with worktree name to avoid conflicts
+  if is_worktree "$repo_dir"; then
+    current_branch=$(get_current_branch "$repo_dir")
     
-    # Get yesterday's commits for this branch
-    commits=$(git -C "$repo_dir" log "$branch" --oneline --after="$yesterday 00:00" --before="$today 00:00" 2>/dev/null)
+    # Check all branches, but mark the currently checked-out one
+    branches=$(git -C "$repo_dir" for-each-ref --format='%(refname:short)' refs/heads/ 2>/dev/null)
     
-    if [[ -n "$commits" ]]; then
-      commit_count=$(echo "$commits" | wc -l | tr -d ' ')
-      commit_messages=$(echo "$commits" | sed 's/^[^ ]* //')
+    while IFS= read -r branch; do
+      # Skip empty branch names
+      [[ -z "$branch" ]] && continue
       
-      # Create unique key to check for duplicates
-      entry_key="${repo_name}|${branch}|${commit_count}"
+      # Get yesterday's commits for this branch
+      commits=$(git -C "$repo_dir" log "$branch" --oneline --after="$yesterday 00:00" --before="$today 00:00" 2>/dev/null)
       
-      # Skip if we've already seen this exact entry
-      if [[ -z "${seen_entries[$entry_key]}" ]]; then
-        seen_entries[$entry_key]=1
-        summary=$(generate_semantic_summary "$commit_messages" "$repo_name")
+      if [[ -n "$commits" ]]; then
+        commit_count=$(echo "$commits" | wc -l | tr -d ' ')
+        commit_messages=$(echo "$commits" | sed 's/^[^ ]* //')
         
-        # Add entry for this branch
-        all_entries+=("$repo_name|$branch|$commit_count|$summary")
-        ((found++))
+        # Create unique key to check for duplicates - include repo_dir to distinguish worktrees
+        entry_key="${repo_dir}|${branch}|${commit_count}"
+        
+        # Skip if we've already seen this exact entry
+        if [[ -z "${seen_entries[$entry_key]}" ]]; then
+          seen_entries[$entry_key]=1
+          summary=$(generate_semantic_summary "$commit_messages" "$repo_name")
+          
+          # Add entry for this branch
+          all_entries+=("$repo_name|$branch|$commit_count|$summary")
+          ((found++))
+        fi
       fi
-    fi
-  done <<< "$branches"
+    done <<< "$branches"
+  else
+    # For regular repos, check all branches
+    branches=$(git -C "$repo_dir" for-each-ref --format='%(refname:short)' refs/heads/ 2>/dev/null)
+    
+    while IFS= read -r branch; do
+      # Skip empty branch names
+      [[ -z "$branch" ]] && continue
+      
+      # Get yesterday's commits for this branch
+      commits=$(git -C "$repo_dir" log "$branch" --oneline --after="$yesterday 00:00" --before="$today 00:00" 2>/dev/null)
+      
+      if [[ -n "$commits" ]]; then
+        commit_count=$(echo "$commits" | wc -l | tr -d ' ')
+        commit_messages=$(echo "$commits" | sed 's/^[^ ]* //')
+        
+        # Create unique key to check for duplicates
+        entry_key="${repo_name}|${branch}|${commit_count}"
+        
+        # Skip if we've already seen this exact entry
+        if [[ -z "${seen_entries[$entry_key]}" ]]; then
+          seen_entries[$entry_key]=1
+          summary=$(generate_semantic_summary "$commit_messages" "$repo_name")
+          
+          # Add entry for this branch
+          all_entries+=("$repo_name|$branch|$commit_count|$summary")
+          ((found++))
+        fi
+      fi
+    done <<< "$branches"
+  fi
 }
 
-# First pass - standard git repositories
-for repo_path in $(find ~/workspace -type d -name ".git" -maxdepth 3 2>/dev/null | sort); do
-  repo_dir=$(dirname "$repo_path")
+# Process all git repositories in ~/workspace
+for repo_path in $(find ~/workspace -name ".git" -maxdepth 3 2>/dev/null | sort); do
+  if [[ -d "$repo_path" ]]; then
+    # Regular git repository
+    repo_dir=$(dirname "$repo_path")
+  else
+    # Git worktree (file)
+    repo_dir=$(dirname "$repo_path")
+  fi
+  
   repo_name=$(basename "$repo_dir")
   
   # Skip if it's the workspace directory itself
   [[ "$repo_name" == "workspace" ]] && continue
-  
-  process_repo "$repo_dir" "$repo_name"
-done
-
-# Second pass - git worktrees (where .git is a file)
-for git_file in $(find ~/workspace -type f -name ".git" -maxdepth 3 2>/dev/null | sort); do
-  repo_dir=$(dirname "$git_file")
-  
-  # For worktrees, just use the directory name
-  repo_name=$(basename "$repo_dir")
   
   process_repo "$repo_dir" "$repo_name"
 done
