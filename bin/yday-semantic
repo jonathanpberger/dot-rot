@@ -167,14 +167,14 @@ get_time_description() {
     # Default mode: git-standup's smart handling
     local day_of_week=$(date +%A)
     if [[ "$day_of_week" == "Monday" ]]; then
-      echo "Friday ($(date -v-3d +%m/%d))"
+      echo "Friday, $(date -v-3d +%A\ %B\ %d)"
     else
-      echo "yesterday ($(date -v-1d +%m/%d))"
+      echo "yesterday, $(date -v-1d +%A\ %B\ %d)"
     fi
   elif [[ $days_back -eq 0 ]]; then
-    echo "today ($(date +%m/%d))"
+    echo "today, $(date +%A\ %B\ %d)"
   elif [[ $days_back -eq 1 ]]; then
-    echo "yesterday ($(date -v-1d +%m/%d))"
+    echo "yesterday, $(date -v-1d +%A\ %B\ %d)"
   elif [[ $days_back -eq 7 ]]; then
     echo "last week"
   else
