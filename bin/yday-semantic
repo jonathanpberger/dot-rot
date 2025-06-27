@@ -32,7 +32,7 @@ declare -A seen_repos  # To track duplicates
 all_entries=()
 found=0
 
-echo "## Git Repository Activity..."
+echo "## Git Repository Activity in \`$parent_dir\`..."
 echo ""
 
 # Function to get relative time and days for sorting
@@ -103,35 +103,37 @@ process_repo() {
   local repo_name="$2"
   local is_wt=$(is_worktree "$repo_dir")
   
-  # Get the most recent commit across all branches
-  local most_recent_commit=$(git -C "$repo_dir" log --all --format="%H|%ci|%s" -1 2>/dev/null)
+  # Skip duplicates early
+  local repo_key="${repo_dir}"
+  if [[ -n "${seen_repos[$repo_key]}" ]]; then
+    return
+  fi
+  seen_repos[$repo_key]=1
   
-  if [[ -z "$most_recent_commit" ]]; then
+  # Quick check: if not showing all repos, only process if recent activity
+  if ! $show_all; then
+    # Check if there's any activity in the last 30 days (quick check)
+    local recent_activity=$(git -C "$repo_dir" log --all --since="30 days ago" --oneline -1 2>/dev/null)
+    if [[ -z "$recent_activity" ]]; then
+      return  # Skip repos with no recent activity
+    fi
+  fi
+  
+  # Single git command to get most recent commit with branch info
+  # Format: commit_hash|commit_date|commit_message|branch_refs
+  local git_info=$(git -C "$repo_dir" log --all --format="%H|%ci|%s" -1 2>/dev/null)
+  
+  if [[ -z "$git_info" ]]; then
     # No commits in repo
     if $show_all; then
-      # Skip duplicates
-      local repo_key="${repo_dir}"
-      if [[ -z "${seen_repos[$repo_key]}" ]]; then
-        seen_repos[$repo_key]=1
-        all_entries+=("99999|$repo_name|never|never|-|0|-|$is_wt")
-        ((found++))
-      fi
+      all_entries+=("99999|$repo_name|never|never|-|0|-|$is_wt")
+      ((found++))
     fi
     return
   fi
   
-  # Parse the most recent commit info
-  IFS='|' read -r commit_hash commit_date commit_message <<< "$most_recent_commit"
-  
-  # Find which branch contains this commit
-  local branch_with_commit=$(git -C "$repo_dir" branch --all --contains "$commit_hash" 2>/dev/null | \
-    sed 's/^[* ] //' | \
-    sed 's|^remotes/origin/||' | \
-    grep -v '^(' | \
-    head -1)
-  
-  # Clean up branch name
-  branch_with_commit=$(echo "$branch_with_commit" | sed 's|^remotes/[^/]*/||')
+  # Parse the git info
+  IFS='|' read -r commit_hash commit_date commit_message <<< "$git_info"
   
   # Get the date part only (YYYY-MM-DD)
   local commit_date_only=$(echo "$commit_date" | cut -d' ' -f1)
@@ -140,31 +142,28 @@ process_repo() {
   local time_result=$(get_relative_time "$commit_date")
   IFS='|' read -r relative_time days_ago <<< "$time_result"
   
-  # Skip duplicates - use repo_dir to distinguish worktrees from regular repos
-  local repo_key="${repo_dir}"
-  if [[ -n "${seen_repos[$repo_key]}" ]]; then
-    return
+  # Find branch containing this commit (simplified)
+  local branch_with_commit=$(git -C "$repo_dir" branch --contains "$commit_hash" 2>/dev/null | \
+    grep -E '^\*|^  ' | head -1 | sed 's/^[* ] //')
+  
+  # If no local branch found, try remote branches
+  if [[ -z "$branch_with_commit" ]]; then
+    branch_with_commit=$(git -C "$repo_dir" branch -r --contains "$commit_hash" 2>/dev/null | \
+      head -1 | sed 's/^  //' | sed 's|^origin/||')
   fi
-  seen_repos[$repo_key]=1
   
-  # Count commits on that date on that branch
-  local commits_count=$(git -C "$repo_dir" log "$branch_with_commit" \
-    --after="$commit_date_only 00:00:00" \
-    --before="$commit_date_only 23:59:59" \
-    --oneline 2>/dev/null | wc -l | tr -d ' ')
-  
-  # Get all commit messages from that date for summary
-  local day_messages=$(git -C "$repo_dir" log "$branch_with_commit" \
+  # Single git command to get commits and messages from that date
+  local day_commits_info=$(git -C "$repo_dir" log "${branch_with_commit:-HEAD}" \
     --after="$commit_date_only 00:00:00" \
     --before="$commit_date_only 23:59:59" \
     --format="%s" 2>/dev/null)
   
-  # Generate summary
-  local summary=""
-  if [[ -n "$day_messages" ]]; then
-    summary=$(generate_semantic_summary "$day_messages" "$repo_name")
-  else
-    summary="-"
+  local commits_count=0
+  local summary="-"
+  
+  if [[ -n "$day_commits_info" ]]; then
+    commits_count=$(echo "$day_commits_info" | wc -l | tr -d ' ')
+    summary=$(generate_semantic_summary "$day_commits_info" "$repo_name")
   fi
   
   # Add entry with days_ago for sorting
@@ -172,16 +171,18 @@ process_repo() {
   ((found++))
 }
 
-# Process all git repositories
-for repo_path in $(find "$parent_dir" -name ".git" -maxdepth 3 2>/dev/null | sort); do
-  if [[ -d "$repo_path" ]]; then
-    # Regular git repository
-    repo_dir=$(dirname "$repo_path")
-  else
-    # Git worktree (file)
-    repo_dir=$(dirname "$repo_path")
-  fi
-  
+# Process all git repositories (optimized find)
+# Combine both types of .git entries and process
+repo_paths=(
+  $(find "$parent_dir" -type d -name ".git" -maxdepth 3 2>/dev/null)
+  $(find "$parent_dir" -type f -name ".git" -maxdepth 3 2>/dev/null)
+)
+
+# Sort the array
+IFS=$'\n' repo_paths=($(sort <<< "${repo_paths[*]}"))
+
+for repo_path in "${repo_paths[@]}"; do
+  repo_dir=$(dirname "$repo_path")
   repo_name=$(basename "$repo_dir")
   
   # Skip if it's the parent directory itself
