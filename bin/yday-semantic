@@ -5,15 +5,9 @@
 yesterday=$(date -v-1d +"%Y-%m-%d")
 today=$(date +"%Y-%m-%d")
 
-# Initialize arrays and variables
-declare -A unique_projects
+# Initialize arrays
+all_entries=()
 found=0
-all_projects=()
-all_commits=()
-all_summaries=()
-max_project_len=7  # "Project" header length
-max_commits_len=7  # "Commits" header length
-current_dir=$(basename "$PWD")
 
 echo "## Yesterday in Git ($yesterday)..."
 echo ""
@@ -22,214 +16,99 @@ echo ""
 generate_semantic_summary() {
   local messages="$1"
   local project="$2"
-  local topics=""
-
-  # For dot-rot repository
-  if [[ "$project" == "dot-rot" ]]; then
-    if echo "$messages" | grep -i -q -E 'script|alias|yday|yweek|review|areview'; then
-      topics+="yday script, "
-    fi
-    if echo "$messages" | grep -i -q -E 'now.md|now|meta|readme'; then
-      topics+="now.md meta, "
-    fi
-    topics+="dot-rot maintainence"
-
-  # For foam repository
-  elif [[ "$project" == "foam" ]]; then
-    # Look for specific project topics
-    forensic_match=0
-    pacifica_match=0
-    thinking_match=0
-
-    if echo "$messages" | grep -i -q -E 'forensic|architecture|11W'; then
-      topics+="11W Forensic Architecture, "
-      forensic_match=1
-    fi
-    if echo "$messages" | grep -i -q -E 'pacifica|grey|gray'; then
-      topics+="grey pacifica, "
-      pacifica_match=1
-    fi
-    if echo "$messages" | grep -i -q -E 'now.md|thinking|thoughts|reflect'; then
-      topics+="lots of thinking about now.md"
-      thinking_match=1
-    fi
-
-    # If none of the specific topics matched, use a generic description
-    if [[ $forensic_match -eq 0 && $pacifica_match -eq 0 && $thinking_match -eq 0 ]]; then
-      topics+="note updates"
-    fi
-
-  # For bad_friend repository
-  elif [[ "$project" == "bad_friend-jumpstart_pro" ]]; then
-    # Initialize a match flag
-    has_match=0
-
-    if echo "$messages" | grep -i -q -E 'design|UI|UX'; then
-      topics+="design system, "
-      has_match=1
-    fi
-    if echo "$messages" | grep -i -q -E 'deploy|render|staging'; then
-      topics+="deployment setup, "
-      has_match=1
-    fi
-    if echo "$messages" | grep -i -q -E 'friend|contact|relationship'; then
-      topics+="friendship features, "
-      has_match=1
-    fi
-    if echo "$messages" | grep -i -q -E 'test|fix|bug'; then
-      topics+="bug fixes, "
-      has_match=1
-    fi
-
-    # Add app development only if no other topics matched or as a final item
-    if [[ $has_match -eq 0 ]]; then
-      topics+="app development"
-    else
-      # Remove trailing comma and space if present
-      topics=$(echo "$topics" | sed 's/, $//')
-    fi
-
-  # For ios-claude-pong repository
-  elif [[ "$project" == "ios-claude-pong" ]]; then
-    # Track which specific topics we've found
-    has_topic=0
-
-    if echo "$messages" | grep -i -q -E 'haptic|touch|feel'; then
-      topics+="haptics, "
-      has_topic=1
-    fi
-    if echo "$messages" | grep -i -q -E 'menu|UI|layout'; then
-      topics+="menu layout, "
-      has_topic=1
-    fi
-    if echo "$messages" | grep -i -q -E 'player|multiplayer'; then
-      topics+="player controls, "
-      has_topic=1
-    fi
-
-    # Only add generic "game enhancements" if no specific topics matched
-    if [[ $has_topic -eq 0 ]]; then
-      topics+="game enhancements"
-    else
-      # Remove trailing comma and space
-      topics=$(echo "$topics" | sed 's/, $//')
-    fi
-
-  # Generic fallback for other projects
+  
+  # Extract meaningful keywords from commit messages
+  # Remove common words and focus on meaningful terms
+  keywords=$(echo "$messages" | \
+    grep -o -E '\b[a-zA-Z]{4,}\b' | \
+    grep -v -E '^(with|from|into|this|that|have|been|were|will|your|their|them|they|when|where|what|which)$' | \
+    sort | uniq -c | sort -nr | head -3 | \
+    awk '{print $2}' | tr '\n' ', ' | sed 's/,$//')
+  
+  if [[ -n "$keywords" ]]; then
+    echo "$keywords"
   else
-    # Extract meaningful keywords from commit messages
-    keywords=$(echo "$messages" | grep -o -E '\b[a-zA-Z]{5,}\b' | sort | uniq -c | sort -nr | head -3 | awk '{print $2}' | tr '\n' ', ' | sed 's/,$//')
-    if [[ -n "$keywords" ]]; then
-      topics+="$keywords"
-    else
-      # If no keywords, use the first line as summary
-      topics+=$(echo "$messages" | head -1 | cut -c 1-40)
-    fi
+    # If no keywords, use the first commit message as summary
+    echo "$messages" | head -1 | cut -c 1-40
   fi
-
-  # Trim trailing commas and spaces
-  echo "$topics" | sed 's/, $//'
 }
 
-# First pass - collect data from standard git repositories
-for repo in $(find ~/workspace -type d -name ".git" -maxdepth 3 | sort); do
-  repo_dir=$(dirname "$repo")
-  project=$(basename "$repo_dir")
-
-  # Skip if we've already processed this project name
-  # Or if it's "." but we're in a named directory that will be processed separately
-  if [[ -n "${unique_projects[$project]}" ]] || [[ "$project" == "." && "$current_dir" != "." ]]; then
-    continue
-  fi
-
-  # Get yesterday's commits
-  commits=$(git -C "$repo_dir" log --oneline --after="$yesterday 00:00" --before="$today 00:00" 2>/dev/null)
-
-  if [[ -n "$commits" ]]; then
-    commit_count=$(echo "$commits" | wc -l | tr -d ' ')
-    commit_messages=$(echo "$commits" | sed 's/^[^ ]* //')
-    summary=$(generate_semantic_summary "$commit_messages" "$project")
-
-    # Mark this project as processed
-    unique_projects[$project]=1
-
-    # Use the proper name for the current directory
-    if [[ "$project" == "." ]]; then
-      project="$current_dir"
-    fi
-
-    # Only add non-empty projects
-    if [[ -n "$project" && -n "$commit_count" && -n "$summary" ]]; then
-      all_projects+=("$project")
-      all_commits+=("$commit_count")
-      all_summaries+=("$summary")
-
-      # Update max widths
-      if [[ ${#project} -gt $max_project_len ]]; then
-        max_project_len=${#project}
-      fi
-      if [[ ${#commit_count} -gt $max_commits_len ]]; then
-        max_commits_len=${#commit_count}
-      fi
-
+# Function to process a git repository
+process_repo() {
+  local repo_dir="$1"
+  local repo_name="$2"
+  
+  # Get all branches with commits from yesterday
+  cd "$repo_dir" 2>/dev/null || return
+  
+  # Get all branches (local and remote)
+  branches=$(git for-each-ref --format='%(refname:short)' refs/heads/ 2>/dev/null)
+  
+  while IFS= read -r branch; do
+    # Skip empty branch names
+    [[ -z "$branch" ]] && continue
+    
+    # Get yesterday's commits for this branch
+    commits=$(git log "$branch" --oneline --after="$yesterday 00:00" --before="$today 00:00" 2>/dev/null)
+    
+    if [[ -n "$commits" ]]; then
+      commit_count=$(echo "$commits" | wc -l | tr -d ' ')
+      commit_messages=$(echo "$commits" | sed 's/^[^ ]* //')
+      summary=$(generate_semantic_summary "$commit_messages" "$repo_name")
+      
+      # Add entry for this branch
+      all_entries+=("$repo_name|$branch|$commit_count|$summary")
       ((found++))
     fi
-  fi
+  done <<< "$branches"
+}
+
+# First pass - standard git repositories
+for repo_path in $(find ~/workspace -type d -name ".git" -maxdepth 3 2>/dev/null | sort); do
+  repo_dir=$(dirname "$repo_path")
+  repo_name=$(basename "$repo_dir")
+  
+  # Skip if it's the workspace directory itself
+  [[ "$repo_name" == "workspace" ]] && continue
+  
+  process_repo "$repo_dir" "$repo_name"
 done
 
-# Second pass - collect data from git worktrees
+# Second pass - git worktrees (where .git is a file)
 for git_file in $(find ~/workspace -type f -name ".git" -maxdepth 3 2>/dev/null | sort); do
   repo_dir=$(dirname "$git_file")
-  project=$(basename "$repo_dir")
-
-  # Skip if we've already processed this project
-  if [[ -n "${unique_projects[$project]}" ]]; then
-    continue
+  
+  # For worktrees, include the parent directory in the name to distinguish them
+  parent_dir=$(basename $(dirname "$repo_dir"))
+  worktree_name=$(basename "$repo_dir")
+  
+  # Create a descriptive name for the worktree
+  if [[ "$parent_dir" != "workspace" ]]; then
+    repo_name="${parent_dir}/${worktree_name}"
+  else
+    repo_name="$worktree_name"
   fi
-
-  # Get yesterday's commits
-  commits=$(git -C "$repo_dir" log --oneline --after="$yesterday 00:00" --before="$today 00:00" 2>/dev/null)
-
-  if [[ -n "$commits" ]]; then
-    commit_count=$(echo "$commits" | wc -l | tr -d ' ')
-    commit_messages=$(echo "$commits" | sed 's/^[^ ]* //')
-    summary=$(generate_semantic_summary "$commit_messages" "$project")
-
-    # Mark this project as processed
-    unique_projects[$project]=1
-
-    # Only add non-empty projects
-    if [[ -n "$project" && -n "$commit_count" && -n "$summary" ]]; then
-      all_projects+=("$project")
-      all_commits+=("$commit_count")
-      all_summaries+=("$summary")
-
-      # Update max widths
-      if [[ ${#project} -gt $max_project_len ]]; then
-        max_project_len=${#project}
-      fi
-      if [[ ${#commit_count} -gt $max_commits_len ]]; then
-        max_commits_len=${#commit_count}
-      fi
-
-      ((found++))
-    fi
-  fi
+  
+  process_repo "$repo_dir" "$repo_name"
 done
 
-# Print table with properly formatted columns
-echo "| Project | Commits | Summary                                |"
-echo "|---------|---------|----------------------------------------|"
+# Sort entries by project name, then by branch
+IFS=$'\n' sorted_entries=($(sort -t'|' -k1,1 -k2,2 <<< "${all_entries[*]}"))
+
+# Print table
+echo "| Project | Branch | Commits | Summary |"
+echo "|---------|--------|---------|---------|"
 
 if [[ $found -eq 0 ]]; then
-  echo "| -       | -       | No commits found for yesterday          |"
+  echo "| -       | -      | -       | No commits found for yesterday |"
 else
-  for i in $(seq 0 $(($found - 1))); do
-    # Skip empty entries
-    if [[ -n "${all_projects[$i]}" && -n "${all_commits[$i]}" ]]; then
-      # Format each column to ensure proper alignment
-      printf "| %-7s | %-7s | %-38s |\n" "${all_projects[$i]}" "${all_commits[$i]}" "${all_summaries[$i]}"
-    fi
+  for entry in "${sorted_entries[@]}"; do
+    IFS='|' read -r project branch commits summary <<< "$entry"
+    # Truncate long values to fit table
+    project=${project:0:20}
+    branch=${branch:0:20}
+    summary=${summary:0:40}
+    printf "| %-20s | %-20s | %-7s | %-40s |\n" "$project" "$branch" "$commits" "$summary"
   done
 fi
 
