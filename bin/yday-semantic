@@ -1,15 +1,17 @@
 #!/bin/zsh
 # yday-semantic - Show git activity with semantic summaries
 
-# Default parent directory
+# Default parent directory and behavior
 parent_dir="$HOME/workspace"
 show_all=false
+yesterday_only=true  # Default behavior: show only yesterday's activity
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
   case $1 in
     --all)
       show_all=true
+      yesterday_only=false
       shift
       ;;
     --parent=*)
@@ -110,18 +112,23 @@ process_repo() {
   fi
   seen_repos[$repo_key]=1
   
-  # Quick check: if not showing all repos, only process if recent activity
-  if ! $show_all; then
-    # Check if there's any activity in the last 30 days (quick check)
-    local recent_activity=$(git -C "$repo_dir" log --all --since="30 days ago" --oneline -1 2>/dev/null)
-    if [[ -z "$recent_activity" ]]; then
-      return  # Skip repos with no recent activity
-    fi
-  fi
+  # Handle different modes
+  local git_info
+  local commit_hash commit_date commit_message
   
-  # Single git command to get most recent commit with branch info
-  # Format: commit_hash|commit_date|commit_message|branch_refs
-  local git_info=$(git -C "$repo_dir" log --all --format="%H|%ci|%s" -1 2>/dev/null)
+  if $yesterday_only; then
+    # Get yesterday's date for filtering
+    local yesterday_date=$(date -v-1d +"%Y-%m-%d")
+    # Only get commits from yesterday
+    git_info=$(git -C "$repo_dir" log --all --after="$yesterday_date 00:00:00" --before="$yesterday_date 23:59:59" --format="%H|%ci|%s" -1 2>/dev/null)
+    
+    if [[ -z "$git_info" ]]; then
+      return  # Skip repos with no yesterday activity
+    fi
+  else
+    # Get most recent commit regardless of date
+    git_info=$(git -C "$repo_dir" log --all --format="%H|%ci|%s" -1 2>/dev/null)
+  fi
   
   if [[ -z "$git_info" ]]; then
     # No commits in repo
@@ -139,7 +146,13 @@ process_repo() {
   local commit_date_only=$(echo "$commit_date" | cut -d' ' -f1)
   
   # Get relative time and days for sorting
-  local time_result=$(get_relative_time "$commit_date")
+  local time_result
+  if $yesterday_only; then
+    # For yesterday mode, always show "1 day ago (yesterday)"
+    time_result="1 day ago (yesterday)|1"
+  else
+    time_result=$(get_relative_time "$commit_date")
+  fi
   IFS='|' read -r relative_time days_ago <<< "$time_result"
   
   # Find branch containing this commit (simplified)
@@ -152,14 +165,25 @@ process_repo() {
       head -1 | sed 's/^  //' | sed 's|^origin/||')
   fi
   
-  # Single git command to get commits and messages from that date
-  local day_commits_info=$(git -C "$repo_dir" log "${branch_with_commit:-HEAD}" \
-    --after="$commit_date_only 00:00:00" \
-    --before="$commit_date_only 23:59:59" \
-    --format="%s" 2>/dev/null)
-  
+  # Get commits and messages from the relevant date
+  local day_commits_info
   local commits_count=0
   local summary="-"
+  
+  if $yesterday_only; then
+    # For yesterday mode, get all commits from yesterday
+    local yesterday_date=$(date -v-1d +"%Y-%m-%d")
+    day_commits_info=$(git -C "$repo_dir" log --all \
+      --after="$yesterday_date 00:00:00" \
+      --before="$yesterday_date 23:59:59" \
+      --format="%s" 2>/dev/null)
+  else
+    # For all mode, get commits from the day of the most recent commit
+    day_commits_info=$(git -C "$repo_dir" log "${branch_with_commit:-HEAD}" \
+      --after="$commit_date_only 00:00:00" \
+      --before="$commit_date_only 23:59:59" \
+      --format="%s" 2>/dev/null)
+  fi
   
   if [[ -n "$day_commits_info" ]]; then
     commits_count=$(echo "$day_commits_info" | wc -l | tr -d ' ')
