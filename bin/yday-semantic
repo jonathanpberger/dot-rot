@@ -1,17 +1,24 @@
 #!/bin/zsh
-# yday-semantic - Show git activity with semantic summaries
+# yday-semantic - Show git activity with semantic summaries using git-standup
 
 # Default parent directory and behavior
 parent_dir="$HOME/workspace"
 show_all=false
-yesterday_only=true  # Default behavior: show only yesterday's activity
+days_back=""  # Let git-standup handle the default
+show_today=false
+custom_days=false
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
   case $1 in
     --all)
       show_all=true
-      yesterday_only=false
+      days_back=7  # Show last week for --all
+      shift
+      ;;
+    --today)
+      show_today=true
+      days_back=0
       shift
       ;;
     --parent=*)
@@ -20,50 +27,46 @@ while [[ $# -gt 0 ]]; do
       parent_dir="${parent_dir/#\~/$HOME}"
       shift
       ;;
+    -d|--days)
+      days_back="$2"
+      custom_days=true
+      shift 2
+      ;;
     *)
-      echo "Usage: $0 [--all] [--parent=<directory>]"
-      echo "  --all: Show all repos regardless of recent activity"
+      echo "Usage: $0 [--all] [--today] [--parent=<directory>] [-d|--days <number>]"
+      echo "  --all: Show last week's activity"
+      echo "  --today: Show today's activity"
       echo "  --parent=<dir>: Directory to search for git repos (default: ~/workspace)"
+      echo "  -d, --days <n>: Number of days back to look"
+      echo ""
+      echo "Default behavior: Shows yesterday's commits (or Friday's on Monday)"
       exit 1
       ;;
   esac
 done
 
-# Initialize arrays
-declare -A seen_repos  # To track duplicates
-all_entries=()
-found=0
-
-echo "## Git Repository Activity in \`$parent_dir\`..."
-echo ""
-
-# Function to get relative time and days for sorting
-get_relative_time() {
-  local timestamp="$1"
-  if [[ -z "$timestamp" ]]; then
-    echo "never|99999"
-    return
-  fi
-  
-  # Calculate days ago for sorting
-  local commit_date=$(date -j -f "%Y-%m-%d %H:%M:%S" "$timestamp" "+%s" 2>/dev/null)
-  local now=$(date "+%s")
-  local diff=$((now - commit_date))
-  local days=$((diff / 86400))
-  
-  # Format display text
-  local display_text
-  if [[ $days -eq 0 ]]; then
-    display_text="0 days ago (today)"
-  elif [[ $days -eq 1 ]]; then
-    display_text="1 day ago (yesterday)"
+# If no flags set, calculate the correct days back for "yesterday"
+if [[ -z "$days_back" ]]; then
+  # Default mode: true yesterday (or Friday on Monday)
+  local day_of_week=$(date +%A)
+  if [[ "$day_of_week" == "Monday" ]]; then
+    standup_flags="-d 3 -u 3"  # Friday only
   else
-    display_text="${days} days ago"
+    standup_flags="-d 1 -u 1"  # Yesterday only
   fi
-  
-  # Return both display text and days for sorting (separated by |)
-  echo "${display_text}|${days}"
-}
+elif [[ $days_back -eq 0 ]]; then
+  standup_flags="-d 0 -u 0"  # Today only
+else
+  standup_flags="-d $days_back"  # Last N days (including today)
+fi
+
+# Check if git-standup is installed
+if ! command -v git-standup &> /dev/null; then
+  echo "Error: git-standup is not installed."
+  echo "Install it with: npm install -g git-standup"
+  echo "Or visit: https://github.com/kamranahmedse/git-standup"
+  exit 1
+fi
 
 # Function to generate semantic summary
 generate_semantic_summary() {
@@ -82,7 +85,7 @@ generate_semantic_summary() {
   # Fallback: extract keywords
   keywords=$(echo "$messages" | \
     grep -o -E '\b[a-zA-Z]{4,}\b' | \
-    grep -v -E '^(with|from|into|this|that|have|been|were|will|your|their|them|they|when|where|what|which|also|some|work|more)$' -i | \
+    grep -v -E '^(with|from|into|this|that|have|been|were|will|your|their|them|they|when|where|what|which|also|some|work|more|commit|added|fixed|changed|update|updated)$' -i | \
     sort | uniq -c | sort -nr | head -3 | \
     awk '{print $2}' | tr '\n' ' ' | sed 's/ $//')
   
@@ -93,190 +96,144 @@ generate_semantic_summary() {
   fi
 }
 
-# Function to check if a path is a git worktree
-is_worktree() {
-  local repo_dir="$1"
-  [[ -f "$repo_dir/.git" ]]
+# Function to get relative time description
+get_time_description() {
+  if [[ -z "$days_back" ]]; then
+    # Default mode: git-standup's smart handling
+    local day_of_week=$(date +%A)
+    if [[ "$day_of_week" == "Monday" ]]; then
+      echo "Friday ($(date -v-3d +%m/%d))"
+    else
+      echo "yesterday ($(date -v-1d +%m/%d))"
+    fi
+  elif [[ $days_back -eq 0 ]]; then
+    echo "today ($(date +%m/%d))"
+  elif [[ $days_back -eq 1 ]]; then
+    echo "yesterday ($(date -v-1d +%m/%d))"
+  elif [[ $days_back -eq 7 ]]; then
+    echo "last week"
+  else
+    echo "last $days_back days"
+  fi
 }
 
-# Function to process a git repository
-process_repo() {
-  local repo_dir="$1"
-  local repo_name="$2"
-  local is_wt=$(is_worktree "$repo_dir")
+# Change to parent directory
+cd "$parent_dir" 2>/dev/null || {
+  echo "Error: Cannot access directory $parent_dir"
+  exit 1
+}
+
+echo "## Git Repository Activity in \`$parent_dir\` ($(get_time_description))..."
+echo ""
+
+# Run git-standup and capture output
+standup_output=$(git-standup $standup_flags 2>/dev/null)
+
+
+if [[ -z "$standup_output" ]]; then
+  echo "| Repo | Commits | Summary |"
+  echo "|------|---------|---------|"
+  echo "| -    | -       | No commits found for $(get_time_description) |"
+  echo ""
+  exit 0
+fi
+
+# Initialize arrays for table data
+declare -A repo_commits
+declare -A repo_summaries
+all_repos=()
+
+# Parse git-standup output
+current_repo=""
+current_commits=""
+
+while IFS= read -r line; do
+  # Skip empty lines
+  [[ -z "$line" ]] && continue
   
-  # Skip duplicates early
-  local repo_key="${repo_dir}"
-  if [[ -n "${seen_repos[$repo_key]}" ]]; then
-    return
-  fi
-  seen_repos[$repo_key]=1
-  
-  # Handle different modes
-  local git_info
-  local commit_hash commit_date commit_message
-  
-  if $yesterday_only; then
-    # Get yesterday's date for filtering
-    local yesterday_date=$(date -v-1d +"%Y-%m-%d")
-    # Only get commits from yesterday
-    git_info=$(git -C "$repo_dir" log --all --after="$yesterday_date 00:00:00" --before="$yesterday_date 23:59:59" --format="%H|%ci|%s" -1 2>/dev/null)
+  # Check if this is a repository header (starts with /, contains git repos)
+  if [[ "$line" =~ ^/.*/([^/]+)$ ]]; then
+    # Save previous repo data if we have it
+    if [[ -n "$current_repo" && -n "$current_commits" ]]; then
+      commit_count=$(echo "$current_commits" | grep -c '^.')  # Count non-empty lines
+      repo_commits[$current_repo]=$commit_count
+      repo_summaries[$current_repo]=$(generate_semantic_summary "$current_commits" "$current_repo")
+      all_repos+=("$current_repo")
+      
+    fi
     
-    if [[ -z "$git_info" ]]; then
-      return  # Skip repos with no yesterday activity
-    fi
-  else
-    # Get most recent commit regardless of date
-    git_info=$(git -C "$repo_dir" log --all --format="%H|%ci|%s" -1 2>/dev/null)
+    # Extract repo name from path
+    current_repo=$(basename "$line")
+    current_commits=""
+    continue
   fi
   
-  if [[ -z "$git_info" ]]; then
-    # No commits in repo
-    if $show_all; then
-      all_entries+=("99999|$repo_name|never|never|-|0|-|$is_wt")
-      ((found++))
-    fi
-    return
+  # Check if this line contains commit info (starts with hash and has " - ")
+  if [[ "$line" =~ ^[a-f0-9]+.*\ -\  ]]; then
+    # Simple approach: split on " - " and take everything after
+    commit_message="${line#*\ -\ }"
+    # Remove the timestamp and author info at the end - keep everything before " (X ago)"
+    commit_message=$(echo "$commit_message" | sed 's/ ([^)]* ago) <[^>]*>.*$//' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+    current_commits+="$commit_message"$'\n'
+    
+    continue
   fi
   
-  # Parse the git info
-  IFS='|' read -r commit_hash commit_date commit_message <<< "$git_info"
-  
-  # Get the date part only (YYYY-MM-DD)
-  local commit_date_only=$(echo "$commit_date" | cut -d' ' -f1)
-  
-  # Get relative time and days for sorting
-  local time_result
-  if $yesterday_only; then
-    # For yesterday mode, always show "1 day ago (yesterday)"
-    time_result="1 day ago (yesterday)|1"
-  else
-    time_result=$(get_relative_time "$commit_date")
-  fi
-  IFS='|' read -r relative_time days_ago <<< "$time_result"
-  
-  # Find branch containing this commit (simplified)
-  local branch_with_commit=$(git -C "$repo_dir" branch --contains "$commit_hash" 2>/dev/null | \
-    grep -E '^\*|^  ' | head -1 | sed 's/^[* ] //')
-  
-  # If no local branch found, try remote branches
-  if [[ -z "$branch_with_commit" ]]; then
-    branch_with_commit=$(git -C "$repo_dir" branch -r --contains "$commit_hash" 2>/dev/null | \
-      head -1 | sed 's/^  //' | sed 's|^origin/||')
-  fi
-  
-  # Get commits and messages from the relevant date
-  local day_commits_info
-  local commits_count=0
-  local summary="-"
-  
-  if $yesterday_only; then
-    # For yesterday mode, get all commits from yesterday
-    local yesterday_date=$(date -v-1d +"%Y-%m-%d")
-    day_commits_info=$(git -C "$repo_dir" log --all \
-      --after="$yesterday_date 00:00:00" \
-      --before="$yesterday_date 23:59:59" \
-      --format="%s" 2>/dev/null)
-  else
-    # For all mode, get commits from the day of the most recent commit
-    day_commits_info=$(git -C "$repo_dir" log "${branch_with_commit:-HEAD}" \
-      --after="$commit_date_only 00:00:00" \
-      --before="$commit_date_only 23:59:59" \
-      --format="%s" 2>/dev/null)
-  fi
-  
-  if [[ -n "$day_commits_info" ]]; then
-    commits_count=$(echo "$day_commits_info" | wc -l | tr -d ' ')
-    summary=$(generate_semantic_summary "$day_commits_info" "$repo_name")
-  fi
-  
-  # Add entry with days_ago for sorting
-  all_entries+=("$days_ago|$repo_name|$relative_time|$branch_with_commit|$commits_count|$summary|$is_wt")
-  ((found++))
-}
+  # Skip lines like "No commits from JPB during this period."
+done <<< "$standup_output"
 
-# Process all git repositories (optimized find)
-# Combine both types of .git entries and process
-repo_paths=(
-  $(find "$parent_dir" -type d -name ".git" -maxdepth 3 2>/dev/null)
-  $(find "$parent_dir" -type f -name ".git" -maxdepth 3 2>/dev/null)
-)
+# Don't forget the last repo
+if [[ -n "$current_repo" && -n "$current_commits" ]]; then
+  commit_count=$(echo "$current_commits" | grep -c '^.')  # Count non-empty lines
+  repo_commits[$current_repo]=$commit_count
+  repo_summaries[$current_repo]=$(generate_semantic_summary "$current_commits" "$current_repo")
+  all_repos+=("$current_repo")
+fi
 
-# Sort the array
-IFS=$'\n' repo_paths=($(sort <<< "${repo_paths[*]}"))
+# Sort repos alphabetically
+IFS=$'\n' sorted_repos=($(sort <<< "${all_repos[*]}"))
 
-for repo_path in "${repo_paths[@]}"; do
-  repo_dir=$(dirname "$repo_path")
-  repo_name=$(basename "$repo_dir")
-  
-  # Skip if it's the parent directory itself
-  [[ "$repo_name" == "$(basename "$parent_dir")" ]] && continue
-  
-  process_repo "$repo_dir" "$repo_name"
-done
-
-# Sort entries by days ago (numeric sort)
-IFS=$'\n' sorted_entries=($(sort -t'|' -k1,1n <<< "${all_entries[*]}"))
-
-# Calculate column widths for proper formatting
+# Calculate column widths
 max_repo=4      # "Repo"
-max_updated=12  # "Last Updated"
-max_branch=6    # "Branch"
 max_commits=7   # "Commits"
 max_summary=7   # "Summary"
-max_worktree=8  # "Worktree"
 
-# Find maximum widths
-for entry in "${sorted_entries[@]}"; do
-  IFS='|' read -r days_ago repo updated branch commits summary worktree <<< "$entry"
+for repo in "${sorted_repos[@]}"; do
   [[ ${#repo} -gt $max_repo ]] && max_repo=${#repo}
-  [[ ${#updated} -gt $max_updated ]] && max_updated=${#updated}
-  [[ ${#branch} -gt $max_branch ]] && max_branch=${#branch}
+  commits=${repo_commits[$repo]}
+  [[ ${#commits} -gt $max_commits ]] && max_commits=${#commits}
+  summary=${repo_summaries[$repo]}
   [[ ${#summary} -gt $max_summary ]] && max_summary=${#summary}
 done
 
 # Cap maximum widths for readability
-[[ $max_repo -gt 25 ]] && max_repo=25
-[[ $max_updated -gt 20 ]] && max_updated=20  # Increased for "0 days ago (today)"
-[[ $max_branch -gt 20 ]] && max_branch=20
-[[ $max_summary -gt 40 ]] && max_summary=40
+[[ $max_repo -gt 30 ]] && max_repo=30
+[[ $max_summary -gt 50 ]] && max_summary=50
 
-# Print table header
-printf "| %-${max_repo}s | %-${max_updated}s | %-${max_branch}s | %-${max_commits}s | %-${max_summary}s | %-${max_worktree}s |\n" \
-  "Repo" "Last Updated" "Branch" "Commits" "Summary" "Worktree"
+# Print table
+printf "| %-${max_repo}s | %-${max_commits}s | %-${max_summary}s |\n" "Repo" "Commits" "Summary"
 
 # Print separator line
 printf "|"
 printf "%s|" "$(printf '%.0s-' $(seq 1 $((max_repo + 2))))"
-printf "%s|" "$(printf '%.0s-' $(seq 1 $((max_updated + 2))))"
-printf "%s|" "$(printf '%.0s-' $(seq 1 $((max_branch + 2))))"
 printf "%s|" "$(printf '%.0s-' $(seq 1 $((max_commits + 2))))"
 printf "%s|" "$(printf '%.0s-' $(seq 1 $((max_summary + 2))))"
-printf "%s|" "$(printf '%.0s-' $(seq 1 $((max_worktree + 2))))"
 printf "\n"
 
-if [[ $found -eq 0 ]]; then
-  printf "| %-${max_repo}s | %-${max_updated}s | %-${max_branch}s | %-${max_commits}s | %-${max_summary}s | %-${max_worktree}s |\n" \
-    "-" "-" "-" "-" "No repos found" "-"
+if [[ ${#sorted_repos[@]} -eq 0 ]]; then
+  printf "| %-${max_repo}s | %-${max_commits}s | %-${max_summary}s |\n" \
+    "-" "-" "No commits found for $(get_time_description)"
 else
-  for entry in "${sorted_entries[@]}"; do
-    IFS='|' read -r days_ago repo updated branch commits summary worktree <<< "$entry"
-    
-    # Convert boolean to yes/no
-    if [[ "$worktree" == "true" ]]; then
-      worktree_display="yes"
-    else
-      worktree_display="no"
-    fi
+  for repo in "${sorted_repos[@]}"; do
+    commits=${repo_commits[$repo]}
+    summary=${repo_summaries[$repo]}
     
     # Truncate if needed
     repo=${repo:0:$max_repo}
-    updated=${updated:0:$max_updated}
-    branch=${branch:0:$max_branch}
     summary=${summary:0:$max_summary}
     
-    printf "| %-${max_repo}s | %-${max_updated}s | %-${max_branch}s | %-${max_commits}s | %-${max_summary}s | %-${max_worktree}s |\n" \
-      "$repo" "$updated" "$branch" "$commits" "$summary" "$worktree_display"
+    printf "| %-${max_repo}s | %-${max_commits}s | %-${max_summary}s |\n" \
+      "$repo" "$commits" "$summary"
   done
 fi
 

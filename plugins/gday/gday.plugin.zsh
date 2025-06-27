@@ -125,6 +125,8 @@ GCAL_CALENDARS=(
 validate_calendars() {
   # Get available calendars - extract the entire calendar name, preserving spaces
   local available_calendars=$(gcalcli list --nocolor | awk 'NR > 1 {
+    # Skip separator lines that contain only dashes/hyphens
+    if ($0 ~ /^[- ]+$/) next;
     # Remove the first two columns (Owner and Access)
     $1=""; $2="";
     # Print the rest of the line (the calendar name)
@@ -135,26 +137,50 @@ validate_calendars() {
   local found=0
 
   echo "Checking configured calendars..."
-  echo "\nAvailable calendars:"
-  echo "$available_calendars" # | sed 's/^/   - /'
 
-  echo "\nConfigured calendars:"
-  for cal in "${GCAL_CALENDARS[@]}"; do
-    # Check if calendar exists EXACTLY in available list (not as substring)
-    if echo "$available_calendars" | grep -Fx "$cal" > /dev/null; then
-      # Then verify we can actually use it with gcalcli
-      if gcalcli --cal "$cal" agenda "today" "today" --nocolor --no-military >/dev/null 2>&1; then
-        echo "   - ✅ $cal"
-        ((found++))
-      else
-        echo "   - ❌ $cal (exists but gcalcli cannot access it)"
-        missing_calendars+=("$cal")
+  # Print table header
+  echo "\n| Available Calendars              | Included? |"
+  echo "|----------------------------------|-----------|"
+
+  # Process each available calendar
+  while IFS= read -r cal; do
+    # Skip empty lines or lines containing only dashes/hyphens
+    if [[ -n "$cal" && ! "$cal" =~ ^[-]+$ ]]; then
+      # Check if calendar is in configured list
+      local is_configured=false
+      local is_accessible=false
+
+      for config_cal in "${GCAL_CALENDARS[@]}"; do
+        if [[ "$cal" == "$config_cal" ]]; then
+          is_configured=true
+          # Verify we can actually use it with gcalcli
+          if gcalcli --cal "$cal" agenda "today" "today" --nocolor --no-military >/dev/null 2>&1; then
+            is_accessible=true
+            ((found++))
+          else
+            missing_calendars+=("$cal")
+          fi
+          break
+        fi
+      done
+
+      # Format the table row
+      local cal_status=""
+      if $is_configured && $is_accessible; then
+        cal_status="✅"
       fi
-    else
-      echo "   - ❌ $cal (not found in available calendars)"
-      missing_calendars+=("$cal")
+
+      # Add padding to make calendar name fit nicely
+      local padded_cal="$cal                                   "
+      padded_cal="${padded_cal:0:34}"
+
+      # Format the status with consistent spacing
+      local formatted_status="$cal_status    "
+      formatted_status="${formatted_status:0:9}"
+
+      echo "| $padded_cal | $formatted_status |"
     fi
-  done
+  done <<< "$available_calendars"
 
   echo "\nValidation results:"
   if [[ ${#missing_calendars[@]} -gt 0 ]]; then
@@ -249,7 +275,7 @@ function gday() {
   # Banner and version
   local GDAY_BANNER="
     🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞
-    🌞🌞🌞    gday Version 3.7.0    🌞🌞🌞
+    🌞🌞🌞    gday Version 3.8.0    🌞🌞🌞
     🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
 
   # Prompts and sections
@@ -265,8 +291,8 @@ function gday() {
   local braindump="## 🫃 What's on your mind rn? 🐸🧹👑 \n\n\n\n\n--- "
   local frogs="\n- 1st 🐸 I'll eat:\n- 2nd 🐸 I'll eat:\n- 3rd 🐸 I'll eat:\n\n"
   local title="## 🪢 Todo Today"
-  local table_header="| Time    | Item |"
-  local table_separator="|---------|------|"
+  local table_header="| Time    | Item                                                                                   |"
+  local table_separator="|---------|----------------------------------------------------------------------------------------|"
   local kicker="\n******* DO WHATEVER THE SCHEDULE TELLS ME. AND ONLY THAT.**********\n\n\n"
 
 
@@ -486,7 +512,15 @@ for line in "${lines[@]}"; do
     item="${emoji} $item"
   fi
 
-  body+="| ${time} | ${item} |"$'\n'
+  # Format time with consistent spacing
+  local formatted_time="${time}       "
+  formatted_time="${formatted_time:0:8}"
+
+  # Pad item with spaces for consistent column width
+  local formatted_item="${item}                                                                                            "
+  formatted_item="${formatted_item:0:88}"
+
+  body+="| ${formatted_time} | ${formatted_item} |"$'\n'
 done
 
   local dateline="# $display_date"
