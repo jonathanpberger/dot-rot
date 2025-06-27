@@ -6,30 +6,37 @@ yesterday=$(date -v-1d +"%Y-%m-%d")
 today=$(date +"%Y-%m-%d")
 
 # Initialize arrays
+declare -A seen_entries  # To track duplicates
 all_entries=()
 found=0
 
 echo "## Yesterday in Git ($yesterday)..."
 echo ""
 
-# Function to generate semantic summaries
+# Function to generate semantic summaries using Claude
 generate_semantic_summary() {
   local messages="$1"
   local project="$2"
   
-  # Extract meaningful keywords from commit messages
-  # Remove common words and focus on meaningful terms
-  keywords=$(echo "$messages" | \
-    grep -o -E '\b[a-zA-Z]{4,}\b' | \
-    grep -v -E '^(with|from|into|this|that|have|been|were|will|your|their|them|they|when|where|what|which)$' | \
-    sort | uniq -c | sort -nr | head -3 | \
-    awk '{print $2}' | tr '\n' ', ' | sed 's/,$//')
-  
-  if [[ -n "$keywords" ]]; then
-    echo "$keywords"
+  # For now, disable claude CLI due to timeout issues
+  # Just use improved keyword extraction
+  if false; then
+    # Claude CLI disabled for now
+    :
   else
-    # If no keywords, use the first commit message as summary
-    echo "$messages" | head -1 | cut -c 1-40
+    # Fallback: extract meaningful keywords
+    keywords=$(echo "$messages" | \
+      grep -o -E '\b[a-zA-Z]{4,}\b' | \
+      grep -v -E '^(with|from|into|this|that|have|been|were|will|your|their|them|they|when|where|what|which|update|updated|commit|added|fixed|changed)$' | \
+      sort | uniq -c | sort -nr | head -3 | \
+      awk '{print $2}' | tr '\n' ' ' | sed 's/ $//')
+    
+    if [[ -n "$keywords" ]]; then
+      echo "$keywords"
+    else
+      # Use first commit message
+      echo "$messages" | head -1 | cut -c 1-30
+    fi
   fi
 }
 
@@ -38,27 +45,32 @@ process_repo() {
   local repo_dir="$1"
   local repo_name="$2"
   
-  # Get all branches with commits from yesterday
-  cd "$repo_dir" 2>/dev/null || return
-  
-  # Get all branches (local and remote)
-  branches=$(git for-each-ref --format='%(refname:short)' refs/heads/ 2>/dev/null)
+  # Get all local branches using git -C to avoid changing directories
+  branches=$(git -C "$repo_dir" for-each-ref --format='%(refname:short)' refs/heads/ 2>/dev/null)
   
   while IFS= read -r branch; do
     # Skip empty branch names
     [[ -z "$branch" ]] && continue
     
     # Get yesterday's commits for this branch
-    commits=$(git log "$branch" --oneline --after="$yesterday 00:00" --before="$today 00:00" 2>/dev/null)
+    commits=$(git -C "$repo_dir" log "$branch" --oneline --after="$yesterday 00:00" --before="$today 00:00" 2>/dev/null)
     
     if [[ -n "$commits" ]]; then
       commit_count=$(echo "$commits" | wc -l | tr -d ' ')
       commit_messages=$(echo "$commits" | sed 's/^[^ ]* //')
-      summary=$(generate_semantic_summary "$commit_messages" "$repo_name")
       
-      # Add entry for this branch
-      all_entries+=("$repo_name|$branch|$commit_count|$summary")
-      ((found++))
+      # Create unique key to check for duplicates
+      entry_key="${repo_name}|${branch}|${commit_count}"
+      
+      # Skip if we've already seen this exact entry
+      if [[ -z "${seen_entries[$entry_key]}" ]]; then
+        seen_entries[$entry_key]=1
+        summary=$(generate_semantic_summary "$commit_messages" "$repo_name")
+        
+        # Add entry for this branch
+        all_entries+=("$repo_name|$branch|$commit_count|$summary")
+        ((found++))
+      fi
     fi
   done <<< "$branches"
 }
@@ -78,16 +90,8 @@ done
 for git_file in $(find ~/workspace -type f -name ".git" -maxdepth 3 2>/dev/null | sort); do
   repo_dir=$(dirname "$git_file")
   
-  # For worktrees, include the parent directory in the name to distinguish them
-  parent_dir=$(basename $(dirname "$repo_dir"))
-  worktree_name=$(basename "$repo_dir")
-  
-  # Create a descriptive name for the worktree
-  if [[ "$parent_dir" != "workspace" ]]; then
-    repo_name="${parent_dir}/${worktree_name}"
-  else
-    repo_name="$worktree_name"
-  fi
+  # For worktrees, just use the directory name
+  repo_name=$(basename "$repo_dir")
   
   process_repo "$repo_dir" "$repo_name"
 done
@@ -95,20 +99,48 @@ done
 # Sort entries by project name, then by branch
 IFS=$'\n' sorted_entries=($(sort -t'|' -k1,1 -k2,2 <<< "${all_entries[*]}"))
 
-# Print table
-echo "| Project | Branch | Commits | Summary |"
-echo "|---------|--------|---------|---------|"
+# Calculate column widths for proper formatting
+max_project=7  # "Project"
+max_branch=6   # "Branch"
+max_commits=7  # "Commits"
+max_summary=7  # "Summary"
+
+# Find maximum widths
+for entry in "${sorted_entries[@]}"; do
+  IFS='|' read -r project branch commits summary <<< "$entry"
+  [[ ${#project} -gt $max_project ]] && max_project=${#project}
+  [[ ${#branch} -gt $max_branch ]] && max_branch=${#branch}
+  [[ ${#summary} -gt $max_summary ]] && max_summary=${#summary}
+done
+
+# Cap maximum widths for readability
+[[ $max_project -gt 25 ]] && max_project=25
+[[ $max_branch -gt 20 ]] && max_branch=20
+[[ $max_summary -gt 40 ]] && max_summary=40
+
+# Print table header
+printf "| %-${max_project}s | %-${max_branch}s | %-${max_commits}s | %-${max_summary}s |\n" "Project" "Branch" "Commits" "Summary"
+
+# Print separator line
+printf "|"
+printf "%s" "$(printf '%.0s-' $(seq 1 $((max_project + 2))))|"
+printf "%s" "$(printf '%.0s-' $(seq 1 $((max_branch + 2))))|"
+printf "%s" "$(printf '%.0s-' $(seq 1 $((max_commits + 2))))|"
+printf "%s" "$(printf '%.0s-' $(seq 1 $((max_summary + 2))))|"
+printf "\n"
 
 if [[ $found -eq 0 ]]; then
-  echo "| -       | -      | -       | No commits found for yesterday |"
+  printf "| %-${max_project}s | %-${max_branch}s | %-${max_commits}s | %-${max_summary}s |\n" \
+    "-" "-" "-" "No commits found for yesterday"
 else
   for entry in "${sorted_entries[@]}"; do
     IFS='|' read -r project branch commits summary <<< "$entry"
-    # Truncate long values to fit table
-    project=${project:0:20}
-    branch=${branch:0:20}
-    summary=${summary:0:40}
-    printf "| %-20s | %-20s | %-7s | %-40s |\n" "$project" "$branch" "$commits" "$summary"
+    # Truncate if needed
+    project=${project:0:$max_project}
+    branch=${branch:0:$max_branch}
+    summary=${summary:0:$max_summary}
+    printf "| %-${max_project}s | %-${max_branch}s | %-${max_commits}s | %-${max_summary}s |\n" \
+      "$project" "$branch" "$commits" "$summary"
   done
 fi
 
