@@ -28,36 +28,39 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Initialize arrays
+declare -A seen_repos  # To track duplicates
 all_entries=()
 found=0
 
 echo "## Git Repository Activity..."
 echo ""
 
-# Function to get relative time
+# Function to get relative time and days for sorting
 get_relative_time() {
   local timestamp="$1"
   if [[ -z "$timestamp" ]]; then
-    echo "never"
+    echo "never|99999"
     return
   fi
   
-  # Use git's built-in relative time formatting
-  git log --format="%cr" --date=relative -1 --before="$(date)" --after="$timestamp" /dev/null 2>/dev/null || {
-    # Fallback: calculate days ago
-    local commit_date=$(date -j -f "%Y-%m-%d %H:%M:%S" "$timestamp" "+%s" 2>/dev/null)
-    local now=$(date "+%s")
-    local diff=$((now - commit_date))
-    local days=$((diff / 86400))
-    
-    if [[ $days -eq 0 ]]; then
-      echo "today"
-    elif [[ $days -eq 1 ]]; then
-      echo "yesterday"
-    else
-      echo "${days} days ago"
-    fi
-  }
+  # Calculate days ago for sorting
+  local commit_date=$(date -j -f "%Y-%m-%d %H:%M:%S" "$timestamp" "+%s" 2>/dev/null)
+  local now=$(date "+%s")
+  local diff=$((now - commit_date))
+  local days=$((diff / 86400))
+  
+  # Format display text
+  local display_text
+  if [[ $days -eq 0 ]]; then
+    display_text="0 days ago (today)"
+  elif [[ $days -eq 1 ]]; then
+    display_text="1 day ago (yesterday)"
+  else
+    display_text="${days} days ago"
+  fi
+  
+  # Return both display text and days for sorting (separated by |)
+  echo "${display_text}|${days}"
 }
 
 # Function to generate semantic summary
@@ -106,8 +109,13 @@ process_repo() {
   if [[ -z "$most_recent_commit" ]]; then
     # No commits in repo
     if $show_all; then
-      all_entries+=("$repo_name|never|never|-|0|-|$is_wt")
-      ((found++))
+      # Skip duplicates
+      local repo_key="${repo_dir}"
+      if [[ -z "${seen_repos[$repo_key]}" ]]; then
+        seen_repos[$repo_key]=1
+        all_entries+=("99999|$repo_name|never|never|-|0|-|$is_wt")
+        ((found++))
+      fi
     fi
     return
   fi
@@ -128,8 +136,16 @@ process_repo() {
   # Get the date part only (YYYY-MM-DD)
   local commit_date_only=$(echo "$commit_date" | cut -d' ' -f1)
   
-  # Get relative time
-  local relative_time=$(get_relative_time "$commit_date")
+  # Get relative time and days for sorting
+  local time_result=$(get_relative_time "$commit_date")
+  IFS='|' read -r relative_time days_ago <<< "$time_result"
+  
+  # Skip duplicates - use repo_dir to distinguish worktrees from regular repos
+  local repo_key="${repo_dir}"
+  if [[ -n "${seen_repos[$repo_key]}" ]]; then
+    return
+  fi
+  seen_repos[$repo_key]=1
   
   # Count commits on that date on that branch
   local commits_count=$(git -C "$repo_dir" log "$branch_with_commit" \
@@ -151,8 +167,8 @@ process_repo() {
     summary="-"
   fi
   
-  # Add entry
-  all_entries+=("$repo_name|$relative_time|$branch_with_commit|$commits_count|$summary|$is_wt")
+  # Add entry with days_ago for sorting
+  all_entries+=("$days_ago|$repo_name|$relative_time|$branch_with_commit|$commits_count|$summary|$is_wt")
   ((found++))
 }
 
@@ -174,8 +190,8 @@ for repo_path in $(find "$parent_dir" -name ".git" -maxdepth 3 2>/dev/null | sor
   process_repo "$repo_dir" "$repo_name"
 done
 
-# Sort entries by repo name
-IFS=$'\n' sorted_entries=($(sort -t'|' -k1,1 <<< "${all_entries[*]}"))
+# Sort entries by days ago (numeric sort)
+IFS=$'\n' sorted_entries=($(sort -t'|' -k1,1n <<< "${all_entries[*]}"))
 
 # Calculate column widths for proper formatting
 max_repo=4      # "Repo"
@@ -187,7 +203,7 @@ max_worktree=8  # "Worktree"
 
 # Find maximum widths
 for entry in "${sorted_entries[@]}"; do
-  IFS='|' read -r repo updated branch commits summary worktree <<< "$entry"
+  IFS='|' read -r days_ago repo updated branch commits summary worktree <<< "$entry"
   [[ ${#repo} -gt $max_repo ]] && max_repo=${#repo}
   [[ ${#updated} -gt $max_updated ]] && max_updated=${#updated}
   [[ ${#branch} -gt $max_branch ]] && max_branch=${#branch}
@@ -196,7 +212,7 @@ done
 
 # Cap maximum widths for readability
 [[ $max_repo -gt 25 ]] && max_repo=25
-[[ $max_updated -gt 15 ]] && max_updated=15
+[[ $max_updated -gt 20 ]] && max_updated=20  # Increased for "0 days ago (today)"
 [[ $max_branch -gt 20 ]] && max_branch=20
 [[ $max_summary -gt 40 ]] && max_summary=40
 
@@ -219,7 +235,7 @@ if [[ $found -eq 0 ]]; then
     "-" "-" "-" "-" "No repos found" "-"
 else
   for entry in "${sorted_entries[@]}"; do
-    IFS='|' read -r repo updated branch commits summary worktree <<< "$entry"
+    IFS='|' read -r days_ago repo updated branch commits summary worktree <<< "$entry"
     
     # Convert boolean to yes/no
     if [[ "$worktree" == "true" ]]; then
