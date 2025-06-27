@@ -1,49 +1,89 @@
 #!/bin/zsh
 # yday-semantic - Show git activity with semantic summaries
 
-# Get yesterday's date
-yesterday=$(date -v-1d +"%Y-%m-%d")
-today=$(date +"%Y-%m-%d")
+# Default parent directory
+parent_dir="$HOME/workspace"
+show_all=false
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --all)
+      show_all=true
+      shift
+      ;;
+    --parent=*)
+      parent_dir="${1#*=}"
+      # Expand tilde
+      parent_dir="${parent_dir/#\~/$HOME}"
+      shift
+      ;;
+    *)
+      echo "Usage: $0 [--all] [--parent=<directory>]"
+      echo "  --all: Show all repos regardless of recent activity"
+      echo "  --parent=<dir>: Directory to search for git repos (default: ~/workspace)"
+      exit 1
+      ;;
+  esac
+done
 
 # Initialize arrays
-declare -A seen_entries  # To track duplicates
 all_entries=()
 found=0
 
-echo "## Yesterday in Git ($yesterday)..."
+echo "## Git Repository Activity..."
 echo ""
 
-# Function to generate semantic summaries
+# Function to get relative time
+get_relative_time() {
+  local timestamp="$1"
+  if [[ -z "$timestamp" ]]; then
+    echo "never"
+    return
+  fi
+  
+  # Use git's built-in relative time formatting
+  git log --format="%cr" --date=relative -1 --before="$(date)" --after="$timestamp" /dev/null 2>/dev/null || {
+    # Fallback: calculate days ago
+    local commit_date=$(date -j -f "%Y-%m-%d %H:%M:%S" "$timestamp" "+%s" 2>/dev/null)
+    local now=$(date "+%s")
+    local diff=$((now - commit_date))
+    local days=$((diff / 86400))
+    
+    if [[ $days -eq 0 ]]; then
+      echo "today"
+    elif [[ $days -eq 1 ]]; then
+      echo "yesterday"
+    else
+      echo "${days} days ago"
+    fi
+  }
+}
+
+# Function to generate semantic summary
 generate_semantic_summary() {
   local messages="$1"
   local project="$2"
   
-  # First try using the semantic_summarize script if available
+  # Use the semantic_summarize script if available
   if [[ -x ~/workspace/dot-rot/bin/semantic_summarize ]]; then
-    summary=$(echo "$messages" | ~/workspace/dot-rot/bin/semantic_summarize "$project")
-    echo "$summary"
-    return
+    summary=$(echo "$messages" | ~/workspace/dot-rot/bin/semantic_summarize "$project" 2>/dev/null)
+    if [[ -n "$summary" ]]; then
+      echo "$summary"
+      return
+    fi
   fi
   
-  # Fallback: better keyword extraction
-  # Look for action words and meaningful terms
-  action_words=$(echo "$messages" | grep -o -E '\b(add|added|fix|fixed|update|updated|implement|implemented|create|created|remove|removed|refactor|refactored|improve|improved|enhance|enhanced|setup|configure|configured|deploy|deployed|integrate|integrated|optimize|optimized|debug|debugged|test|tested|build|built)\b' -i | head -1)
-  
-  # Extract meaningful keywords, excluding common words and the action words
+  # Fallback: extract keywords
   keywords=$(echo "$messages" | \
     grep -o -E '\b[a-zA-Z]{4,}\b' | \
     grep -v -E '^(with|from|into|this|that|have|been|were|will|your|their|them|they|when|where|what|which|also|some|work|more)$' -i | \
-    grep -v -E "^${action_words}$" -i | \
-    sort | uniq -c | sort -nr | head -2 | \
-    awk '{print $2}' | tr '\n' ' ')
+    sort | uniq -c | sort -nr | head -3 | \
+    awk '{print $2}' | tr '\n' ' ' | sed 's/ $//')
   
-  # Combine action with keywords
-  if [[ -n "$action_words" && -n "$keywords" ]]; then
-    echo "${action_words} ${keywords}" | tr '[:upper:]' '[:lower:]' | sed 's/ $//'
-  elif [[ -n "$keywords" ]]; then
-    echo "$keywords" | sed 's/ $//'
+  if [[ -n "$keywords" ]]; then
+    echo "$keywords"
   else
-    # Use first commit message
     echo "$messages" | head -1 | cut -c 1-30
   fi
 }
@@ -54,83 +94,70 @@ is_worktree() {
   [[ -f "$repo_dir/.git" ]]
 }
 
-# Function to get the current branch for a worktree or regular repo
-get_current_branch() {
-  local repo_dir="$1"
-  git -C "$repo_dir" rev-parse --abbrev-ref HEAD 2>/dev/null
-}
-
 # Function to process a git repository
 process_repo() {
   local repo_dir="$1"
   local repo_name="$2"
+  local is_wt=$(is_worktree "$repo_dir")
   
-  # For worktrees, check all branches but prefix with worktree name to avoid conflicts
-  if is_worktree "$repo_dir"; then
-    current_branch=$(get_current_branch "$repo_dir")
-    
-    # Check all branches, but mark the currently checked-out one
-    branches=$(git -C "$repo_dir" for-each-ref --format='%(refname:short)' refs/heads/ 2>/dev/null)
-    
-    while IFS= read -r branch; do
-      # Skip empty branch names
-      [[ -z "$branch" ]] && continue
-      
-      # Get yesterday's commits for this branch
-      commits=$(git -C "$repo_dir" log "$branch" --oneline --after="$yesterday 00:00" --before="$today 00:00" 2>/dev/null)
-      
-      if [[ -n "$commits" ]]; then
-        commit_count=$(echo "$commits" | wc -l | tr -d ' ')
-        commit_messages=$(echo "$commits" | sed 's/^[^ ]* //')
-        
-        # Create unique key to check for duplicates - include repo_dir to distinguish worktrees
-        entry_key="${repo_dir}|${branch}|${commit_count}"
-        
-        # Skip if we've already seen this exact entry
-        if [[ -z "${seen_entries[$entry_key]}" ]]; then
-          seen_entries[$entry_key]=1
-          summary=$(generate_semantic_summary "$commit_messages" "$repo_name")
-          
-          # Add entry for this branch
-          all_entries+=("$repo_name|$branch|$commit_count|$summary")
-          ((found++))
-        fi
-      fi
-    done <<< "$branches"
-  else
-    # For regular repos, check all branches
-    branches=$(git -C "$repo_dir" for-each-ref --format='%(refname:short)' refs/heads/ 2>/dev/null)
-    
-    while IFS= read -r branch; do
-      # Skip empty branch names
-      [[ -z "$branch" ]] && continue
-      
-      # Get yesterday's commits for this branch
-      commits=$(git -C "$repo_dir" log "$branch" --oneline --after="$yesterday 00:00" --before="$today 00:00" 2>/dev/null)
-      
-      if [[ -n "$commits" ]]; then
-        commit_count=$(echo "$commits" | wc -l | tr -d ' ')
-        commit_messages=$(echo "$commits" | sed 's/^[^ ]* //')
-        
-        # Create unique key to check for duplicates
-        entry_key="${repo_name}|${branch}|${commit_count}"
-        
-        # Skip if we've already seen this exact entry
-        if [[ -z "${seen_entries[$entry_key]}" ]]; then
-          seen_entries[$entry_key]=1
-          summary=$(generate_semantic_summary "$commit_messages" "$repo_name")
-          
-          # Add entry for this branch
-          all_entries+=("$repo_name|$branch|$commit_count|$summary")
-          ((found++))
-        fi
-      fi
-    done <<< "$branches"
+  # Get the most recent commit across all branches
+  local most_recent_commit=$(git -C "$repo_dir" log --all --format="%H|%ci|%s" -1 2>/dev/null)
+  
+  if [[ -z "$most_recent_commit" ]]; then
+    # No commits in repo
+    if $show_all; then
+      all_entries+=("$repo_name|never|never|-|0|-|$is_wt")
+      ((found++))
+    fi
+    return
   fi
+  
+  # Parse the most recent commit info
+  IFS='|' read -r commit_hash commit_date commit_message <<< "$most_recent_commit"
+  
+  # Find which branch contains this commit
+  local branch_with_commit=$(git -C "$repo_dir" branch --all --contains "$commit_hash" 2>/dev/null | \
+    sed 's/^[* ] //' | \
+    sed 's|^remotes/origin/||' | \
+    grep -v '^(' | \
+    head -1)
+  
+  # Clean up branch name
+  branch_with_commit=$(echo "$branch_with_commit" | sed 's|^remotes/[^/]*/||')
+  
+  # Get the date part only (YYYY-MM-DD)
+  local commit_date_only=$(echo "$commit_date" | cut -d' ' -f1)
+  
+  # Get relative time
+  local relative_time=$(get_relative_time "$commit_date")
+  
+  # Count commits on that date on that branch
+  local commits_count=$(git -C "$repo_dir" log "$branch_with_commit" \
+    --after="$commit_date_only 00:00:00" \
+    --before="$commit_date_only 23:59:59" \
+    --oneline 2>/dev/null | wc -l | tr -d ' ')
+  
+  # Get all commit messages from that date for summary
+  local day_messages=$(git -C "$repo_dir" log "$branch_with_commit" \
+    --after="$commit_date_only 00:00:00" \
+    --before="$commit_date_only 23:59:59" \
+    --format="%s" 2>/dev/null)
+  
+  # Generate summary
+  local summary=""
+  if [[ -n "$day_messages" ]]; then
+    summary=$(generate_semantic_summary "$day_messages" "$repo_name")
+  else
+    summary="-"
+  fi
+  
+  # Add entry
+  all_entries+=("$repo_name|$relative_time|$branch_with_commit|$commits_count|$summary|$is_wt")
+  ((found++))
 }
 
-# Process all git repositories in ~/workspace
-for repo_path in $(find ~/workspace -name ".git" -maxdepth 3 2>/dev/null | sort); do
+# Process all git repositories
+for repo_path in $(find "$parent_dir" -name ".git" -maxdepth 3 2>/dev/null | sort); do
   if [[ -d "$repo_path" ]]; then
     # Regular git repository
     repo_dir=$(dirname "$repo_path")
@@ -141,57 +168,74 @@ for repo_path in $(find ~/workspace -name ".git" -maxdepth 3 2>/dev/null | sort)
   
   repo_name=$(basename "$repo_dir")
   
-  # Skip if it's the workspace directory itself
-  [[ "$repo_name" == "workspace" ]] && continue
+  # Skip if it's the parent directory itself
+  [[ "$repo_name" == "$(basename "$parent_dir")" ]] && continue
   
   process_repo "$repo_dir" "$repo_name"
 done
 
-# Sort entries by project name, then by branch
-IFS=$'\n' sorted_entries=($(sort -t'|' -k1,1 -k2,2 <<< "${all_entries[*]}"))
+# Sort entries by repo name
+IFS=$'\n' sorted_entries=($(sort -t'|' -k1,1 <<< "${all_entries[*]}"))
 
 # Calculate column widths for proper formatting
-max_project=7  # "Project"
-max_branch=6   # "Branch"
-max_commits=7  # "Commits"
-max_summary=7  # "Summary"
+max_repo=4      # "Repo"
+max_updated=12  # "Last Updated"
+max_branch=6    # "Branch"
+max_commits=7   # "Commits"
+max_summary=7   # "Summary"
+max_worktree=8  # "Worktree"
 
 # Find maximum widths
 for entry in "${sorted_entries[@]}"; do
-  IFS='|' read -r project branch commits summary <<< "$entry"
-  [[ ${#project} -gt $max_project ]] && max_project=${#project}
+  IFS='|' read -r repo updated branch commits summary worktree <<< "$entry"
+  [[ ${#repo} -gt $max_repo ]] && max_repo=${#repo}
+  [[ ${#updated} -gt $max_updated ]] && max_updated=${#updated}
   [[ ${#branch} -gt $max_branch ]] && max_branch=${#branch}
   [[ ${#summary} -gt $max_summary ]] && max_summary=${#summary}
 done
 
 # Cap maximum widths for readability
-[[ $max_project -gt 25 ]] && max_project=25
+[[ $max_repo -gt 25 ]] && max_repo=25
+[[ $max_updated -gt 15 ]] && max_updated=15
 [[ $max_branch -gt 20 ]] && max_branch=20
 [[ $max_summary -gt 40 ]] && max_summary=40
 
 # Print table header
-printf "| %-${max_project}s | %-${max_branch}s | %-${max_commits}s | %-${max_summary}s |\n" "Project" "Branch" "Commits" "Summary"
+printf "| %-${max_repo}s | %-${max_updated}s | %-${max_branch}s | %-${max_commits}s | %-${max_summary}s | %-${max_worktree}s |\n" \
+  "Repo" "Last Updated" "Branch" "Commits" "Summary" "Worktree"
 
 # Print separator line
 printf "|"
-printf "%s" "$(printf '%.0s-' $(seq 1 $((max_project + 2))))|"
-printf "%s" "$(printf '%.0s-' $(seq 1 $((max_branch + 2))))|"
-printf "%s" "$(printf '%.0s-' $(seq 1 $((max_commits + 2))))|"
-printf "%s" "$(printf '%.0s-' $(seq 1 $((max_summary + 2))))|"
+printf "%s|" "$(printf '%.0s-' $(seq 1 $((max_repo + 2))))"
+printf "%s|" "$(printf '%.0s-' $(seq 1 $((max_updated + 2))))"
+printf "%s|" "$(printf '%.0s-' $(seq 1 $((max_branch + 2))))"
+printf "%s|" "$(printf '%.0s-' $(seq 1 $((max_commits + 2))))"
+printf "%s|" "$(printf '%.0s-' $(seq 1 $((max_summary + 2))))"
+printf "%s|" "$(printf '%.0s-' $(seq 1 $((max_worktree + 2))))"
 printf "\n"
 
 if [[ $found -eq 0 ]]; then
-  printf "| %-${max_project}s | %-${max_branch}s | %-${max_commits}s | %-${max_summary}s |\n" \
-    "-" "-" "-" "No commits found for yesterday"
+  printf "| %-${max_repo}s | %-${max_updated}s | %-${max_branch}s | %-${max_commits}s | %-${max_summary}s | %-${max_worktree}s |\n" \
+    "-" "-" "-" "-" "No repos found" "-"
 else
   for entry in "${sorted_entries[@]}"; do
-    IFS='|' read -r project branch commits summary <<< "$entry"
+    IFS='|' read -r repo updated branch commits summary worktree <<< "$entry"
+    
+    # Convert boolean to yes/no
+    if [[ "$worktree" == "true" ]]; then
+      worktree_display="yes"
+    else
+      worktree_display="no"
+    fi
+    
     # Truncate if needed
-    project=${project:0:$max_project}
+    repo=${repo:0:$max_repo}
+    updated=${updated:0:$max_updated}
     branch=${branch:0:$max_branch}
     summary=${summary:0:$max_summary}
-    printf "| %-${max_project}s | %-${max_branch}s | %-${max_commits}s | %-${max_summary}s |\n" \
-      "$project" "$branch" "$commits" "$summary"
+    
+    printf "| %-${max_repo}s | %-${max_updated}s | %-${max_branch}s | %-${max_commits}s | %-${max_summary}s | %-${max_worktree}s |\n" \
+      "$repo" "$updated" "$branch" "$commits" "$summary" "$worktree_display"
   done
 fi
 
