@@ -167,5 +167,6 @@
   "MarkdownPaste.imageRules": [],
   "files.associations": {
     "*.md": "markdown"
-  }
+  },
+  "github.copilot.nextEditSuggestions.enabled": true
 }
