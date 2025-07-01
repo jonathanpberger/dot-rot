@@ -6,6 +6,10 @@ echo "\n\n•••••••••• Loading aliases ••• $(date "+%a %
 alias hg="history | grep"
 alias g="gcalcli"
 alias be="bundle exec"
+alias dco= "docker compose"
+alias dce="docker compose exec"
+
+
 
 alias pomo="pomodoro"
 alias vi="nvim"
