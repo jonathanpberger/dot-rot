@@ -52,6 +52,7 @@ alias pom="ack '🍅' ~/workspace/foam/todo.md | sort"
 alias unremote="no_remote"
 alias yday="~/workspace/dot-rot/bin/yday-smart"
 alias projectsinprojects="github_project_repos"
+alias tday="(cd ~/workspace && git-standup -s)"
 
 # Define the function silently using function keyword
 function claude {

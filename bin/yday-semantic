@@ -68,96 +68,117 @@ if ! command -v git-standup &> /dev/null; then
   exit 1
 fi
 
-# Function to generate semantic summary
+# Function to generate semantic summary by analyzing commit messages
 generate_semantic_summary() {
   local messages="$1"
   local project="$2"
   
-  # Clean up messages: remove common prefixes and noise
+  # Clean up messages: remove noise and standardize format
   local clean_messages=$(echo "$messages" | \
     sed 's/^Merge pull request.*$//' | \
     sed 's/^Merge branch.*$//' | \
     sed 's/^WIP[[:space:]]*://' | \
-    sed 's/^[Ff]ix[[:space:]]*://' | \
-    sed 's/^[Aa]dd[[:space:]]*://' | \
-    sed 's/^[Uu]pdate[[:space:]]*://' | \
-    sed 's/^[Ff]eat[[:space:]]*://' | \
-    sed 's/^[Ff]eature[[:space:]]*://' | \
-    sed 's/^chore://' | \
-    sed 's/^refactor://' | \
+    sed 's/^[Ff]ix[[:space:]]*:/fix:/' | \
+    sed 's/^[Aa]dd[[:space:]]*:/add:/' | \
+    sed 's/^[Uu]pdate[[:space:]]*:/update:/' | \
+    sed 's/^[Ff]eat[[:space:]]*:/feat:/' | \
+    sed 's/^[Ff]eature[[:space:]]*:/feat:/' | \
+    sed 's/^chore:/chore:/' | \
+    sed 's/^refactor:/refactor:/' | \
     sed '/^[[:space:]]*$/d')
   
-  # Look for specific high-level features and epics
-  local summary=""
+  # Exit early if no messages
+  [[ -z "$clean_messages" ]] && { echo "No meaningful commits"; return; }
   
-  # Check for app/feature names and major components first
-  if echo "$clean_messages" | grep -i -q -E '\b(watch|watchOS|apple watch|watch app)\b'; then
-    summary="Watch app development"
-  elif echo "$clean_messages" | grep -i -q -E '\b(swarm|docker|container|deployment|deploy)\b'; then
-    summary="Deployment/containerization"
-  elif echo "$clean_messages" | grep -i -q -E '\b(test|testing|spec|rspec|jest|cypress)\b'; then
-    summary="Testing improvements"
-  elif echo "$clean_messages" | grep -i -q -E '\b(error|exception|handling|validation)\b'; then
-    summary="Error handling"
-  elif echo "$clean_messages" | grep -i -q -E '\b(authentication|auth|login|signup|oauth)\b'; then
-    summary="Authentication system"
-  elif echo "$clean_messages" | grep -i -q -E '\b(ui|interface|theme|styling|design|layout)\b'; then
-    summary="UI/design work"
-  elif echo "$clean_messages" | grep -i -q -E '\b(api|endpoint|controller|service|backend)\b'; then
-    summary="API development"
-  elif echo "$clean_messages" | grep -i -q -E '\b(database|migration|model|schema)\b'; then
-    summary="Database work"
-  elif echo "$clean_messages" | grep -i -q -E '\b(performance|optimization|speed|cache)\b'; then
-    summary="Performance optimization"
-  elif echo "$clean_messages" | grep -i -q -E '\b(navigation|routing|menu)\b'; then
-    summary="Navigation/routing"
-  elif echo "$clean_messages" | grep -i -q -E '\b(payment|stripe|billing|subscription)\b'; then
-    summary="Payment integration"
-  elif echo "$clean_messages" | grep -i -q -E '\b(notification|email|message|alert)\b'; then
-    summary="Notifications/messaging"
-  elif echo "$clean_messages" | grep -i -q -E '\b(search|filter|pagination|sort)\b'; then
-    summary="Search/filtering"
-  elif echo "$clean_messages" | grep -i -q -E '\b(mobile|ios|android|responsive)\b'; then
-    summary="Mobile development"
-  elif echo "$clean_messages" | grep -i -q -E '\b(configuration|config|setup|install)\b'; then
-    summary="Configuration/setup"
-  elif echo "$clean_messages" | grep -i -q -E '\b(security|permission|access|role)\b'; then
-    summary="Security/permissions"
-  elif echo "$clean_messages" | grep -i -q -E '\b(integration|webhook|third.party|external)\b'; then
-    summary="Third-party integration"
-  elif echo "$clean_messages" | grep -i -q -E '\b(script|automation|tool|utility|helper)\b'; then
-    summary="Development tooling"
-  elif echo "$clean_messages" | grep -i -q -E '\b(documentation|docs|readme|guide)\b'; then
-    summary="Documentation"
-  elif echo "$clean_messages" | grep -i -q -E '\b(refactor|cleanup|maintenance|reorganize)\b'; then
-    summary="Code maintenance"
-  elif echo "$clean_messages" | grep -i -q -E '\b(rails|ruby|gem|bundler)\b'; then
-    summary="Rails development"
-  elif echo "$clean_messages" | grep -i -q -E '\b(vscode|editor|titlebar|extension)\b'; then
-    summary="Editor/IDE setup"
+  # Analyze commit patterns to understand the story
+  local story_summary=""
+  local commit_types=""
+  local key_features=""
+  
+  # Extract action types (conventional commits style)
+  commit_types=$(echo "$clean_messages" | grep -o '^[a-z]*:' | sort | uniq -c | sort -nr)
+  
+  # Extract key domain words (nouns that indicate features/components)
+  key_features=$(echo "$clean_messages" | \
+    grep -i -o -E '\b(auth|login|user|api|database|test|ui|component|service|model|controller|config|deploy|docker|security|payment|notification|search|mobile|performance|documentation|integration)\w*\b' | \
+    tr '[:upper:]' '[:lower:]' | \
+    sort | uniq -c | sort -nr | head -3 | awk '{print $2}')
+  
+  # Extract specific feature names and business logic terms
+  local business_terms=$(echo "$clean_messages" | \
+    grep -i -o -E '\b[A-Z][a-z]{2,}[A-Z][a-z]*\b|\b[a-z]{4,}[_-][a-z]{3,}\b' | \
+    head -5 | tr '\n' ' ')
+  
+  # Build story summary based on analysis
+  local primary_action=""
+  local primary_feature=""
+  
+  # Determine primary action from commit types
+  if echo "$commit_types" | head -1 | grep -q "feat:"; then
+    primary_action="Building"
+  elif echo "$commit_types" | head -1 | grep -q "fix:"; then
+    primary_action="Fixing"
+  elif echo "$commit_types" | head -1 | grep -q "refactor:"; then
+    primary_action="Refactoring"
+  elif echo "$commit_types" | head -1 | grep -q "update:"; then
+    primary_action="Updating"
+  elif echo "$commit_types" | head -1 | grep -q "add:"; then
+    primary_action="Adding"
+  elif echo "$commit_types" | head -1 | grep -q "chore:"; then
+    primary_action="Maintaining"
   else
-    # Fall back to extracting key nouns from commit messages
-    local key_nouns=$(echo "$clean_messages" | \
-      grep -i -o -E '\b[A-Z][A-Za-z]{3,}|[a-z]{4,}' | \
-      grep -v -E '^(with|from|into|this|that|have|been|were|will|your|their|them|they|when|where|what|which|also|some|work|more|commit|change|update|file|code|line|text|data|info|item|part|side|main|full|auto|very|most|many|much|less|same|other|each|every|only|just|first|last|next|prev|good|better|best|new|old|small|large|quick|simple|basic|advanced|complete|final|initial|original|current|latest|recent)$' -i | \
+    primary_action="Working on"
+  fi
+  
+  # Determine primary feature
+  primary_feature=$(echo "$key_features" | head -1)
+  
+  if [[ -n "$primary_feature" ]]; then
+    story_summary="$primary_action $primary_feature"
+    
+    # Add secondary features if they exist and are different
+    local secondary=$(echo "$key_features" | sed -n '2p')
+    if [[ -n "$secondary" && "$secondary" != "$primary_feature" ]]; then
+      story_summary="$story_summary & $secondary"
+    fi
+  else
+    # Fall back to extracting meaningful nouns from all messages
+    local meaningful_terms=$(echo "$clean_messages" | \
+      grep -i -o -E '\b[a-z]{4,}\b' | \
+      grep -v -E '^(this|that|with|from|into|have|been|were|will|your|they|when|what|also|some|work|more|file|code|line|text|data|info|item|part|side|main|full|very|most|many|much|less|same|each|only|just|good|best|make|made|need|want|take|come|know|think|look|find|give|keep|turn|move|show|help|call|might|could|would|should|still|after|before|where|there|here|back|down|over|such|being|doing|going)$' | \
       sort | uniq -c | sort -nr | head -2 | awk '{print $2}')
     
-    if [[ -n "$key_nouns" ]]; then
-      summary=$(echo "$key_nouns" | tr '\n' ' ' | sed 's/ $//' | sed 's/^[[:space:]]*//')
+    if [[ -n "$meaningful_terms" ]]; then
+      story_summary="$primary_action $(echo "$meaningful_terms" | tr '\n' ', ' | sed 's/, $//')"
     else
-      # Last resort: use first meaningful commit message
-      summary=$(echo "$clean_messages" | head -1 | cut -c 1-25)
+      # Last resort: use the most descriptive commit message
+      local best_commit=$(echo "$clean_messages" | \
+        grep -v '^[a-z]*:$' | \
+        awk 'length > 10 && length < 50' | \
+        head -1)
+      
+      if [[ -n "$best_commit" ]]; then
+        story_summary=$(echo "$best_commit" | sed 's/^[a-z]*://' | sed 's/^[[:space:]]*//' | cut -c 1-30)
+      else
+        story_summary="Code changes"
+      fi
     fi
   fi
   
-  # Clean up and ensure proper capitalization
-  summary=$(echo "$summary" | sed 's/[[:space:]]\+/ /g' | sed 's/^ *//' | sed 's/ *$//')
+  # Clean and format the final summary
+  story_summary=$(echo "$story_summary" | \
+    sed 's/[[:space:]]\+/ /g' | \
+    sed 's/^ *//' | \
+    sed 's/ *$//')
+  
+  # Capitalize first letter (portable way)
+  story_summary="$(echo "$story_summary" | cut -c1 | tr '[:lower:]' '[:upper:]')$(echo "$story_summary" | cut -c2-)"
   
   # Limit length and return
-  if [[ ${#summary} -gt 35 ]]; then
-    echo "${summary:0:32}..."
+  if [[ ${#story_summary} -gt 35 ]]; then
+    echo "${story_summary:0:32}..."
   else
-    echo "$summary"
+    echo "$story_summary"
   fi
 }
 
