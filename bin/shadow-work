@@ -1,0 +1,313 @@
+#!/bin/zsh
+# shadow-work - Identify repos with commits but no GitHub project tracking
+
+# Default values
+parent_dir="$HOME/workspace"
+github_org="discoveryworks"
+project_number="2"
+dry_run=false
+days_back=""
+show_today=false
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --parent=*)
+      parent_dir="${1#*=}"
+      parent_dir="${parent_dir/#\~/$HOME}"
+      shift
+      ;;
+    --org=*)
+      github_org="${1#*=}"
+      shift
+      ;;
+    --project=*)
+      project_number="${1#*=}"
+      shift
+      ;;
+    --dry-run)
+      dry_run=true
+      shift
+      ;;
+    --today)
+      show_today=true
+      shift
+      ;;
+    -d|--days)
+      days_back="$2"
+      shift 2
+      ;;
+    --help|-h)
+      echo "Usage: $0 [OPTIONS]"
+      echo ""
+      echo "Identify repositories with commits but no GitHub project tracking"
+      echo ""
+      echo "Options:"
+      echo "  --parent=<dir>     Directory to search for git repos (default: ~/workspace)"
+      echo "  --org=<org>        GitHub organization (default: discoveryworks)"
+      echo "  --project=<num>    Project number (default: 2)"
+      echo "  --dry-run          Show what would be created without creating issues"
+      echo "  --today            Analyze today's commits instead of yesterday's"
+      echo "  -d, --days <n>     Number of days back to look"
+      echo "  --help, -h         Show this help message"
+      echo ""
+      echo "Example:"
+      echo "  $0 --dry-run       # See what issues would be created"
+      echo "  $0                 # Create tracking issues for untracked repos"
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $1"
+      echo "Use --help for usage information"
+      exit 1
+      ;;
+  esac
+done
+
+# Check dependencies
+if ! command -v gh &> /dev/null; then
+  echo "Error: GitHub CLI (gh) is not installed or not in PATH"
+  exit 1
+fi
+
+if ! command -v jq &> /dev/null; then
+  echo "Error: jq is not installed or not in PATH"
+  exit 1
+fi
+
+# Function to get repos from yday-semantic
+get_active_repos() {
+  local yday_cmd_args=""
+  
+  if [[ "$show_today" == "true" ]]; then
+    yday_cmd_args="--today"
+  elif [[ -n "$days_back" ]]; then
+    yday_cmd_args="-d $days_back"
+  fi
+  
+  # Run yday-semantic and parse output  
+  local script_dir="$(cd "$(dirname "$0")" && pwd)"
+  if [[ -n "$yday_cmd_args" ]]; then
+    local output=$("$script_dir/yday-semantic" --parent="$parent_dir" $yday_cmd_args 2>/dev/null)
+  else
+    local output=$("$script_dir/yday-semantic" --parent="$parent_dir" 2>/dev/null)
+  fi
+  
+  echo "$output" >&2
+  echo "$output" | \
+    grep "|" | \
+    tail -n +3 | \
+    cut -d'|' -f2 | \
+    sed 's/^[[:space:]]*//' | \
+    sed 's/[[:space:]]*$//' | \
+    grep -v '^$' | \
+    grep -v '^-$'
+}
+
+# Function to get repos already tracked in GitHub project
+get_tracked_repos() {
+  gh project item-list "$project_number" --owner "$github_org" --format json 2>/dev/null | \
+    jq -r '.items[] | select(.content.repository) | .content.repository' | \
+    sed "s|$github_org/||" | \
+    sort -u
+}
+
+# Function to create tracking issue for a repository
+create_tracking_issue() {
+  local repo_name="$1"
+  local commit_count="$2"
+  local summary="$3"
+  local time_desc="$4"
+  
+  local issue_title="Track work in $repo_name"
+  local issue_body="This issue tracks ongoing development work in the \`$repo_name\` repository.
+
+**Recent Activity ($time_desc):**
+- $commit_count commits
+- Summary: $summary
+
+This issue was automatically created by shadow-work to ensure all active repositories are represented in project tracking.
+
+**Next Steps:**
+- [ ] Review recent commits to understand current work
+- [ ] Break down work into specific feature/bug issues if needed  
+- [ ] Update project status and priority
+- [ ] Close this tracking issue once specific work items are created"
+
+  if [[ "$dry_run" == "true" ]]; then
+    echo "Would create issue in $github_org/$repo_name:"
+    echo "  Title: $issue_title"
+    echo "  Body: (${#issue_body} characters)"
+    echo "  Would add to project: $project_number"
+    return 0
+  fi
+  
+  # Create the issue
+  local issue_url=$(gh issue create \
+    --repo "$github_org/$repo_name" \
+    --title "$issue_title" \
+    --body "$issue_body" \
+    --label "tracking,shadow-work" 2>/dev/null)
+  
+  if [[ $? -eq 0 && -n "$issue_url" ]]; then
+    echo "✓ Created tracking issue: $issue_url"
+    
+    # Add issue to project
+    local issue_number=$(echo "$issue_url" | grep -o '[0-9]*$')
+    if [[ -n "$issue_number" ]]; then
+      gh project item-add "$project_number" --owner "$github_org" --url "$issue_url" 2>/dev/null
+      if [[ $? -eq 0 ]]; then
+        echo "  ✓ Added to project $project_number"
+      else
+        echo "  ⚠ Created issue but failed to add to project"
+      fi
+    fi
+  else
+    echo "✗ Failed to create issue for $repo_name"
+    return 1
+  fi
+}
+
+# Main execution
+echo "Shadow Work Analysis"
+echo "===================="
+echo ""
+
+# Get time description for the analysis period
+if [[ "$show_today" == "true" ]]; then
+  time_desc="today"
+elif [[ -n "$days_back" ]]; then
+  time_desc="last $days_back days"
+else
+  local day_of_week=$(date +%A)
+  if [[ "$day_of_week" == "Monday" ]]; then
+    time_desc="Friday"
+  else
+    time_desc="yesterday"
+  fi
+fi
+
+echo "Analyzing repositories with commits ($time_desc)..."
+
+# Get active repos from commits
+echo "Debug: About to call get_active_repos..." >&2
+active_repos_raw=$(get_active_repos)
+echo "Debug: get_active_repos returned: '$active_repos_raw'" >&2
+if [[ -z "$active_repos_raw" ]]; then
+  echo "No repositories found with recent commits."
+  exit 0
+fi
+
+# Convert to array and get details
+declare -a active_repos
+declare -A repo_details
+while IFS= read -r repo; do
+  [[ -n "$repo" ]] && active_repos+=("$repo")
+done <<< "$active_repos_raw"
+
+# Get commit details for each repo
+for repo in "${active_repos[@]}"; do
+  local yday_args=""
+  if [[ "$show_today" == "true" ]]; then
+    yday_args="--today"
+  elif [[ -n "$days_back" ]]; then
+    yday_args="-d $days_back"
+  fi
+  
+  local script_dir="$(cd "$(dirname "$0")" && pwd)"
+  local repo_line=$("$script_dir/yday-semantic" --parent="$parent_dir" $yday_args 2>/dev/null | \
+    grep "| $repo " | head -1)
+  
+  if [[ -n "$repo_line" ]]; then
+    local commit_count=$(echo "$repo_line" | awk -F'|' '{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $3); print $3}')
+    local summary=$(echo "$repo_line" | awk -F'|' '{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $4); print $4}')
+    repo_details["$repo"]="$commit_count|$summary"
+  fi
+done
+
+echo "Found ${#active_repos[@]} repositories with recent commits:"
+for repo in "${active_repos[@]}"; do
+  local details="${repo_details[$repo]}"
+  local commit_count="${details%%|*}"
+  local summary="${details#*|}"
+  echo "  - $repo ($commit_count commits): $summary"
+done
+echo ""
+
+# Get tracked repos from project
+echo "Checking GitHub project tracking..."
+tracked_repos=$(get_tracked_repos)
+if [[ $? -ne 0 ]]; then
+  echo "Error: Failed to fetch project items from GitHub"
+  echo "Make sure you have access to project $project_number in org $github_org"
+  exit 1
+fi
+
+if [[ -n "$tracked_repos" ]]; then
+  echo "Repositories already tracked in project:"
+  while IFS= read -r repo; do
+    [[ -n "$repo" ]] && echo "  - $repo"
+  done <<< "$tracked_repos"
+else
+  echo "No repositories currently tracked in project."
+fi
+echo ""
+
+# Find untracked repos
+declare -a untracked_repos
+for repo in "${active_repos[@]}"; do
+  if ! echo "$tracked_repos" | grep -q "^${repo}$"; then
+    untracked_repos+=("$repo")
+  fi
+done
+
+if [[ ${#untracked_repos[@]} -eq 0 ]]; then
+  echo "✓ All active repositories are already tracked in the project!"
+  exit 0
+fi
+
+echo "Untracked repositories (${#untracked_repos[@]}):"
+for repo in "${untracked_repos[@]}"; do
+  local details="${repo_details[$repo]}"
+  local commit_count="${details%%|*}"
+  local summary="${details#*|}"
+  echo "  - $repo ($commit_count commits): $summary"
+done
+echo ""
+
+if [[ "$dry_run" == "true" ]]; then
+  echo "DRY RUN - Would create tracking issues for ${#untracked_repos[@]} repositories:"
+  echo ""
+fi
+
+# Create tracking issues for untracked repos
+created_count=0
+for repo in "${untracked_repos[@]}"; do
+  local details="${repo_details[$repo]}"
+  local commit_count="${details%%|*}"
+  local summary="${details#*|}"
+  
+  if create_tracking_issue "$repo" "$commit_count" "$summary" "$time_desc"; then
+    ((created_count++))
+  fi
+  
+  # Add small delay to avoid rate limiting
+  [[ "$dry_run" == "false" ]] && sleep 1
+done
+
+echo ""
+if [[ "$dry_run" == "true" ]]; then
+  echo "DRY RUN complete. Would have created $created_count tracking issues."
+  echo "Run without --dry-run to create the issues."
+else
+  echo "Shadow work analysis complete."
+  echo "Created $created_count tracking issues out of ${#untracked_repos[@]} untracked repositories."
+  
+  if [[ $created_count -gt 0 ]]; then
+    echo ""
+    echo "Next steps:"
+    echo "1. Review the created tracking issues in your GitHub project"
+    echo "2. Break down significant work into specific feature/bug issues"
+    echo "3. Update project status and priorities as needed"
+  fi
+fi
