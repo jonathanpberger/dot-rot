@@ -139,8 +139,8 @@ validate_calendars() {
   echo "Checking configured calendars..."
 
   # Print table header
-  echo "\n| Available Calendars              | Included? |"
-  echo "|----------------------------------|-----------|"
+  echo "\n| Included? | Available Calendars              |"
+  echo "|-----------|----------------------------------|"
 
   # Process each available calendar
   while IFS= read -r cal; do
@@ -165,7 +165,7 @@ validate_calendars() {
       done
 
       # Format the table row
-      local cal_status=""
+      local cal_status="🔲"
       if $is_configured && $is_accessible; then
         cal_status="✅"
       fi
@@ -174,11 +174,11 @@ validate_calendars() {
       local padded_cal="$cal                                   "
       padded_cal="${padded_cal:0:34}"
 
-      # Format the status with consistent spacing
-      local formatted_status="$cal_status    "
+      # Format the status with consistent spacing - center the emoji in 9 chars
+      local formatted_status="    $cal_status    "
       formatted_status="${formatted_status:0:9}"
 
-      echo "| $padded_cal | $formatted_status |"
+      echo "| $formatted_status | $padded_cal |"
     fi
   done <<< "$available_calendars"
 
@@ -275,7 +275,7 @@ function gday() {
   # Use semantic versioning: major.minor.patch. Human will bump the minor, Agents should bump the patch when we update the software.
   local GDAY_BANNER="
     🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞
-    🌞🌞🌞    gday Version 3.8.1    🌞🌞🌞
+    🌞🌞🌞    gday Version 3.9.0    🌞🌞🌞
     🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞
 
 
