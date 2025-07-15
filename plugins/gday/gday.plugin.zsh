@@ -275,8 +275,11 @@ function gday() {
   # Banner and version
   local GDAY_BANNER="
     🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞
-    🌞🌞🌞    gday Version 3.8.0    🌞🌞🌞
-    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
+    🌞🌞🌞    gday Version 3.8.1    🌞🌞🌞
+    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞
+
+
+"
 
   # Prompts and sections
   local hearts_desire_EOB="## 🧞‍♂️ What is top-of-mind for 🐲? What do the want rn?"
@@ -304,7 +307,7 @@ function gday() {
   echo -e "$GDAY_BANNER"
 
   ##### Setup
-  declare -A emoji_map=(
+  typeset -A emoji_map=(
     [800]="🕗" [830]="🕣" [900]="🕘" [930]="🕤"
     [1000]="🕙" [1030]="🕥" [1100]="🕚" [1130]="🕦"
     [1200]="🕛" [1230]="🕧" [100]="🕐" [130]="🕜"
@@ -313,14 +316,11 @@ function gday() {
     [600]="🕕" [630]="🕡" [700]="🕖" [730]="🕢"
   )
 
-  if [[ $display_date == *"Monday"* ]]; then
-    h1+=" - 📆 Week $week_number"
-  fi
 
   # Build the calendar arguments string
   local calendar_args=""
   for cal in "${GCAL_CALENDARS[@]}"; do
-    calendar_args+="--cal \"$cal\" "
+    calendar_args="${calendar_args}--cal \"$cal\" "
   done
 
   # Calculate target date for filtering events
@@ -337,7 +337,7 @@ function gday() {
     target_month=$(date -v -1d "+%b")
     target_date=$(date -v -1d "+%d")
   elif [[ "$date_arg" =~ ([0-9]+)\ days\ ago ]]; then
-    local days_ago=${BASH_REMATCH[1]}
+    local days_ago="${match[1]}"
     target_day=$(date -v "-${days_ago}d" "+%a")
     target_month=$(date -v "-${days_ago}d" "+%b")
     target_date=$(date -v "-${days_ago}d" "+%d")
@@ -520,7 +520,7 @@ for line in "${lines[@]}"; do
   local formatted_item="${item}                                                                                            "
   formatted_item="${formatted_item:0:88}"
 
-  body+="| ${formatted_time} | ${formatted_item} |"$'\n'
+  body="${body}| ${formatted_time} | ${formatted_item} |"$'\n'
 done
 
   local dateline="# $display_date"
