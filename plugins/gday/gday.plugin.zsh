@@ -272,7 +272,7 @@ function gday() {
       ;;
   esac
 
-  # Banner and version
+  # Use semantic versioning: major.minor.patch. Human will bump the minor, Agents should bump the patch when we update the software.
   local GDAY_BANNER="
     🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞
     🌞🌞🌞    gday Version 3.8.1    🌞🌞🌞
