@@ -14,4 +14,4 @@ jobs:
       - uses: actions/add-to-project@v0.5.0
         with:
           project-url: https://github.com/users/jonathanpberger/projects/14
-          github-token: ${{ secrets.PROJECT_TOKEN }}
+          github-token: \${{ secrets.PROJECT_TOKEN }}
