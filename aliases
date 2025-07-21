@@ -9,8 +9,6 @@ alias be="bundle exec"
 alias dco= "docker compose"
 alias dce="docker compose exec"
 
-
-
 alias pomo="pomodoro"
 alias vi="nvim"
 alias vim="nvim"
@@ -18,6 +16,12 @@ alias vim="nvim"
 # Navigation
 alias vscode-global="cd ~/Library/Application\ Support/Code/User/"
 alias dotrot="cd ~/workspace/dot-rot"
+
+# Add dot-rot bin to PATH for custom scripts
+export PATH="$HOME/workspace/dot-rot/bin:$PATH"
+
+# Shadow work alias for convenience
+alias shadow-work="$HOME/workspace/dot-rot/bin/shadow-work"
 
 # Some alias / shell housekeeping
 alias zr="source ~/.zshrc"
