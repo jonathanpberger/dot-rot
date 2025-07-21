@@ -1,8 +1,8 @@
 # ADR-001: Extract Workflow Tools from dot-rot
 
-**Date:** 2024-07-02  
-**Status:** Accepted  
-**Deciders:** JPB  
+**Date:** 2024-07-02
+**Status:** Accepted
+**Deciders:** JPB
 
 ## Context
 
@@ -26,16 +26,15 @@ We will **extract workflow tools into separate, focused repositories** while kee
 **dot-rot (system configuration only):**
 - Shell configuration and aliases
 - VS Code settings and extensions
-- macOS defaults and system preferences  
+- macOS defaults and system preferences
 - Homebrew package lists
 - Setup and installation scripts
 - Personal workflow orchestration (gday function)
 
 **Standalone tool repositories:**
 - `yday` - Git retrospective analysis tool
-- `project-discovery` - Multi-source project scanning
-- `work-calendar` - Calendar formatting utilities
-- Other workflow tools as they emerge
+- `gday` - Calendar formatting utilities
+- `shadow-work` - Multi-source project scanning
 
 ### Tool Characteristics
 
@@ -68,7 +67,7 @@ We will **extract workflow tools into separate, focused repositories** while kee
 ### Risks & Mitigations
 - **Risk:** Tools diverge from personal workflow needs
 - **Mitigation:** Maintain primary development in personal workflow context
-- **Risk:** Breaking changes in extracted tools affect daily workflow  
+- **Risk:** Breaking changes in extracted tools affect daily workflow
 - **Mitigation:** Pin to specific versions in dot-rot, careful semver
 
 ## Implementation
@@ -90,10 +89,22 @@ We will **extract workflow tools into separate, focused repositories** while kee
 - Other workflow tools as identified
 
 ### Success Criteria
-- [ ] `npm install -g yday` provides full retrospective functionality
-- [ ] dot-rot/bin contains only system configuration tools
+- [x] `npm install -g yday` provides full retrospective functionality
+- [ ] dot-rot/bin contains only system configuration tools  
 - [ ] gday workflow continues to work seamlessly
-- [ ] Extracted tools have their own documentation and can be used independently
+- [x] Extracted tools have their own documentation and can be used independently
+
+### Phase 2 Progress: gday Extraction (2025-01-21)
+- [x] **gday-cli repository created** at `/Users/jpb/workspace/gday-cli`
+- [x] **Modular architecture** with lib/ directory (banner.sh, config.sh, calendar.sh)
+- [x] **Full command interface** (`gday`, `gday later`, `gday filtered`, `gday --help`)
+- [x] **YAML configuration system** extracted from hardcoded Oh My Zsh plugin
+- [x] **Cross-platform compatibility** tested (bash/zsh shell scripts)
+- [x] **Distribution ready** (Homebrew formula + package.json for npm)
+- [x] **Comprehensive README** with installation and usage documentation
+- [x] **Version 3.10.0** with all features from original plugin maintained
+- [ ] **GitHub repository** creation (pending)
+- [ ] **dot-rot integration update** to use external gday (pending)
 
 ## Notes
 
