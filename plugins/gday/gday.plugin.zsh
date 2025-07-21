@@ -65,8 +65,23 @@
 ########################################
 
 
+# Helper function to show banner
+_gday_show_banner() {
+  # Use semantic versioning: major.minor.patch. Human will bump the minor, Agents should bump the patch when we update the software.
+  local GDAY_BANNER="
+    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞
+    🌞🌞🌞    gday Version 3.10.0    🌞🌞🌞
+    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞
+
+
+"
+  echo -e "$GDAY_BANNER"
+}
+
 # Helper function to show only the "Later Today" section
 _gday_later_today_section() {
+  _gday_show_banner
+
   local config_file="$HOME/.config/gday/config.yml"
   if [[ ! -f "$config_file" ]]; then
     echo "Error: Configuration file not found at $config_file"
@@ -224,6 +239,8 @@ _gday_later_today_section() {
 
 # Helper function to show filtered appointments
 _gday_show_filtered_appointments() {
+  _gday_show_banner
+
   local config_file="$HOME/.config/gday/config.yml"
   if [[ ! -f "$config_file" ]]; then
     echo "Error: Configuration file not found at $config_file"
@@ -251,6 +268,8 @@ _gday_show_filtered_appointments() {
 
 # Helper function to show help
 _gday_show_help() {
+  _gday_show_banner
+  
   echo "gday - Personal calendar and task management tool"
   echo ""
   echo "USAGE:"
@@ -494,15 +513,6 @@ function gday() {
       ;;
   esac
 
-  # Use semantic versioning: major.minor.patch. Human will bump the minor, Agents should bump the patch when we update the software.
-  local GDAY_BANNER="
-    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞
-    🌞🌞🌞    gday Version 3.10.0    🌞🌞🌞
-    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞
-
-
-"
-
   # Calendar and task display configuration
   local title="## 🪢 Todo Today"
   local table_header="| Time    | Item                                                                                   |"
@@ -570,7 +580,7 @@ function gday() {
     fi
   done < "$config_file"
 
-  echo -e "$GDAY_BANNER"
+  _gday_show_banner
 
   ##### Setup
   typeset -A emoji_map=(
