@@ -145,14 +145,7 @@
   "workbench.colorTheme": "Default Light+",
   "prisma.showPrismaDataPlatformNotification": false,
   "workbench.startupEditor": "none",
-  "vscode-markdown-notes.slugifyMethod": "classic",
-  "vscode-markdown-notes.slugifyCharacter": "-",
-  "markdown.marp.enableHtml": true,
   "terminal.integrated.enableMultiLinePasteWarning": false,
-  "markdown.extension.toc.levels": "1..2",
-  "[markdown]": {
-    "editor.defaultFormatter": "yzhang.markdown-all-in-one"
-  },
   "print.folder.fileNames": true,
   "print.folder.include": [],
   "print.folder.exclude": [
@@ -164,9 +157,5 @@
   "print.folder.maxLines": 1200,
   "print.folder.maxFiles": 30,
   "print.folder.includeFileList": false,
-  "MarkdownPaste.imageRules": [],
-  "files.associations": {
-    "*.md": "markdown"
-  },
   "github.copilot.nextEditSuggestions.enabled": true
 }
