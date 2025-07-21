@@ -65,13 +65,232 @@
 ########################################
 
 
+# Helper function to show only the "Later Today" section
+_gday_later_today_section() {
+  local config_file="$HOME/.config/gday/config.yml"
+  if [[ ! -f "$config_file" ]]; then
+    echo "Error: Configuration file not found at $config_file"
+    return 1
+  fi
+  
+  # Load filtered appointments from YAML
+  local -a filtered_appointments_array
+  local in_filtered_appointments=false
+  
+  while IFS= read -r line; do
+    if [[ "$line" =~ ^filtered_appointments: ]]; then
+      in_filtered_appointments=true
+      filtered_appointments_array=()
+    elif [[ $in_filtered_appointments == true && "$line" =~ ^[[:space:]]*-[[:space:]]*(.*) ]]; then
+      local appointment=$(echo "$line" | sed 's/^[[:space:]]*-[[:space:]]*//' | sed 's/^"//' | sed 's/"$//')
+      filtered_appointments_array+=("$appointment")
+    elif [[ "$line" =~ ^[[:alpha:]]+: ]] && [[ $in_filtered_appointments == true ]]; then
+      # New section started, stop processing filtered appointments
+      break
+    fi
+  done < "$config_file"
+  
+  # For the later command, we need to generate the full schedule and then filter it
+  # This is a simplified version that reuses the main gday logic
+  local date_arg="today"
+  local display_date=$(date "+%m/%d - %A")
+  local week_number=$(date "+%V")
+  
+  # Build the calendar arguments string
+  local calendar_args=""
+  for cal in "${GCAL_CALENDARS[@]}"; do
+    calendar_args="${calendar_args}--cal \"$cal\" "
+  done
+  
+  local gcalcli_cmd="gcalcli $calendar_args agenda \"1am $date_arg\" \"11pm $date_arg\" --nocolor --no-military --details length"
+  local calendar_data=$(eval "$gcalcli_cmd")
+  local calendar_data_no_color=$(echo "$calendar_data" | sed 's/\x1b\[[0-9;]*m//g')
+  calendar_data_no_color=$(echo "$calendar_data_no_color" | sed 's/|/—/g')
+  
+  # Process the calendar data exactly like the main function does
+  local body=""
+  local lines=()
+  local time_count=()
+  local prev_time=""
+  local prev_item=""
+  
+  # Setup emoji map
+  typeset -A emoji_map=(
+    [800]="🕗" [830]="🕣" [900]="🕘" [930]="🕤"
+    [1000]="🕙" [1030]="🕥" [1100]="🕚" [1130]="🕦"
+    [1200]="🕛" [1230]="🕧" [100]="🕐" [130]="🕜"
+    [200]="🕑" [230]="🕝" [300]="🕒" [330]="🕞"
+    [400]="🕓" [430]="🕟" [500]="🕔" [530]="🕠"
+    [600]="🕕" [630]="🕡" [700]="🕖" [730]="🕢"
+  )
+  
+  # Process calendar data (simplified version of main logic)
+  local target_day=$(date "+%a")
+  local target_month=$(date "+%b")
+  local target_date=$(date "+%d")
+  local day_format="$target_day $target_month $target_date"
+  
+  local all_day_events=()
+  
+  while IFS= read -r line; do
+    line=$(echo "$line" | sed 's/^[ \t]*//') # trim whitespace
+    
+    # Function to add a pomodoro (30 minutes) to a given time
+    add_pomodoro() {
+      local time=$1
+      local new_time=$(date -j -v+30M -f "%I:%M%p" "$time" +"%I:%M%p")
+      echo $new_time | sed 's/^0//' | tr '[:upper:]' '[:lower:]'
+    }
+    
+    # Process time-based events like main function
+    if [[ $line =~ ^[0-9]{1,2}:[0-9]{2}[apm]{2} ]]; then
+      local time=$(echo "$line" | awk '{print $1}')
+      local item=$(echo "$line" | awk '{$1=""; print substr($0,2)}')
+      
+      # Get duration from next line
+      IFS= read -r next_line
+      local duration_raw=$(echo "$next_line" | awk '/Length:/ {print $2}')
+      local hours=$(echo "$duration_raw" | cut -d ':' -f 1)
+      local minutes=$(echo "$duration_raw" | cut -d ':' -f 2)
+      local total_minutes=$((hours * 60 + minutes))
+      
+      # Handle different event lengths
+      if [[ $total_minutes -eq 1440 || ($time == "12:00am" && $total_minutes -gt 720) ]]; then
+        if [[ ! $item =~ ^Length: ]]; then
+          all_day_events+=("all-day|📅 $item (All-day)")
+        fi
+      elif [[ $total_minutes -eq 15 ]]; then
+        if [[ $time =~ :15([ap]m) ]]; then
+          time=$(echo "$time" | sed 's/:15/:00/')
+          item="$item - $(echo "$line" | awk '{print $1}')"
+        elif [[ $time =~ :45([ap]m) ]]; then
+          time=$(echo "$time" | sed 's/:45/:30/')
+          item="$item - $(echo "$line" | awk '{print $1}')"
+        fi
+        new_line="$time|$item"
+        lines+=("$new_line")
+      else
+        local blocks=$((total_minutes / 30))
+        if [[ $blocks -eq 0 ]]; then
+          blocks=1
+        fi
+        
+        for ((i=0; i<blocks; i++)); do
+          new_line="$time|$item"
+          if [[ "$item" != "🍅" || "$time" != "$prev_time" ]]; then
+            lines+=("$new_line")
+          fi
+          prev_time="$time"
+          time=$(add_pomodoro "$time")
+        done
+      fi
+    fi
+  done <<< "$calendar_data_no_color"
+  
+  # Add all-day events to the beginning
+  lines=("${all_day_events[@]}" "${lines[@]}")
+  
+  # Generate the body table
+  local body=""
+  for line in "${lines[@]}"; do
+    IFS='|' read -r time item <<< "$line"
+    local time_number=$(echo "$time" | tr -d '[:alpha:]' | tr -d ':')
+    
+    if ! [[ $item =~ ^[^[:alnum:]] ]]; then
+      local emoji=${emoji_map[$time_number]}
+      item="${emoji} $item"
+    fi
+    
+    local formatted_time="${time}       "
+    formatted_time="${formatted_time:0:8}"
+    local formatted_item="${item}                                                                                            "
+    formatted_item="${formatted_item:0:88}"
+    
+    body="${body}| ${formatted_time} | ${formatted_item} |"$'\n'
+  done
+  
+  # Join filtered appointments with pipe delimiter
+  local filtered_appointments_joined=""
+  for appt in "${filtered_appointments_array[@]}"; do
+    if [[ -z "$filtered_appointments_joined" ]]; then
+      filtered_appointments_joined="$appt"
+    else
+      filtered_appointments_joined="$filtered_appointments_joined|$appt"
+    fi
+  done
+  
+  echo $body | generate_later_today_h2s "$filtered_appointments_joined"
+}
+
+# Helper function to show filtered appointments
+_gday_show_filtered_appointments() {
+  local config_file="$HOME/.config/gday/config.yml"
+  if [[ ! -f "$config_file" ]]; then
+    echo "Error: Configuration file not found at $config_file"
+    return 1
+  fi
+  
+  echo "## Filtered Appointments"
+  echo "The following appointments are excluded from 'Later Today' section:"
+  echo ""
+  
+  local in_filtered_appointments=false
+  
+  while IFS= read -r line; do
+    if [[ "$line" =~ ^filtered_appointments: ]]; then
+      in_filtered_appointments=true
+    elif [[ $in_filtered_appointments == true && "$line" =~ ^[[:space:]]*-[[:space:]]*(.*) ]]; then
+      local appointment=$(echo "$line" | sed 's/^[[:space:]]*-[[:space:]]*//' | sed 's/^"//' | sed 's/"$//')
+      echo "- $appointment"
+    elif [[ "$line" =~ ^[[:alpha:]]+: ]] && [[ $in_filtered_appointments == true ]]; then
+      # New section started, stop processing filtered appointments
+      break
+    fi
+  done < "$config_file"
+}
+
+# Helper function to show help
+_gday_show_help() {
+  echo "gday - Personal calendar and task management tool"
+  echo ""
+  echo "USAGE:"
+  echo "  gday [COMMAND|DATE]"
+  echo ""
+  echo "COMMANDS:"
+  echo "  auth              Re-authenticate with Google Calendar"
+  echo "  later             Show only the 'Later Today' section"
+  echo "  filtered          Show the list of filtered appointments"
+  echo "  help, --help      Show this help message"
+  echo ""
+  echo "DATE OPTIONS:"
+  echo "  (no args)         Show today's schedule (default)"
+  echo "  yesterday, yday   Show yesterday's schedule"
+  echo "  monday            Show most recent Monday's schedule"
+  echo "  tuesday           Show most recent Tuesday's schedule"
+  echo "  wednesday         Show most recent Wednesday's schedule"
+  echo "  thursday          Show most recent Thursday's schedule"
+  echo "  friday            Show most recent Friday's schedule"
+  echo "  saturday          Show most recent Saturday's schedule"
+  echo "  sunday            Show most recent Sunday's schedule"
+  echo ""
+  echo "EXAMPLES:"
+  echo "  gday              Show today's full schedule"
+  echo "  gday yesterday    Show yesterday's schedule"
+  echo "  gday friday       Show last Friday's schedule"
+  echo "  gday later        Show only appointments for later today"
+  echo "  gday filtered     Show which appointments are filtered out"
+  echo ""
+  echo "VERSION: 3.10.0"
+}
+
 # Helper function to extract filtered tasks
 generate_later_today_h2s() {
-  awk -v appointments="${FILTERED_APPOINTMENTS[*]}" '
+  local filtered_appointments_param="$1"
+  awk -v appointments="$filtered_appointments_param" '
     BEGIN {
       print "## Later Today..."
       print "```"
-      split(appointments, appts, " ")
+      split(appointments, appts, "|")
     }
     function normalize(str) {
       gsub(/[^a-zA-Z0-9 ]/, "", str)
@@ -196,17 +415,6 @@ validate_calendars() {
   return 0
 }
 
-# Filtered appointments
-FILTERED_APPOINTMENTS=(
-  " Elias Allergy Shots"
-  "Somatic Call with Jenna"
-  "☀️❤️😘 after maria takes Esz: JPB / KW standup"
-  "🍅"
-  "🍜 Lunch"
-  "🏋️ JPB workout / 📔 morning pages"
-  "📓 Boys do homework while adult cooks"
-  "🤼‍♀️ Elias tap outs"
-)
 
 function gday() {
 
@@ -217,6 +425,20 @@ function gday() {
       rm ~/.gcalcli_oauth
       echo "running \`gcalcli agenda\`. If this fails, try \`gcalcli init\` to force the auth flow"
       gcalcli init
+      return
+      ;;
+    later)
+      # Only show the "Later Today" section
+      _gday_later_today_section
+      return
+      ;;
+    filtered)
+      # Show filtered appointments from config
+      _gday_show_filtered_appointments
+      return
+      ;;
+    --help|help)
+      _gday_show_help
       return
       ;;
     prev|yesterday|yday|then)
@@ -275,24 +497,13 @@ function gday() {
   # Use semantic versioning: major.minor.patch. Human will bump the minor, Agents should bump the patch when we update the software.
   local GDAY_BANNER="
     🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞
-    🌞🌞🌞    gday Version 3.9.0    🌞🌞🌞
+    🌞🌞🌞    gday Version 3.10.0    🌞🌞🌞
     🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞
 
 
 "
 
-  # Prompts and sections
-  local hearts_desire_EOB="## 🧞‍♂️ What is top-of-mind for 🐲? What do the want rn?"
-  local hearts_desire_EAB="## 🧞‍♂️ What is top-of-mind for 🦅🦁? What do the want rn?"
-  local hearts_desire_EMB="## 🧞‍♂️ What is top-of-mind for 🦄? What do the want rn?"
-  local hearts_desire_ELB="## 🧞‍♂️ What is top-of-mind for 🐴🪽? What do the want rn?"
-  local hearts_desire_KWB="## 🧞‍♂️ What is top-of-mind for KWB? What do the want rn?"
-  local hearts_desire_JPB="## 🧞‍♂️ What is top-of-mind for JPB? What do the want rn?"
-  local spoons="## 🥄 What did you spend spoons on yesterday?"
-  local yday="## 🚢 What did you ship yesterday?"
-  local wild="## 🃏 What Wildcards are in play today?"
-  local braindump="## 🫃 What's on your mind rn? 🐸🧹👑 \n\n\n\n\n--- "
-  local frogs="\n- 1st 🐸 I'll eat:\n- 2nd 🐸 I'll eat:\n- 3rd 🐸 I'll eat:\n\n"
+  # Calendar and task display configuration
   local title="## 🪢 Todo Today"
   local table_header="| Time    | Item                                                                                   |"
   local table_separator="|---------|----------------------------------------------------------------------------------------|"
@@ -303,6 +514,61 @@ function gday() {
   if ! validate_calendars; then
     return 1
   fi
+
+  # Load configuration from YAML
+  local config_file="$HOME/.config/gday/config.yml"
+  if [[ ! -f "$config_file" ]]; then
+    echo "Warning: gday configuration file not found at $config_file"
+    echo "Create ~/.config/gday/config.yml to customize prompts"
+    return 1
+  fi
+  
+  # Parse new YAML structure
+  typeset -A prompt_groups_freq
+  typeset -A prompt_groups_content
+  local -a filtered_appointments_array
+  local current_group=""
+  local current_frequency=""
+  local in_content=false
+  local in_filtered_appointments=false
+  
+  while IFS= read -r line; do
+    if [[ "$line" =~ ^[[:space:]]*-[[:space:]]*name:[[:space:]]*\"(.*)\" ]]; then
+      # Start of new prompt group
+      current_group="${match[1]}"
+      in_content=false
+      in_filtered_appointments=false
+    elif [[ "$line" =~ ^[[:space:]]*frequency:[[:space:]]*(.*) ]]; then
+      # Frequency line
+      current_frequency="${match[1]}"
+      # Remove comments
+      current_frequency=$(echo "$current_frequency" | sed 's/#.*//' | sed 's/[[:space:]]*$//')
+      prompt_groups_freq[$current_group]="$current_frequency"
+    elif [[ "$line" =~ ^[[:space:]]*content: ]]; then
+      # Start of content section
+      in_content=true
+      in_filtered_appointments=false
+      prompt_groups_content[$current_group]=""
+    elif [[ "$line" =~ ^filtered_appointments: ]]; then
+      # Start of filtered appointments section
+      in_filtered_appointments=true
+      in_content=false
+      filtered_appointments_array=()
+    elif [[ $in_content == true && "$line" =~ ^[[:space:]]*-[[:space:]]*(.*) ]]; then
+      # Content line
+      local prompt=$(echo "$line" | sed 's/^[[:space:]]*-[[:space:]]*//' | sed 's/^"//' | sed 's/"$//')
+      local current_content="${prompt_groups_content[$current_group]}"
+      if [[ -z "$current_content" ]]; then
+        prompt_groups_content[$current_group]="$prompt"
+      else
+        prompt_groups_content[$current_group]="$current_content|$prompt"
+      fi
+    elif [[ $in_filtered_appointments == true && "$line" =~ ^[[:space:]]*-[[:space:]]*(.*) ]]; then
+      # Filtered appointment line
+      local appointment=$(echo "$line" | sed 's/^[[:space:]]*-[[:space:]]*//' | sed 's/^"//' | sed 's/"$//')
+      filtered_appointments_array+=("$appointment")
+    fi
+  done < "$config_file"
 
   echo -e "$GDAY_BANNER"
 
@@ -529,16 +795,50 @@ done
   fi
 
   echo -e "${dateline}\n\n"
-  echo -e "${hearts_desire_EOB}\n\n"
-  echo -e "${hearts_desire_EAB}\n\n"
-  echo -e "${hearts_desire_EMB}\n\n"
-  echo -e "${hearts_desire_ELB}\n\n"
-  echo -e "${hearts_desire_KWB}\n\n"
-  echo -e "${hearts_desire_JPB}\n\n"
-  echo -e "${spoons}\n\n\n\n"
-  echo -e "${yday}\n\n\n\n"
-  echo -e "${wild}\n\n\n\n"
-  echo -e "${braindump}\n\n\n\n"
+  
+  # Process each prompt group based on frequency
+  for group in "${(k)prompt_groups_freq[@]}"; do
+    local frequency="${prompt_groups_freq[$group]}"
+    local content="${prompt_groups_content[$group]}"
+    # Split content by | delimiter
+    IFS='|' read -A prompts <<< "$content"
+    
+    if [[ "$frequency" == "daily" ]]; then
+      # Show all prompts from this group
+      for prompt in "${prompts[@]}"; do
+        echo -e "${prompt}\n\n"
+      done
+    elif [[ "$frequency" =~ "rotating\(([0-9]+)\)" ]]; then
+      # Rotating frequency - show N prompts with fair distribution
+      local count="${match[1]}"
+      local day_of_year=$(date +%j)
+      local total_prompts=${#prompts[@]}
+      # Calculate starting index for today
+      local start_index=$(( (day_of_year * count) % total_prompts ))
+      
+      # Show the specified number of prompts
+      for ((i = 0; i < count && i < total_prompts; i++)); do
+        local index=$(( (start_index + i) % total_prompts ))
+        echo -e "${prompts[$index]}\n\n"
+      done
+    elif [[ "$frequency" =~ "random\(([0-9]+)\)" ]]; then
+      # Random frequency - show N random prompts
+      local count="${match[1]}"
+      local selected=()
+      local available=("${prompts[@]}")
+      
+      # Seed random with date for consistency within the day
+      RANDOM=$(date +%j)
+      
+      # Pick random prompts without replacement
+      for ((i = 0; i < count && ${#available[@]} > 0; i++)); do
+        local rand_index=$((RANDOM % ${#available[@]}))
+        echo -e "${available[$rand_index]}\n\n"
+        # Remove selected prompt from available list
+        available=("${available[@]:0:$rand_index}" "${available[@]:$((rand_index + 1))}")
+      done
+    fi
+  done
   echo -e "${title}\n${table_header}\n${table_separator}\n${body}\n\n"
   echo -e "${kicker}"
 
@@ -546,5 +846,15 @@ done
   ~/workspace/dot-rot/bin/yday-semantic
 
   # Now show the Later Today section
-  echo $body | generate_later_today_h2s
+  # Join filtered appointments with pipe delimiter
+  local filtered_appointments_joined=""
+  for appt in "${filtered_appointments_array[@]}"; do
+    if [[ -z "$filtered_appointments_joined" ]]; then
+      filtered_appointments_joined="$appt"
+    else
+      filtered_appointments_joined="$filtered_appointments_joined|$appt"
+    fi
+  done
+  
+  echo $body | generate_later_today_h2s "$filtered_appointments_joined"
 }
