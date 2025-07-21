@@ -88,9 +88,9 @@ get_active_repos() {
   # Run yday-semantic and parse output  
   local script_dir="$(cd "$(dirname "$0")" && pwd)"
   if [[ -n "$yday_cmd_args" ]]; then
-    local output=$("$script_dir/yday-semantic" --parent="$parent_dir" $yday_cmd_args 2>/dev/null)
+    local output=$("$script_dir/yday-semantic" --parent="$parent_dir" $yday_cmd_args)
   else
-    local output=$("$script_dir/yday-semantic" --parent="$parent_dir" 2>/dev/null)
+    local output=$("$script_dir/yday-semantic" --parent="$parent_dir")
   fi
   
   echo "$output" >&2
