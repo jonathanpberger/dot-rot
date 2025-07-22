@@ -1,0 +1,78 @@
+# gday configuration
+# Copy to ~/.config/gday/config.yml and customize
+
+# Calendar names (must match your Google Calendar names exactly)
+calendars:
+  - "Pomo"
+  # - "JPB Bills"
+  # - "Hearth Calendar"
+  # - "Kiddo_meta-JPB_only"
+  - "Berger Appointments"
+  - "Kids Activities"
+  - "JPB Private"
+  # - "EM 🦁🦅"
+  # - "ESZ 🦄"
+  # - "EV 🐴🪽"
+  # - "EL 🐲"
+  # - "Wildcards"
+  # - "🍗🥬 Meal plan"
+  - "🛟 HALP!"
+  # - "ROUTINE"
+  # - "KW"
+  # - "Temple Beth Shalom"
+  - "Jewish Holidays"
+  - "Holidays in United States"
+  - "Jonathan Berger (TripIt)"
+  # - "Hastings-on-Hudson UFSD Calendar"
+  - "Weather for Mount Hope"
+  - "jon@berger"
+  - "JPB-DW"
+
+# Prompt configuration with rotation settings
+prompts:
+  - name: "Mind dump"
+    frequency: daily # Show every day
+    content:
+      - "## 💭 What's on your mind rn? 🐸🧹👑"
+
+  - name: "Weekly Areas of Focus"
+    frequency: random(3) # Show 3 random prompts each day
+    content:
+      - "### 🪸😎 What's the most 😎 SELF-focused thing you've done lately? How full is that cup?"
+      - "### 🪸💰 What's the most 💰 MONEY-focused thing you've done lately? How full is that cup?"
+      - "### 🪸💼 What's the most 💼 CAREER-focused thing you've done lately? How full is that cup?"
+      - "### 🪸👪 What's the most 👪 FAMILY-focused thing you've done lately? How full is that cup?"
+      - "### 🪸🍎 What's the most 🍎 HEALTH-focused thing you've done lately? How full is that cup?"
+      - "### 🪸💀 What's the most 💀 SPIRIT-focused thing you've done lately? How full is that cup?"
+      - "### 🪸🐒 What's the most 🐒 FRIENDS-focused thing you've done lately? How full is that cup?"
+      - "### 🪸🌱 What's the most 🌱 LEARNING-focused thing you've done lately? How full is that cup?"
+      - "### 🪸🐜 What's the most 🐜 COMMUNITY-focused thing you've done lately? How full is that cup?"
+      - "### 🪸🏠 What's the most 🏠 LIFESTYLE-focused thing you've done lately? How full is that cup?"
+      - "### 🪸🐣 What's the most 🐣 CREATIVITY-focused thing you've done lately? How full is that cup?"
+      - "### 🪸🪢 What's the most 🪢 DISCIPLINE-focused thing you've done lately? How full is that cup?"
+      - "### 🪸🦦 What's the most 🦦 RELATIONSHIP-focused thing you've done lately? How full is that cup?"
+
+  - name: "Family Check-in"
+    frequency: rotating(2) # Show 2 items, cycle through all fairly
+    content:
+      - "### 🧞‍♂️ What is top-of-mind for KWB? What do they want rn?"
+      - "### 🧞‍♂️ What is top-of-mind for 🐲? What do they want rn?"
+      - "### 🧞‍♂️ What is top-of-mind for 🦅🦁? What do they want rn?"
+      - "### 🧞‍♂️ What is top-of-mind for 🦄? What do they want rn?"
+      - "### 🧞‍♂️ What is top-of-mind for 🐴🪽? What do they want rn?"
+
+  - name: "Daily Review"
+    frequency: daily
+    content:
+      - "### 🥄 What did you spend spoons on yesterday?"
+      - "### 🚢 What did you ship yesterday?"
+      - "### 🃏 What wildcards are in play today?"
+
+# Appointments to exclude from "Later Today" section
+# These will appear in main schedule but not in the filtered "Later Today" view
+filtered_appointments:
+  - "🍅 Pomodoro"
+  - "🍜 Lunch"
+  - "🌞 Wake kiddos 7am, get em out the door 🍳👖🪥🚌"
+  - "🏋️ JPB workout / 📔 morning pages"
+  - "☀️❤️😘 after maria takes Esz: JPB / KW standup"
