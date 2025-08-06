@@ -4,6 +4,7 @@
 # Calendar names (must match your Google Calendar names exactly)
 calendars:
   - "Pomo"
+  # - "Anyone? Bueller?"
   # - "JPB Bills"
   # - "Hearth Calendar"
   # - "Kiddo_meta-JPB_only"
@@ -16,7 +17,7 @@ calendars:
   # - "EL 🐲"
   # - "Wildcards"
   # - "🍗🥬 Meal plan"
-  - "🛟 HALP!"
+  # - "🛟 HALP!"
   # - "ROUTINE"
   # - "KW"
   # - "Temple Beth Shalom"
@@ -30,12 +31,12 @@ calendars:
 
 # Prompt configuration with rotation settings
 prompts:
-  - name: "Mind dump"
+  - name: "Mind_dump"
     frequency: daily # Show every day
     content:
       - "## 💭 What's on your mind rn? 🐸🧹👑"
 
-  - name: "Weekly Areas of Focus"
+  - name: "weekly_areas_of_focus"
     frequency: random(3) # Show 3 random prompts each day
     content:
       - "### 🪸😎 What's the most 😎 SELF-focused thing you've done lately? How full is that cup?"
@@ -52,7 +53,7 @@ prompts:
       - "### 🪸🪢 What's the most 🪢 DISCIPLINE-focused thing you've done lately? How full is that cup?"
       - "### 🪸🦦 What's the most 🦦 RELATIONSHIP-focused thing you've done lately? How full is that cup?"
 
-  - name: "Family Check-in"
+  - name: "Family_Check-in"
     frequency: rotating(2) # Show 2 items, cycle through all fairly
     content:
       - "### 🧞‍♂️ What is top-of-mind for KWB? What do they want rn?"
@@ -71,7 +72,10 @@ prompts:
 # Appointments to exclude from "Later Today" section
 # These will appear in main schedule but not in the filtered "Later Today" view
 filtered_appointments:
-  - "🍅 Pomodoro"
+  - "🍅"
+  - "Emily - am"
+  - "Somatic Call with Jenna"
+  - "🪢 Todo today / run `gday`"
   - "🍜 Lunch"
   - "🌞 Wake kiddos 7am, get em out the door 🍳👖🪥🚌"
   - "🏋️ JPB workout / 📔 morning pages"

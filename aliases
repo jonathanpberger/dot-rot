@@ -20,6 +20,9 @@ alias dotrot="cd ~/workspace/dot-rot"
 # Add dot-rot bin to PATH for custom scripts
 export PATH="$HOME/workspace/dot-rot/bin:$PATH"
 
+# Add gday-cli to PATH (plugin loading has issues)
+export PATH="$HOME/workspace/gday-cli/bin:$PATH"
+
 # Shadow work alias for convenience
 alias shadow-work="$HOME/workspace/dot-rot/bin/shadow-work"
 
