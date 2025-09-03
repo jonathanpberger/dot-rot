@@ -126,7 +126,8 @@ function monthly_review() {
 ---\\
 name: JPB Monthly Notes for $(date +'%m')/$(date +'%Y')\\
 filepath: \"$new_file\"\\
----" "$new_file"
+---\\
+" "$new_file"
 
     # Check the links
     echo "\nChecking links:"
