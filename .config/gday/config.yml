@@ -28,6 +28,7 @@ calendars:
   # - "Weather for Mount Hope"
   - "jon@berger"
   - "JPB-DW"
+  - "JPB TuxD"
 
 # Prompt configuration with rotation settings
 prompts:
