@@ -111,13 +111,23 @@
   {
     "key": "cmd+i",
     "command": "composerMode.agent"
-},
-{
+  },
+  {
     "key": "shift+enter",
     "command": "workbench.action.terminal.sendSequence",
     "args": {
-        "text": "\\\r\n"
+      "text": "\\\r\n"
     },
     "when": "terminalFocus"
-}
+  },
+  {
+    "key": "ctrl+shift+alt+q",
+    "command": "workbench.action.quickOpenNavigateNextInViewPicker",
+    "when": "inQuickOpen && inViewsPicker"
+  },
+  {
+    "key": "ctrl+q",
+    "command": "-workbench.action.quickOpenNavigateNextInViewPicker",
+    "when": "inQuickOpen && inViewsPicker"
+  }
 ]
