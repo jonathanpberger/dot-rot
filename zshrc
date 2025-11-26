@@ -150,3 +150,6 @@ source /Users/jpb/.docker/init-zsh.sh || true # Added by Docker Desktop
 # Prioritize Homebrew gday over development version
 export PATH="/opt/homebrew/bin:$PATH"
 
+
+# Added by Antigravity
+export PATH="/Users/jpb/.antigravity/antigravity/bin:$PATH"
