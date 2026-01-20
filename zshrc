@@ -156,6 +156,17 @@ export PATH="/Users/jpb/.antigravity/antigravity/bin:$PATH"
 
 # Amp CLI
 export PATH="/Users/jpb/.amp/bin:$PATH"
+
+# Git worktree helper - create worktree with new branch in .worktrees/
+gwtab() {
+  local branch="${1:?Branch name required}"
+  if git show-ref --verify --quiet "refs/heads/$branch"; then
+    git worktree add ".worktrees/$branch" "$branch"
+  else
+    git worktree add ".worktrees/$branch" -b "$branch"
+  fi
+}
+
 # Claude Code skill pairing (pair-with ralph|gsd|powers|solo)
 source ~/.claude/pair-with.sh
 

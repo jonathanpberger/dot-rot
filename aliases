@@ -935,3 +935,14 @@ gh_project_set_token() {
 
 # Alias for setting the project token
 alias gh_token="gh_project_set_token"
+
+# make git worktrees more easily
+
+gwtab() {
+  local branch="${1:?Branch name required}"
+  if git show-ref --verify --quiet "refs/heads/$branch"; then
+    git worktree add ".worktrees/$branch" "$branch"
+  else
+    git worktree add ".worktrees/$branch" -b "$branch"
+  fi
+}
