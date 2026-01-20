@@ -158,3 +158,8 @@ export PATH="/Users/jpb/.antigravity/antigravity/bin:$PATH"
 export PATH="/Users/jpb/.amp/bin:$PATH"
 # Claude Code skill pairing (pair-with ralph|gsd|powers|solo)
 source ~/.claude/pair-with.sh
+
+
+# Gas town
+export PATH="$PATH:$HOME/go/bin"
+
