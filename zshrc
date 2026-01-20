@@ -156,3 +156,5 @@ export PATH="/Users/jpb/.antigravity/antigravity/bin:$PATH"
 
 # Amp CLI
 export PATH="/Users/jpb/.amp/bin:$PATH"
+# Claude Code skill pairing (pair-with ralph|gsd|powers|solo)
+source ~/.claude/pair-with.sh
