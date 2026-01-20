@@ -139,7 +139,7 @@
     "vals",
     "Vivek"
   ],
-  "editor.accessibilitySupport": "off",
+  "editor.accessibilitySupport": "on",
   "code-runner.customCommand": "alias",
   "terminal.integrated.defaultProfile.osx": "zsh",
   "workbench.colorTheme": "Default Light+",
