@@ -13,6 +13,9 @@ alias pomo="pomodoro"
 alias vi="nvim"
 alias vim="nvim"
 
+# Labelling
+alias tag="toilet -f mono12 "
+
 # Navigation
 alias vscode-global="cd ~/Library/Application\ Support/Code/User/"
 alias dotrot="cd ~/workspace/dot-rot"
