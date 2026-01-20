@@ -153,3 +153,6 @@ export PATH="/opt/homebrew/bin:$PATH"
 
 # Added by Antigravity
 export PATH="/Users/jpb/.antigravity/antigravity/bin:$PATH"
+
+# Amp CLI
+export PATH="/Users/jpb/.amp/bin:$PATH"
