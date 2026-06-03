@@ -118,9 +118,10 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 
 eval "$(pkgx --quiet dev --shellcode)"  # https://github.com/pkgxdev/dev
 
-# Go is a PITA. Installing via homebrew bc mise has trouble w/ it.
+# Go via homebrew (mise Go causes version conflicts)
 export GOROOT="/opt/homebrew/opt/go/libexec"
 export GOPATH="$HOME/go"
+export GOBIN="$GOPATH/bin"
 export PATH="$GOROOT/bin:$GOPATH/bin:$PATH"
 
 # Define claude function silently
@@ -136,12 +137,28 @@ alias taskmaster='task-master'
 # mise setup (should be first)
 eval "$(mise activate zsh)"
 
+# Prevent accidental mise go install (use homebrew Go instead)
+# To bypass: comment out this function or run `command mise install go@X.Y.Z`
+# Location: ~/.zshrc (search for "mise go install")
+mise() {
+  if [[ "$1" == "install" && "$2" == go* ]]; then
+    echo "ERROR: Don't install Go via mise - use homebrew instead"
+    echo "  brew install go"
+    echo "  (To bypass this check, see ~/.zshrc and search for 'mise go install')"
+    return 1
+  fi
+  command mise "$@"
+}
+
+# Override mise's Go with homebrew Go (mise Go has version conflicts)
+export GOROOT="/opt/homebrew/opt/go/libexec"
+export GOBIN="$HOME/go/bin"
+
 
 export PATH="$PWD/bin:$PATH"
 
 # Added by Windsurf
 export PATH="/Users/jpb/.codeium/windsurf/bin:$PATH"
-alias claude="/Users/jpb/.claude/local/claude"
 export PATH="/Users/jpb/.claude/local:$PATH"
 export PATH="$HOME/bin:$PATH"
 
@@ -171,6 +188,29 @@ gwtab() {
 source ~/.claude/pair-with.sh
 
 
-# Gas town
-export PATH="$PATH:$HOME/go/bin"
+# Gas town (gt installed via: go install github.com/steveyegge/gastown/cmd/gt@latest)
 
+
+# --- Gas Town Integration (managed by gt) ---
+[[ -f "/Users/jpb/.config/gastown/shell-hook.sh" ]] && source "/Users/jpb/.config/gastown/shell-hook.sh"
+# --- End Gas Town ---
+
+# Git-duet for AI pair programming attribution
+export GIT_DUET_CO_AUTHORED_BY=1
+export GIT_DUET_GLOBAL=true
+export MAXIMOFF_URL="https://wanda.discovery.works"
+
+unalias br 2>/dev/null  # br installer - remove conflicting alias
+
+# >>> MCP Agent Mail br path /Users/jpb/.local/bin
+if [[ ":$PATH:" != *":/Users/jpb/.local/bin:"* ]]; then
+  export PATH="/Users/jpb/.local/bin:$PATH"
+fi
+# <<< MCP Agent Mail br path
+
+# >>> MCP Agent Mail bd alias
+alias bd='br'
+# <<< MCP Agent Mail bd alias
+alias am="cd ~/workspace/mcp_agent_mail && uv run python -m mcp_agent_mail.cli serve-http"
+
+eval "$(starship init zsh)"

@@ -63,6 +63,7 @@ brew install mise
 brew install nvim
 brew install pd
 brew install phoenix
+brew install starship
 brew install powerline-go
 brew install rowanj-gitx
 brew install signal

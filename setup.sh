@@ -11,13 +11,16 @@ echo "#### Setting up symlinks"
 rm -f ~/.oh-my-zsh/custom/aliases.zsh
 rm -f ~/.oh-my-zsh/custom/plugins/gday/gday.plugin.zsh
 rm -f ~/.oh-my-zsh/custom/plugins/gh_project/gh_project.plugin.zsh
+rm -f ~/.config/starship.toml
 
 # Create directories if they don't exist
 mkdir -p ~/.oh-my-zsh/custom/plugins/gday
 mkdir -p ~/.oh-my-zsh/custom/plugins/gh_project
+mkdir -p ~/.config
 
 # Create new symlinks
 ln -s ~/workspace/dot-rot/aliases.zsh ~/.oh-my-zsh/custom/aliases.zsh
+ln -s ~/workspace/dot-rot/config/starship.toml ~/.config/starship.toml
 ln -s ~/workspace/dot-rot/plugins/gday/gday.plugin.zsh ~/.oh-my-zsh/custom/plugins/gday/gday.plugin.zsh
 ln -s ~/workspace/dot-rot/plugins/gh_project/gh_project.plugin.zsh ~/.oh-my-zsh/custom/plugins/gh_project/gh_project.plugin.zsh
 
