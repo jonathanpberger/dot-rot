@@ -10,6 +10,7 @@ alias dco= "docker compose"
 alias dce="docker compose exec"
 
 alias pomo="pomodoro"
+alias v="nvim ."
 alias vi="nvim"
 alias vim="nvim"
 

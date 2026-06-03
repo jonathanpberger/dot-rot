@@ -129,5 +129,10 @@
     "key": "ctrl+q",
     "command": "-workbench.action.quickOpenNavigateNextInViewPicker",
     "when": "inQuickOpen && inViewsPicker"
+  },
+  {
+    "key": "alt+cmd+s",
+    "command": "workbench.action.toggleUnifiedSidebarFromKeyboard",
+    "when": "!isAuxiliaryWindowFocusedContext"
   }
 ]

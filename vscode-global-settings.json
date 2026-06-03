@@ -142,7 +142,7 @@
   "editor.accessibilitySupport": "on",
   "code-runner.customCommand": "alias",
   "terminal.integrated.defaultProfile.osx": "zsh",
-  "workbench.colorTheme": "Default Light+",
+  "workbench.colorTheme": "Light+",
   "prisma.showPrismaDataPlatformNotification": false,
   "workbench.startupEditor": "none",
   "terminal.integrated.enableMultiLinePasteWarning": false,
@@ -157,5 +157,9 @@
   "print.folder.maxLines": 1200,
   "print.folder.maxFiles": 30,
   "print.folder.includeFileList": false,
-  "github.copilot.nextEditSuggestions.enabled": true
+  "github.copilot.nextEditSuggestions.enabled": true,
+  "accessibility.signals.terminalBell": {
+    "sound": "off"
+  },
+  "chat.disableAIFeatures": true
 }
