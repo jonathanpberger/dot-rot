@@ -72,7 +72,7 @@ ZSH_THEME="robbyrussell-worktree"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(gday rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(gday git git-it-on)
+plugins=(gday git)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -101,10 +101,10 @@ export PATH="$PATH:$HOME/.orbstack/bin"
 # for SL Multisig
 export MY_NAME=jon
 
-. "$HOME/.cargo/env"
+[[ -r "$HOME/.cargo/env" ]] && . "$HOME/.cargo/env"
 
-# Source secrets from dot-rot
-source ~/workspace/dot-rot/.secrets
+# Source machine-local secrets and overrides when present.
+[[ -r "$HOME/workspace/dot-rot/.secrets" ]] && source "$HOME/workspace/dot-rot/.secrets"
 
 # set up poetry
 export PATH="/Users/jpb/.local/bin:$PATH"
@@ -116,7 +116,7 @@ export PATH="/Users/jpb/.local/bin:$PATH"
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 
-eval "$(pkgx --quiet dev --shellcode)"  # https://github.com/pkgxdev/dev
+command -v pkgx >/dev/null 2>&1 && eval "$(pkgx --quiet dev --shellcode)"  # https://github.com/pkgxdev/dev
 
 # Go via homebrew (mise Go causes version conflicts)
 export GOROOT="/opt/homebrew/opt/go/libexec"
@@ -162,7 +162,7 @@ export PATH="/Users/jpb/.codeium/windsurf/bin:$PATH"
 export PATH="/Users/jpb/.claude/local:$PATH"
 export PATH="$HOME/bin:$PATH"
 
-source /Users/jpb/.docker/init-zsh.sh || true # Added by Docker Desktop
+[[ -r /Users/jpb/.docker/init-zsh.sh ]] && source /Users/jpb/.docker/init-zsh.sh # Added by Docker Desktop
 
 # Prioritize Homebrew gday over development version
 export PATH="/opt/homebrew/bin:$PATH"
@@ -188,12 +188,11 @@ gwtab() {
 source ~/.claude/pair-with.sh
 
 
-# Gas town (gt installed via: go install github.com/steveyegge/gastown/cmd/gt@latest)
+# Gas town (deprecated — superseded by Gas City, installed via Homebrew: brew install gascity)
+export PATH="$PATH:$HOME/go/bin"
 
-
-# --- Gas Town Integration (managed by gt) ---
-[[ -f "/Users/jpb/.config/gastown/shell-hook.sh" ]] && source "/Users/jpb/.config/gastown/shell-hook.sh"
-# --- End Gas Town ---
+# gas city cleanup
+unalias gc 2>/dev/null; alias gc="/opt/homebrew/Cellar/gascity/1.2.1/bin/gc"
 
 # Git-duet for AI pair programming attribution
 export GIT_DUET_CO_AUTHORED_BY=1

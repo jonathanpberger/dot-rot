@@ -1,6 +1,6 @@
 # This probably wants to go in ~/.oh-my-zsh/custom/aliases.zsh
 
-echo "\n\n•••••••••• Loading aliases ••• $(date "+%a %b %d %H:%M:%S") "
+[[ "${DOTFILES_VERBOSE:-0}" == "1" ]] && echo "\n\n•••••••••• Loading aliases ••• $(date "+%a %b %d %H:%M:%S") "
 
 # Generally helpful
 alias hg="history | grep"
@@ -13,6 +13,7 @@ alias pomo="pomodoro"
 alias v="nvim ."
 alias vi="nvim"
 alias vim="nvim"
+alias v="nvim"
 
 # Labelling
 alias tag="toilet -f mono12 "
@@ -20,6 +21,7 @@ alias tag="toilet -f mono12 "
 # Navigation
 alias vscode-global="cd ~/Library/Application\ Support/Code/User/"
 alias dotrot="cd ~/workspace/dot-rot"
+alias tux="cd ~/workspace/tuxedodrive"
 
 # Add dot-rot bin to PATH for custom scripts
 export PATH="$HOME/workspace/dot-rot/bin:$PATH"
@@ -34,9 +36,6 @@ alias shadow-work="$HOME/workspace/dot-rot/bin/shadow-work"
 alias zr="source ~/.zshrc"
 alias ze="code ~/.zshrc"
 alias za="code ~/.oh-my-zsh/custom/aliases.zsh"
-
-# An alias for dvorak typists
-alias aoeu='asdf'
 
 # Some todo apps
 alias t='reminders'
@@ -224,7 +223,7 @@ function ship() {
 ##  ╚═╝     ╚═╝╚═╝  ╚═══╝╚═╝╚══════╝╚═╝  ╚═╝╚══════╝╚═════╝     ╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚═════╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝     ╚═╝  ╚═╝╚══════╝╚═╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝
 
 
-echo "•••••••••• Finished Loading aliases!\n\n"
+[[ "${DOTFILES_VERBOSE:-0}" == "1" ]] && echo "•••••••••• Finished Loading aliases!\n\n"
 
 # Find git repos without GitHub remotes
 git_no_remote() {
