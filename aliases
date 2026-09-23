@@ -63,11 +63,6 @@ alias unremote="no_remote"
 alias projectsinprojects="github_project_repos"
 alias tday="(cd ~/workspace && git-standup -s)"
 
-# Define the function silently using function keyword
-function claude {
-  "/Users/jpb/.claude/local/claude" "$@"
-}
-
 vibes() {
   cursor --status | grep "^|    Folder" | awk '{gsub(/[():]/, "", $3); print "- " $3}' | sort
 }

@@ -124,11 +124,6 @@ export GOPATH="$HOME/go"
 export GOBIN="$GOPATH/bin"
 export PATH="$GOROOT/bin:$GOPATH/bin:$PATH"
 
-# Define claude function silently
-function claude {
-  "/Users/jpb/.claude/local/claude" "$@"
-}
-
 # Task Master aliases added on 4/23/2025
 alias tm='task-master'
 alias taskmaster='task-master'
@@ -159,7 +154,6 @@ export PATH="$PWD/bin:$PATH"
 
 # Added by Windsurf
 export PATH="/Users/jpb/.codeium/windsurf/bin:$PATH"
-export PATH="/Users/jpb/.claude/local:$PATH"
 export PATH="$HOME/bin:$PATH"
 
 [[ -r /Users/jpb/.docker/init-zsh.sh ]] && source /Users/jpb/.docker/init-zsh.sh # Added by Docker Desktop
@@ -211,5 +205,13 @@ fi
 alias bd='br'
 # <<< MCP Agent Mail bd alias
 alias am="cd ~/workspace/mcp_agent_mail && uv run python -m mcp_agent_mail.cli serve-http"
+
+# claude: prefer a local install if one exists, otherwise fall through to PATH.
+# Kept after every other PATH prepend (homebrew, ~/bin, ...) so a local install
+# still wins, matching the old function's precedence on the Mac.
+# Portable on purpose — $HOME, not a hardcoded /Users path, so this works on the
+# Mac and on Linux hosts. A function shadowing the binary broke every agent
+# spawn on rookery, where /Users/jpb does not exist.
+[ -d "$HOME/.claude/local" ] && PATH="$HOME/.claude/local:$PATH"
 
 eval "$(starship init zsh)"
