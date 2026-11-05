@@ -1,0 +1,108 @@
+#!/bin/zsh
+# git-weekly - Show git activity for the previous week (Monday-Sunday)
+
+# Set date range for the previous week
+last_week_start=$(date -v-1w -v-mon +"%Y-%m-%d")
+last_week_end=$(date -v-1d +"%Y-%m-%d") # Yesterday (Sunday)
+date_range="$last_week_start to $last_week_end"
+
+found=0
+all_projects=()
+all_commits=()
+all_summaries=()
+max_project_len=12  # "Project [WT]" header length
+max_commits_len=7   # "Commits" header length
+
+echo "Weekly Git Activity Report ($date_range):"
+
+# First pass - collect data from standard git repositories (directories with .git directory)
+for repo in $(find ~/workspace -type d -name ".git" -maxdepth 3 | sort); do
+  repo_dir=$(dirname "$repo")
+  project=$(basename "$repo_dir")
+
+  # Get commits for the specified date range
+  commits=$(git -C "$repo_dir" log --oneline --after="$last_week_start 00:00" --before="$last_week_end 00:00" 2>/dev/null)
+
+  if [[ -n "$commits" ]]; then
+    commit_count=$(echo "$commits" | wc -l | tr -d ' ')
+    summary=$(echo "$commits" | head -5 | sed 's/^[^ ]* //' | sed 's/^/• /' | tr '\n' ' ')
+
+    # Truncate if too long
+    if [[ ${#summary} -gt 80 ]]; then
+      summary="${summary:0:77}..."
+    fi
+
+    all_projects+=("$project")
+    all_commits+=("$commit_count")
+    all_summaries+=("$summary")
+
+    # Update max widths
+    if [[ ${#project} -gt $max_project_len ]]; then
+      max_project_len=${#project}
+    fi
+    if [[ ${#commit_count} -gt $max_commits_len ]]; then
+      max_commits_len=${#commit_count}
+    fi
+
+    ((found++))
+  fi
+done
+
+# Second pass - collect data from git worktrees (directories with .git file)
+for git_file in $(find ~/workspace -type f -name ".git" -maxdepth 3 | sort); do
+  repo_dir=$(dirname "$git_file")
+  project=$(basename "$repo_dir")
+
+  # Get commits for the specified date range
+  commits=$(git -C "$repo_dir" log --oneline --after="$last_week_start 00:00" --before="$last_week_end 00:00" 2>/dev/null)
+
+  if [[ -n "$commits" ]]; then
+    commit_count=$(echo "$commits" | wc -l | tr -d ' ')
+    summary=$(echo "$commits" | head -5 | sed 's/^[^ ]* //' | sed 's/^/• /' | tr '\n' ' ')
+
+    # Truncate if too long
+    if [[ ${#summary} -gt 80 ]]; then
+      summary="${summary:0:77}..."
+    fi
+
+    # Add "[WT]" suffix to indicate it's a worktree
+    wt_project="$project [WT]"
+
+    all_projects+=("$wt_project")
+    all_commits+=("$commit_count")
+    all_summaries+=("$summary")
+
+    # Update max widths
+    if [[ ${#wt_project} -gt $max_project_len ]]; then
+      max_project_len=${#wt_project}
+    fi
+    if [[ ${#commit_count} -gt $max_commits_len ]]; then
+      max_commits_len=${#commit_count}
+    fi
+
+    ((found++))
+  fi
+done
+
+# Print table with proper formatting
+project_header=$(printf "%-${max_project_len}s" "Project")
+commits_header=$(printf "%-${max_commits_len}s" "Commits")
+echo "| $project_header | $commits_header | Summary |"
+
+separator_project=$(printf '%0.s-' $(seq 1 $max_project_len))
+separator_commits=$(printf '%0.s-' $(seq 1 $max_commits_len))
+echo "| $separator_project | $separator_commits | --------- |"
+
+if [[ $found -eq 0 ]]; then
+  empty_project=$(printf "%-${max_project_len}s" "-")
+  empty_commits=$(printf "%-${max_commits_len}s" "-")
+  echo "| $empty_project | $empty_commits | No commits found for last week |"
+else
+  for i in $(seq 0 $(($found - 1))); do
+    padded_project=$(printf "%-${max_project_len}s" "${all_projects[$i]}")
+    padded_commits=$(printf "%-${max_commits_len}s" "${all_commits[$i]}")
+    echo "| $padded_project | $padded_commits | ${all_summaries[$i]} |"
+  done
+fi
+
+echo "\nTotal projects with activity last week: $found"

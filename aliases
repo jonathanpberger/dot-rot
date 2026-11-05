@@ -1,27 +1,41 @@
 # This probably wants to go in ~/.oh-my-zsh/custom/aliases.zsh
 
-echo "•••••••••• Loading aliases ••• $(date "+%a %b %d %H:%M:%S") "
+[[ "${DOTFILES_VERBOSE:-0}" == "1" ]] && echo "\n\n•••••••••• Loading aliases ••• $(date "+%a %b %d %H:%M:%S") "
 
 # Generally helpful
 alias hg="history | grep"
 alias g="gcalcli"
 alias be="bundle exec"
+alias dco= "docker compose"
+alias dce="docker compose exec"
 
 alias pomo="pomodoro"
+alias v="nvim ."
 alias vi="nvim"
 alias vim="nvim"
+alias v="nvim"
+
+# Labelling
+alias tag="toilet -f mono12 "
 
 # Navigation
 alias vscode-global="cd ~/Library/Application\ Support/Code/User/"
 alias dotrot="cd ~/workspace/dot-rot"
+alias tux="cd ~/workspace/tuxedodrive"
+
+# Add dot-rot bin to PATH for custom scripts
+export PATH="$HOME/workspace/dot-rot/bin:$PATH"
+
+# Add gday-cli to PATH (plugin loading has issues)
+export PATH="$HOME/workspace/gday-cli/bin:$PATH"
+
+# Shadow work alias for convenience
+alias shadow-work="$HOME/workspace/dot-rot/bin/shadow-work"
 
 # Some alias / shell housekeeping
 alias zr="source ~/.zshrc"
 alias ze="code ~/.zshrc"
 alias za="code ~/.oh-my-zsh/custom/aliases.zsh"
-
-# An alias for dvorak typists
-alias aoeu='asdf'
 
 # Some todo apps
 alias t='reminders'
@@ -32,477 +46,26 @@ alias tl='reminders show Reminders'
 
 # `Now.md` convenience methods
 export FOAM_HOME=~/workspace/foam
-alias todos="ack '^.[^|\[]\[[^x]\]\s\w' ~/workspace/foam/now.md -C2"
-alias prev-todos="ack '^.[^|\[]\[[^x]\]\s\w' prev.md -C2"
+alias todos="ack '^\s*-\s\[[ xX]\]\s+.*' ~/workspace/foam/now.md -C2"
+alias prev-todos="ack '^\s*-\s\[[ xX]\]\s+.*' ~/workspace/foam/prev.md -C2"
 alias h2s="ack '^\#{2}\s' ~/workspace/foam/now.md -C1"
 alias projects-w-context="ack  '(\+\+\w.*)'  ~/workspace/foam/now.md --output '$1'"
 alias projects="ack -o '\+\+\w+' ~/workspace/foam/now.md | sort | uniq"
+alias prev-projects="ack -o '\+\+\w+' ~/workspace/foam/prev.md | sort | uniq"
+alias todo-projects="ack -o '\+\+\w+' ~/workspace/foam/todo.md | sort | uniq"
 
-
-alias prev-projects="ack  '(\+\+\w.*)'  ~/workspace/foam/prev.md --output '$1'"
 alias foam="cd ~/workspace/foam"
 alias frogs="ack '🐸' ~/workspace/foam/todo.md | sort"
 alias nitty="ack '🧹' ~/workspace/foam/todo.md | sort"
 alias cherry="ack '🍒' ~/workspace/foam/todo.md | sort"
+alias pom="ack '🍅' ~/workspace/foam/todo.md | sort"
+alias unremote="no_remote"
+alias projectsinprojects="github_project_repos"
+alias tday="(cd ~/workspace && git-standup -s)"
 
-
-# Github CLI
-
-alias ttl="pmtl \n\n && gordtl \n\n && ghtl"
-
-#####################   ██████╗ ███╗   ███╗████████╗██╗        Product Management Task List
-#####################   ██╔══██╗████╗ ████║╚══██╔══╝██║
-#####################   ██████╔╝██╔████╔██║   ██║   ██║
-#####################   ██╔═══╝ ██║╚██╔╝██║   ██║   ██║
-#####################   ██║     ██║ ╚═╝ ██║   ██║   ███████╗
-#####################   ╚═╝     ╚═╝     ╚═╝   ╚═╝   ╚══════╝
-
-function pmtl() {
-  local headers="|Order | Status | Title | Project | Link|\n|---|---|---|---|---|"
-
-  local result=$(gh p item-list 36 --limit 300 --format=json | jq -r '(.items | to_entries | map(select((.value.status == "In progress" or .value.status == "Backlog" or .value.status == "Waiting")))) | .[] | "| \(.key+1) | \(.value.status) | \(.value.title) | \(.value["project 🪚"]) | \((.value.content.repository | split("/")[-1]) + "/" + (.value.content.number|tostring)) |"')
-
-  echo -e "### SL PM Tasks"
-  echo -e "$headers"
-  echo "$result"
-  echo -e "$headers\n$result" | pbcopy
+vibes() {
+  cursor --status | grep "^|    Folder" | awk '{gsub(/[():]/, "", $3); print "- " $3}' | sort
 }
-
-
-####################################################################################
-####################################################################################
-####################################################################################
-####################################################################################
-####################################################################################
-
-##################                   *******  ****     **** ********** **                  ** *******  ******
-##################                  /**////**/**/**   **/**/////**/// /**                 /**/**////**/*////**
-##################                  /**   /**/**//** ** /**    /**    /**                 /**/**   /**/*   /**
-##################                  /******* /** //***  /**    /**    /**       *****     /**/******* /******
-##################                  /**////  /**  //*   /**    /**    /**      /////      /**/**////  /*//// **
-##################                  /**      /**   /    /**    /**    /**             **  /**/**      /*    /**
-##################                  /**      /**        /**    /**    /********      //***** /**      /*******
-##################                  //       //         //     //     ////////        /////  //       ///////
-
-function pmtl-jpb() {
-  local headers="|Order | Status | Title | Project | Link|\n|---|---|---|---|---|"
-
-  local result=$(gh p item-list 36 --limit 300 --format=json | jq -r '(.items | to_entries | map(select((.value.status == "In progress" or .value.status == "Backlog" or .value.status == "Waiting") and (.value.assignees[]? | contains("jonathanpberger"))))) | .[] | "| \(.key+1) | \(.value.status) | \(.value.title) | \(.value["project 🪚"]) | \((.value.content.repository | split("/")[-1]) + "/" + (.value.content.number|tostring)) |"')
-
-  echo -e "### SL PM Tasks for JPB"
-  echo -e "$headers"
-  echo "$result"
-  echo -e "$headers\n$result" | pbcopy
-}
-# ######### this works
-#
-# function gordtl() {
-#   local headers="|Title|Status|url|Assignees|\n|--|--|--|--|"
-#   local result=$(gh p item-list 47 --limit 22 --format=json | jq -r '.items[] | "| \(.title) | \(.status) |\(.content.url) | \(.assignees // [] | if type == "array" then map(if type == "object" then .login else . end) else [] end | join(", ")) |"')
-
-#   echo -e "### Gordian Tasks"
-#   echo -e "$headers"
-#   echo "$result"
-#   echo -e "$headers\n$result" | pbcopy
-# }
-# #########
-
-
-########################     ██████╗  ██████╗ ██████╗ ██████╗ ████████╗██╗        Gordian Task List
-########################    ██╔════╝ ██╔═══██╗██╔══██╗██╔══██╗╚══██╔══╝██║
-########################    ██║  ███╗██║   ██║██████╔╝██║  ██║   ██║   ██║
-########################    ██║   ██║██║   ██║██╔══██╗██║  ██║   ██║   ██║
-########################    ╚██████╔╝╚██████╔╝██║  ██║██████╔╝   ██║   ███████╗
-########################     ╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═════╝    ╚═╝   ╚══════╝
-
-
-
-function gordtl() {
-  echo "Version 0.42"
-  local headers="|Order|Status|Title|URL|Assignees|\n|--|--|--|--|--|"
-  local result=$(gh p item-list 47 --format=json | jq -r '.items | to_entries[] | "| \(.key + 1) | \(.value.status) | \(.value.title) | \(.value.content.url) | \(.value.assignees // [] | if type == "array" then map(if type == "object" then .login else . end) else [] end | join(", ")) |"')
-
-  local count=$(echo "$result" | wc -l | tr -d ' ')
-
-  echo -e "### Gordian Tasks"
-  echo -e "$headers\n$result"
-  echo -e "$headers\n$result" | pbcopy
-  echo -e "\n\n********* Gordian Tasks have been copied to the clipboard. There are $count tasks. :-) ###\n"
-}
-
-
-#################           ██████╗ ██╗  ██╗████████╗██╗          Github Task List
-#################          ██╔════╝ ██║  ██║╚══██╔══╝██║          Map this to whichever project is top priority.
-#################          ██║  ███╗███████║   ██║   ██║
-#################          ██║   ██║██╔══██║   ██║   ██║
-#################          ╚██████╔╝██║  ██║   ██║   ███████╗
-#################           ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚══════╝
-
-
-
-function ghtl() {
-  local headers="|Order | Status | Title | url|"
-  local separators="|$(echo "$headers" | sed 's/[^|]//g' | sed 's/|/---|/g' | sed 's/|$//')"
-
-  local result=$(gh p item-list 46 --limit 300 --format=json | jq -r '(.items | to_entries | map(select((.value.status == "In progress" or .value.status == "Backlog" or .value.status == "Waiting") and (.value.assignees[]? | contains("jonathanpberger"))))) | .[] | "| \(.key+1) | \(.value.status) | \(.value.title) | \((.value.content.repository | split("/")[-1]) + "/" + (.value.content.number|tostring)) |"')
-
-  echo -e "### README.lint Tasks"
-  echo -e "$headers"
-  echo -e "$separators"
-  echo "$result"
-  echo -e "$headers\n$result" | pbcopy
-}
-
-
-####################       ██████╗ ██╗  ██╗██╗
-####################      ██╔════╝ ██║  ██║██║
-####################      ██║  ███╗███████║██║
-####################      ██║   ██║██╔══██║██║
-####################      ╚██████╔╝██║  ██║██║
-####################       ╚═════╝ ╚═╝  ╚═╝╚═╝
-
-
-
-function ghi() {
-  local user=$(gh api /user | jq -r '.login')
-  local header="| Repository | Number | State | Title |url|"
-  local separator="|------------|--------|-------|-----|--|"
-  local results=$(gh search issues --assignee=@me --state=open --limit 333 --include-prs --json="repository,number,state,title,url" | jq -r '.[] | "| \(.repository.name) | \(.number) | \(.state) | \(.title) | \(.url) |"')
-  local count=$(echo "$results" | wc -l | tr -d ' ')
-  local title="### $count Open GitHub Issues for @$user"
-
-  echo "$title"
-  echo "$header"
-  echo "$separator"
-  echo "$results"
-
-  echo -e "$title\n$header\n$separator\n$results" | pbcopy
-  echo -e "\n$title have been copied to the clipboard. There are $count issues. :-) ###"
-}
-
-function ghepic() {
-  local user=$(gh api /user | jq -r '.login')
-  local header="| EPIC |url|"
-  local separator="|---|---|"
-  local results=$(gh search issues --assignee=@me --state=open --limit 333 --include-prs --json="repository,number,state,title,url" | jq -r '.[] | "| \(.title) | \(.url) |"' | grep EPIC)
-  local count=$(echo "$results" | wc -l | tr -d ' ')
-  local title="### $count Open GitHub Issues for @$user"
-
-  echo "$title"
-  echo "$header"
-  echo "$separator"
-  echo "$results"
-
-  echo -e "$title\n$header\n$separator\n$results" | pbcopy
-  echo -e "\n$title have been copied to the clipboard. There are $count Epics. :-) ###"
-}
-
-function ghi2() {
-  gh search issues --assignee=@me --state=open
-}
-
-
-
-############    ██████╗ ██████╗  █████╗ ██╗   ██╗ ANSI Shadow
-############   ██╔════╝ ██╔══██╗██╔══██╗╚██╗ ██╔╝
-############   ██║  ███╗██║  ██║███████║ ╚████╔╝
-############   ██║   ██║██║  ██║██╔══██║  ╚██╔╝
-############   ╚██████╔╝██████╔╝██║  ██║   ██║
-############    ╚═════╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
-############    TODO: extend lines in 30m increments, by duration
-############    ╚═════╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
-
-
-########################################
-# ChatGPT Pseudo-code
-## Header Creation: Generates a header for the output, including the current date and week number (for Mondays).
-#
-## Table Headers: Prepares headers for the table that will display the calendar events.
-#
-## Fetching Calendar Data: Uses gcalcli to fetch today's agenda from Google Calendar. The --details length flag is used to include the duration of each event.
-#
-## Emoji Mapping: Defines a map of emojis for different times of the day. This is used to add a visual cue (emoji) to each event based on its start time.
-#
-## Processing Calendar Output: The main part of the script processes the output from gcalcli. It involves several steps:
-#
-## Removing ANSI color codes for plain text processing.
-## Parsing each line to extract the time, duration, and description of events.
-## Adding an emoji to the event if it doesn't start with one.
-## Converting the event duration from hours and minutes to a total in minutes.
-## Storing the processed information for each event.
-## Expanding Events Longer than 30 Minutes: For events longer than 30 minutes, the script splits them into multiple 30-minute blocks. It uses a custom function add_pomodoro to increment the time by 30 minutes for each block.
-#
-## Handling Pomodoros and Event Conflicts: The script aims to remove pomodoro (🍅) events that conflict with longer events. This step seems to need refinement based on the issues you're experiencing.
-#
-## Final Output Assembly: Constructs the final output table with the processed event data.
-## ------------
-
-## # Gday is a script to integrate my gCal with my daily notes. To help organize my time, the day should be broken into pomodoros wheverer I don't have existing appointments
-
-## As JPB
-## I want to connect my gCal to my daily notes
-## Because I prefer to work in plaintext and markdown
-
-## When I run gday
-## Then all my gcal appointments should come in
-## And any appointments longer than a pomodoro should be broken into 30m chunks
-## And any appointments without an emoji should be assigned one based on their start time
-## And their emoji should be duplicated for each chunk, ie the first Most Important Thing should start with 👑 and the second with 👑👑, etc
-## And any unscheduled time should be broken into pomodoros
-## And any pomodoros that conflict with other events should be removed
-
-## ## Pseudo-code
-## - Create Table Headers and define clock Emoji Map
-## - Fetch Calendar Data from Google Calendar
-## - Remove ANSI color codes from Cal data
-## - extract time, duration, and description of events from each line of Cal data
-## - Add clock emoji to Cal data lines lacking emoji
-## - Expand Events Longer than 30 Minutes into multiple lines, 30m each
-## - Remove Pomodoro lines that conflict with other events
-## - Render the final markdown table
-#
-
-########################################
-########################################
-########################################
-########################################
-
-function gday-neo() {
-
-## 0.1 Create Table Headers
-
-local date=$(date '+%m/%d - %A')
-echo "Welcome to GDAY-NEO for $date"
-processed_output+="# $date\n\n## 🪢 Todo Today\n"
-processed_output+="| Time    | Item                                             | -               |\n"
-processed_output+="|---------|--------------------------------------------------|-----------------|\n"
-
-
-## 0.2 Define clock Emoji Map
-local -A emoji_map
-emoji_map=( ["00"]="🕛" ["30"]="🕧" ["01"]="🕐" ["31"]="🕜" ["02"]="🕑" ["32"]="🕝"
-            ["03"]="🕒" ["33"]="🕞" ["04"]="🕓" ["34"]="🕟" ["05"]="🕔" ["35"]="🕠"
-            ["06"]="🕕" ["36"]="🕡" ["07"]="🕖" ["37"]="🕢" ["08"]="🕗" ["38"]="🕣"
-            ["09"]="🕘" ["39"]="🕤" ["10"]="🕙" ["40"]="🕥" ["11"]="🕚" ["41"]="🕦" )
-
-
-## 1. Fetch & sanitize  Calendar Data from Google Calendar
-
-local calendar_data=$(gcalcli --cal "JPB-DW" --cal "Pomo" --cal "JPB SL" --cal "JPB Private" agenda "1am today" "11pm today" --nocolor --no-military --details length --tsv)
-
-# give a count of lines in calendar_data
-calendar_data_lines=$(echo "$calendar_data" | wc -l)
-
-# set a new var calendar_data_sifted to remove any pomodoro rows with a start time we've already seen in another row. Preserve the initial order of the rows
-
-
-# Initial results
-# 2024-04-29      00:00   2024-04-30      00:00   Home
-# 2024-04-29      06:30   2024-04-29      08:45   get the kids up and out
-# 2024-04-29      08:30   2024-04-29      09:00   🍅
-# 2024-04-29      08:45   2024-04-29      09:00   🐸 15m of Monarch categorization
-# 2024-04-29      09:00   2024-04-29      09:30   🍅
-# 2024-04-29      09:00   2024-04-29      09:30   🪢 Todo today
-# 2024-04-29      09:15   2024-04-29      09:30   Check slack for open dYdX proposals which need to be voted on (search term: `in:#govstatements-votes dydx "new proposal"`)
-# 2024-04-29      09:30   2024-04-29      10:00   🍅
-# 2024-04-29      09:30   2024-04-29      10:00   🪢📆 JPB IPM
-# 2024-04-29      10:00   2024-04-29      10:30   🍅
-# 2024-04-29      10:00   2024-04-29      10:30   JPB and Alix Keller
-# 2024-04-29      10:30   2024-04-29      11:00   🍅
-# 2024-04-29      10:30   2024-04-29      11:00   🐸 Eat 3 frogs
-# 2024-04-29      11:00   2024-04-29      11:30   🍅
-# 2024-04-29      11:00   2024-04-29      11:20   Infra Standup
-# 2024-04-29      11:30   2024-04-29      12:00   🍅
-# 2024-04-29      12:00   2024-04-29      12:30   🍅
-# 2024-04-29      12:00   2024-04-29      12:30   🌎 Weekly SPoG review
-# 2024-04-29      12:00   2024-04-29      13:00   Strangelove Family Mgmt Weekly
-# 2024-04-29      12:00   2024-04-29      12:55   Art of Action Stand-up V6 (weekly)
-# 2024-04-29      12:30   2024-04-29      13:00   🍅
-# 2024-04-29      13:00   2024-04-29      13:30   🍅
-# 2024-04-29      13:00   2024-04-29      13:30   🍜 Lunch
-# 2024-04-29      13:00   2024-04-29      13:15   Yard Patrol 🌱 Touch grass
-# 2024-04-29      13:30   2024-04-29      14:00   🍅
-# 2024-04-29      13:30   2024-04-29      14:00   🧹 Knock out ~3 nitty-gritties
-# 2024-04-29      14:00   2024-04-29      14:30   🍅
-# 2024-04-29      14:00   2024-04-29      15:00   🦊 Ship README.lint PR (or owe 🍺 to @Ollie)
-# 2024-04-29      14:00   2024-04-29      16:30   👑 A-priority only focus time
-# 2024-04-29      14:30   2024-04-29      15:00   🍅
-# 2024-04-29      15:00   2024-04-29      15:30   🍅
-# 2024-04-29      15:30   2024-04-29      16:00   🍅
-# 2024-04-29      16:00   2024-04-29      16:30   🍅
-# 2024-04-29      16:30   2024-04-29      17:00   🍅
-# 2024-04-29      17:00   2024-04-29      17:30   🍅
-# 2024-04-29      17:00   2024-04-29      17:15   🍒 What did you 🚢 today?
-
-
-# Desired results
-# 2024-04-29      00:00   2024-04-30      00:00   Home
-# 2024-04-29      06:30   2024-04-29      08:45   get the kids up and out
-# 2024-04-29      08:45   2024-04-29      09:00   🐸 15m of Monarch categorization
-# 2024-04-29      09:00   2024-04-29      09:30   🪢 Todo today
-# 2024-04-29      09:15   2024-04-29      09:30   Check slack for open dYdX proposals which need to be voted on (search term: `in:#govstatements-votes dydx "new proposal"`)
-# 2024-04-29      09:30   2024-04-29      10:00   🪢📆 JPB IPM
-# 2024-04-29      10:00   2024-04-29      10:30   JPB and Alix Keller
-# 2024-04-29      10:30   2024-04-29      11:00   🐸 Eat 3 frogs
-# 2024-04-29      11:00   2024-04-29      11:20   Infra Standup
-# 2024-04-29      11:00   2024-04-29      11:30   🍅
-# 2024-04-29      11:30   2024-04-29      12:00   🍅
-# 2024-04-29      12:00   2024-04-29      12:30   🌎 Weekly SPoG review
-# 2024-04-29      12:00   2024-04-29      13:00   Strangelove Family Mgmt Weekly
-# 2024-04-29      12:00   2024-04-29      12:55   Art of Action Stand-up V6 (weekly)
-# 2024-04-29      12:30   2024-04-29      13:00   🍅
-# 2024-04-29      13:00   2024-04-29      13:30   🍜 Lunch
-# 2024-04-29      13:00   2024-04-29      13:15   Yard Patrol 🌱 Touch grass
-# 2024-04-29      13:30   2024-04-29      14:00   🧹 Knock out ~3 nitty-gritties
-# 2024-04-29      14:00   2024-04-29      14:30   🍅
-# 2024-04-29      14:00   2024-04-29      15:00   🦊 Ship README.lint PR (or owe 🍺 to @Ollie)
-# 2024-04-29      14:00   2024-04-29      16:30   👑 A-priority only focus time
-# 2024-04-29      15:00   2024-04-29      15:30   🍅
-# 2024-04-29      15:30   2024-04-29      16:00   🍅
-# 2024-04-29      16:00   2024-04-29      16:30   🍅
-# 2024-04-29      16:30   2024-04-29      17:00   🍅
-# 2024-04-29      17:00   2024-04-29      17:30   🍅
-# 2024-04-29      17:00   2024-04-29      17:15   🍒 What did you 🚢 today?
-
-
-
-
-
-
-
-
-  ## 1a. Fetch
-  ## 1b. Remove ANSI color codes from Cal data
-
-## 3. extract time, duration, and description of events from each line of Cal data
-
-## 3a. create list of h2s
-
-
-
-## 4. Add clock emoji to Cal data lines lacking emoji
-## 5. Expand Events Longer than 30 Minutes into multiple lines, 30m each
-## 6. Remove Pomodoro lines that conflict with other events
-## 7. Render the final markdown table
-
-
-
-
-
-}
-
-
-########################################
-########################################
-########################################
-########################################
-
-
-
-# Increment time function
-function increment_time() {
-    local time=$1
-    local hour=$(echo $time | cut -d ':' -f 1)
-    local minute=$(echo $time | cut -d ':' -f 2 | sed 's/[apm]*//g')
-    local period=$(echo $time | grep -o '[apm]*')
-    local new_minute=$((minute + 30))
-
-    if [[ $new_minute -ge 60 ]]; then
-        new_minute=$((new_minute % 60))
-        hour=$((hour % 12 + 1))
-    fi
-
-    if [[ $hour -eq 12 && $period == "am" ]]; then
-        period="pm"
-    elif [[ $hour -eq 12 && $period == "pm" ]]; then
-        period="am"
-    fi
-
-    printf "%d:%02d%s" $hour $new_minute $period
-}
-
-# Transform gcalcli output to desired markdown format
-function transform_gcal_output() {
-    local raw_output=$1
-    echo "***************** Debug: Starting transform_gcal_output \n\n\n\n\n\n"
-
-    local processed_output=""
-    local current_time=""
-    local current_event=""
-    local current_length=""
-    local -A emoji_map
-    emoji_map=( ["00"]="🕛" ["30"]="🕧" ["01"]="🕐" ["31"]="🕜" ["02"]="🕑" ["32"]="🕝"
-                ["03"]="🕒" ["33"]="🕞" ["04"]="🕓" ["34"]="🕟" ["05"]="🕔" ["35"]="🕠"
-                ["06"]="🕕" ["36"]="🕡" ["07"]="🕖" ["37"]="🕢" ["08"]="🕗" ["38"]="🕣"
-                ["09"]="🕘" ["39"]="🕤" ["10"]="🕙" ["40"]="🕥" ["11"]="🕚" ["41"]="🕦" )
-
-    # Header
-    local date=$(date '+%m/%d - %A')
-    processed_output+="# $date\n\n## 🪢 Todo Today\n"
-    processed_output+="| Time    | Item                                             | -               |\n"
-    processed_output+="|---------|--------------------------------------------------|-----------------|\n"
-
-    local -a lines
-    lines=("${(@f)raw_output}")
-    echo "########### lines starting here"
-    echo $lines
-    echo "########### end of lines var"
-    local is_event_line=false
-
-    for line in $lines; do
-        echo "$line"
-        if [[ $line =~ ^[[:space:]]*[0-9]{1,2}:[0-9]{2}[apm]{2} ]]; then
-            current_time=$(echo $line | awk '{print $1}')
-            current_event=$(echo $line | awk '{$1=""; print substr($0,2)}' | xargs)
-            current_length=""
-            is_event_line=true
-        elif [[ $line =~ Length: ]] && $is_event_line; then
-            current_length=$(echo $line | awk '{print $2}')
-            local duration_minutes=$(echo $current_length | awk -F: '{print $1 * 60 + $2}')
-            if [[ $duration_minutes -gt 30 ]]; then
-                local blocks=$((duration_minutes / 30))
-                for ((i=1; i<=blocks; i++)); do
-                    local emoji_time=$(echo $current_time | cut -d ':' -f 2 | cut -d [apm]* -f 1)
-                    local emoji=${emoji_map[$emoji_time]}
-                    local prefix=$(printf "%.0s${emoji}" $(seq 1 $i))
-                    processed_output+="| $current_time | $prefix $current_event | Length: $current_length |\n"
-                    current_time=$(increment_time $current_time)
-                done
-            else
-                processed_output+="| $current_time | $current_event | |\n"
-            fi
-            is_event_line=false
-        fi
-    done
-
-    # Footer
-    processed_output+="\n- 👑 Most Important Thing Today:\n- 1st 🐸 I'll eat:\n- 2nd 🐸 I'll eat:\n- 3rd 🐸 I'll eat:\n"
-
-    echo -e "$processed_output"
-}
-
-# Main gday function
-function gday-factored() {
-    # Display header
-    echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞"
-    echo "    🌞🌞🌞   gday Version 1.64.1    🌞🌞🌞"
-    echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
-
-    # Fetch calendar data
-    echo "################### Debug: Fetching calendar data \n"
-    local raw_output=$(gcalcli --cal "JPB-DW" --cal "Pomo" --cal "JPB SL" --cal "JPB Private" agenda "1am today" "11pm today" --nocolor --no-military --details length --tsv)
-
-    # Process and transform the output
-    transform_gcal_output "$raw_output"
-
-
-}
-
-########################################
-########################################
-########################################
-########################################
-
 
 # path/filename: ~/scripts/todo_project_count.sh
 # This script generates a markdown table with a list of unique projects and their counts from the todo.md file.
@@ -521,95 +84,121 @@ generate_project_table() {
 # Call the function with the path to the todo.md file
 # generate_project_table "/path/to/todo.md"
 
-
-########################################
-########################################
-########################################
-########################################
-############# GDAY MIKE
 ########################################
 ########################################
 ########################################
 ########################################
 
+function monthly_review() {
+  local for_real=false
 
-# gday-mike Version 1.38.0
-
-function gday-mike() {
-  echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞"
-  echo "    🌞🌞🌞   gday Version 1.38.0 Mike    🌞🌞🌞"
-  echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
-
-  local calendar_data=$(gcalcli --cal "JPB-DW" --cal "Pomo" --cal "JPB SL" --cal "JPB Private" agenda "1am today" "11pm today" --nocolor --no-military --details length --tsv)
-
-  echo "Raw gcalcli results:"
-  echo "$calendar_data"
-  local line_count=$(echo "$calendar_data" | wc -l | xargs)
-  echo "Line count: $line_count"
-  echo "-----------------"
-
-  if [[ -z "$calendar_data" || "$line_count" -eq 0 ]]; then
-    echo "No calendar data found or gcalcli failed."
-    return
+  # Check if --for_real flag is passed
+  if [[ "$1" == "--for_real" ]]; then
+    for_real=true
   fi
 
-  typeset -A all_items
-  while IFS=$'\t' read -r start_date start_time end_date end_time item; do
-    # Convert to 12-hour format and remove leading zero
-    start_time=$(date -d "$start_date $start_time" +"%I:%M %p" 2>/dev/null || date -jf "%Y-%m-%d %H:%M" "$start_date $start_time" +"%I:%M %p" 2>/dev/null | sed 's/^0//')
-    # Use a unique key combining time and item to ensure uniqueness
-    all_items["$start_time,$item"]=1
-  done <<< "$(echo "$calendar_data")"
+  # Define the filenames
+  old_file="jpb_notes-$(date -v-1m +%Y-%m).md"
+  new_file="jpb_notes-$(date +%Y-%m).md"
 
-  # Sort and print the items
-  echo "## 🪢 Todo Today"
-  echo "| Time    | Item |"
-  echo "|---------|------|"
-  for key in ${(ok)all_items}; do
-    local time=${key%%,*}
-    local item=${key#*,}
-    # Directly print without quotes
-    printf "| %s | %s |\n" "$time" "$item"
-  done
+  # Set the header based on whether this is a dry run
+  if [[ "$for_real" == true ]]; then
+    echo "\n######### EXECUTING: Monthly Review #########"
+  else
+    echo "\n######### DRY RUN: Monthly Review #########"
+  fi
 
-  echo "\n- 👑 Most Important Thing Today:"
-  echo "- 1st 🐸 I'll eat:"
-  echo "- 2nd 🐸 I'll eat:"
-  echo "- 3rd 🐸 I'll eat:\n"
+  echo "######### prev: $old_file"
+  echo "######### now: $new_file\n"
+
+  if [[ "$for_real" == true ]]; then
+    # Actually perform the operations
+    cp "$old_file" "$new_file"
+    chmod 444 "$old_file"
+    rm -f now.md prev.md
+    ln -s "$new_file" now.md
+    ln -s "$old_file" prev.md
+
+    # Update frontmatter in the new file
+    sed -i '' "1,/---/c\\
+---\\
+name: JPB Monthly Notes for $(date +'%m')/$(date +'%Y')\\
+filepath: \"$new_file\"\\
+---\\
+" "$new_file"
+
+    # Check the links
+    echo "\nChecking links:"
+    ls -l now.md prev.md
+  else
+    # Dry run output
+    echo "[DRY RUN] Would copy $old_file to $new_file"
+    echo "[DRY RUN] Would make $old_file read-only (chmod 444)"
+    echo "[DRY RUN] Would remove now.md and create symlink to $new_file"
+    echo "[DRY RUN] Would remove prev.md and create symlink to $old_file"
+    echo "[DRY RUN] Would update frontmatter in $new_file:"
+    cat <<EOF
+---
+name: JPB Monthly Notes for $(date +'%m')/$(date +'%Y')
+filepath: "$new_file"
+---
+EOF
+    echo "\n[DRY RUN] Would check links:"
+    echo "now.md -> $new_file"
+    echo "prev.md -> $old_file"
+
+    echo "\n######### End of DRY RUN #########"
+    echo "\nTo execute these changes, run: monthly_review --for_real"
+  fi
 }
 
-# Note: Adjust the `date` command as needed for compatibility with macOS or Linux.
-
-
-
-
-
 
 ########################################
 ########################################
 ########################################
 ########################################
 
-extract_h2s() {
+
+
+
+function ship() {
+    local now_file="$HOME/now.md"
+
+
+  echo "| Date       | Shipped Items |"
+  echo "|------------|---------------|"
+
   awk '
-    BEGIN {
-      print "## Later Today..."
-      print "```"
+    function trim(s) {
+      sub(/^[[:space:]]+/, "", s)
+      sub(/[[:space:]]+$/, "", s)
+      return s
     }
-    function normalize(str) {
-      gsub(/[^a-zA-Z0-9 ]/, "", str);
-      return str;
+    /^# [0-9]{2}\/[0-9]{2}/ {
+      if (date) {
+        printf "| %-10s | %s |\n", date, (shipped ? shipped : "No items shipped")
+      }
+      day_of_week = substr($4, 1, 3)  # Take first 3 chars of day
+      date = $2 " - " day_of_week
+      shipped = ""
+      in_ship_section = 0
     }
-    /^\| [0-9]/ {
-      sub(/^\|[^|]+\| /, "## ");
-      gsub(/ \|$/, "");
-      norm = normalize($0);
-      if (!seen[norm]++) {
-        print $0
+    /^## 🚢 What did you ship today\?/ {
+      in_ship_section = 1
+      next
+    }
+    /^#|^---/ {
+      in_ship_section = 0
+    }
+    in_ship_section && NF {
+      shipped = shipped " " $0
+    }
+    END {
+      if (date) {
+        printf "| %-10s | %s |\n", date, (shipped ? trim(shipped) : "No items shipped")
       }
     }
-    END { print "```" }
-  '
+  ' "$now_file"
 }
 
 
@@ -618,216 +207,272 @@ extract_h2s() {
 ########################################
 ########################################
 
-function gday-old() {
-  echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞"
-  echo "    🌞🌞🌞   gday Version 1.31.0    🌞🌞🌞"
-  echo "    🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞🌞 \n\n"
-  # TODO: Cull pomodoros for times which already have appointments
-  # TODO: When splitting long events into multiple pomodoros, duplicate the emoji for each pomodoro
-  # TODO: Add tests. Maybe <https://github.com/shellspec/shellspec>?
-  # TODO: Parse pseudo-code into Features List / Release Notes
-  # TODO: Factor this out into more sane methods. And pull out of `alias` file.
 
 
-  ##### Setup
-  declare -A emoji_map=(
-    [800]="🕗" [830]="🕣" [900]="🕘" [930]="🕤"
-    [1000]="🕙" [1030]="🕥" [1100]="🕚" [1130]="🕦"
-    [1200]="🕛" [1230]="🕧" [100]="🕐" [130]="🕜"
-    [200]="🕑" [230]="🕝" [300]="🕒" [330]="🕞"
-    [400]="🕓" [430]="🕟" [500]="🕔" [530]="🕠"
-    [600]="🕕" [630]="🕡" [700]="🕖" [730]="🕢"
-  )
 
-  local title="## 🪢 Todo Today"
-  local table_header="| Time    | Item |"
-  local table_separator="|---------|------|"
-  local kicker="\n******* DO WHATEVER THE SCHEDULE TELLS ME. AND ONLY THAT.**********\n\n### Brain Dump (for 👑s)\n\n\n --- \n\n\n- 1st 🐸 I'll eat:\n- 2nd 🐸 I'll eat:\n- 3rd 🐸 I'll eat:\n\n"
+##  ███████╗██╗███╗   ██╗██╗███████╗██╗  ██╗███████╗██████╗     ██╗      ██████╗  █████╗ ██████╗ ██╗███╗   ██╗ ██████╗      █████╗ ██╗     ██╗ █████╗ ███████╗███████╗████████╗
+##  ██╔════╝██║████╗  ██║██║██╔════╝██║  ██║██╔════╝██╔══██╗    ██║     ██╔═══██╗██╔══██╗██╔══██╗██║███╗  ██║██╔════╝     ██╔══██╗██║     ██║██╔══██╗██╔════╝██╔════╝██╔════╝
+##  █████╗  ██║██╔██╗ ██║██║███████╗███████║█████╗  ██║  ██║    ██║     ██║   ██║███████║██║  ██║██║██╔██╗ ██║██║  ███╗    ███████║██║     ██║███████║███████╗█████╗  ███████╗
+##  ██╔══╝  ██║██║╚██╗██║██║╚════██║██╔══██║██╔══╝  ██║  ██║    ██║     ██║   ██║██╔══██║██║  ██║██║██║╚██╗██║██║   ██║    ██╔══██║██║     ██║██╔══██║╚════██║██╔══╝  ╚════██║
+##  ██║     ██║██║ ╚████║██║███████║██║  ██║███████╗██████╔╝    ███████╗╚██████╔╝██║  ██║██████╔╝██║██║ ╚████║╚██████╔╝    ██║  ██║███████╗██║██║  ██║███████║███████╗███████╗
+##  ╚═╝     ╚═╝╚═╝  ╚═══╝╚═╝╚══════╝╚═╝  ╚═╝╚══════╝╚═════╝     ╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚═════╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝     ╚═╝  ╚═╝╚══════╝╚═╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝
 
-  ###### Day of week should include 📅 and weeknum on Mondays
-  local day_of_week=$(date '+%A')
-  local h1="# $(date '+%m/%d') - ${day_of_week}"
 
-  if [[ $day_of_week == "Monday" ]]; then
-    h1+=" - 📆 Week $(date '+%V')"
+[[ "${DOTFILES_VERBOSE:-0}" == "1" ]] && echo "•••••••••• Finished Loading aliases!\n\n"
+
+# Find git repos without GitHub remotes
+git_no_remote() {
+  echo "Searching for git repos without GitHub remotes in ~/workspace..."
+  local found=0
+
+  for repo in $(find ~/workspace -type d -name ".git" -maxdepth 3 | sort); do
+    local repo_dir=$(dirname "$repo")
+
+    # Check if repo has any remote
+    if ! git -C "$repo_dir" remote -v | grep -q "github.com"; then
+      echo "- $(basename "$repo_dir") (${repo_dir/#$HOME/~})"
+      ((found++))
+    fi
+  done
+
+  if [[ $found -eq 0 ]]; then
+    echo "All git repositories have GitHub remotes."
+  else
+    echo "\nFound $found repositories without GitHub remotes."
   fi
-  # local calendar_names=("JPB-DW" "Pomo" "JPB SL" "JPB Private" "Jonathan Berger (TripIt)")
-  local calendar_data=$(gcalcli --cal "JPB-DW" --cal "Pomo" --cal "JPB SL" --cal "JPB Private" agenda "1am today" "11pm today" --nocolor --no-military --details length)
-  local calendar_data_no_color=$(echo "$calendar_data" | sed 's/\x1b\[[0-9;]*m//g')
+}
 
-  ###### convert pipe characters to an em-dash (bc escaping pipes is hard)
-  calendar_data_no_color=$(echo "$calendar_data_no_color" | sed 's/|/—/g')
+# Alias for the function
+alias no_remote="git_no_remote"
 
-  local body=""
-  local lines=()
-  local time_count=()
+# Function to review yesterday's git commits and return a per-project status report
+git_yesterday_report() {
+  local yesterday=$(date -v-1d +"%Y-%m-%d")
+  local today=$(date +"%Y-%m-%d")
+  local found=0
+  local all_projects=()
+  local all_commits=()
+  local all_summaries=()
+  local max_project_len=7  # "Project" header length
+  local max_commits_len=7  # "Commits" header length
+  local -A unique_projects  # Associative array to track unique projects
+  local current_dir=$(basename "$PWD")
 
-##### Process the calendar data
-while IFS= read -r line; do
-  line=$(echo "$line" | sed 's/^[ \t]*//') # trim whitespace
+  echo "Git Activity Report for $yesterday:"
 
-  # Function to add a pomodoro (30 minutes) to a given time
-  add_pomodoro() {
-    local time=$1
-    local new_time=$(date -j -v+30M -f "%I:%M%p" "$time" +"%I:%M%p")
-    echo $new_time | sed 's/^0//' | tr '[:upper:]' '[:lower:]'
-  }
+  # First pass - collect data and determine column widths
+  for repo in $(find ~/workspace -type d -name ".git" -maxdepth 3 | sort); do
+    local repo_dir=$(dirname "$repo")
+    local project=$(basename "$repo_dir")
 
-  if [[ $line =~ ^[0-9]{1,2}:[0-9]{2}[apm]{2} ]]; then # if line starts with time
-    local time=$(echo "$line" | awk '{print $1}') # extract vars
-    local item=$(echo "$line" | awk '{$1=""; print substr($0,2)}')
+    # Skip if we've already processed this project name
+    # Or if it's "." but we're in a named directory that will be processed separately
+    if [[ -n "${unique_projects[$project]}" ]] || [[ "$project" == "." && "$current_dir" != "." ]]; then
+      continue
+    fi
 
-    # Split >30m events into multiple lines
-    IFS= read -r next_line
-    local duration_raw=$(echo "$next_line" | awk '/Length:/ {print $2}')
-    local hours=$(echo "$duration_raw" | cut -d ':' -f 1)
-    local minutes=$(echo "$duration_raw" | cut -d ':' -f 2)
-    local total_minutes=$((hours * 60 + minutes))
-    local blocks=$((total_minutes / 30))
+    # Get yesterday's commits
+    local commits=$(git -C "$repo_dir" log --oneline --after="$yesterday 00:00" --before="$today 00:00" 2>/dev/null)
 
-    for ((i=0; i<blocks; i++)); do
-      lines+=("$time|$item")
-      time=$(add_pomodoro "$time")
+    if [[ -n "$commits" ]]; then
+      local commit_count=$(echo "$commits" | wc -l | tr -d ' ')
+      local summary=$(smart_summarize "$commits")
+
+      # Mark this project as processed
+      unique_projects[$project]=1
+
+      # Use the proper name for the current directory
+      if [[ "$project" == "." ]]; then
+        project="$current_dir"
+      fi
+
+      # Only add non-empty projects
+      if [[ -n "$project" && -n "$commit_count" && -n "$summary" ]]; then
+        all_projects+=("$project")
+        all_commits+=("$commit_count")
+        all_summaries+=("$summary")
+
+        # Update max widths
+        if [[ ${#project} -gt $max_project_len ]]; then
+          max_project_len=${#project}
+        fi
+        if [[ ${#commit_count} -gt $max_commits_len ]]; then
+          max_commits_len=${#commit_count}
+        fi
+
+        ((found++))
+      fi
+    fi
+  done
+
+  # Also check for git worktrees
+  for git_file in $(find ~/workspace -type f -name ".git" -maxdepth 3 2>/dev/null | sort); do
+    local repo_dir=$(dirname "$git_file")
+    local project=$(basename "$repo_dir")
+
+    # Skip if we've already processed this project
+    if [[ -n "${unique_projects[$project]}" ]]; then
+      continue
+    fi
+
+    # Get yesterday's commits
+    local commits=$(git -C "$repo_dir" log --oneline --after="$yesterday 00:00" --before="$today 00:00" 2>/dev/null)
+
+    if [[ -n "$commits" ]]; then
+      local commit_count=$(echo "$commits" | wc -l | tr -d ' ')
+      local summary=$(smart_summarize "$commits")
+
+      # Mark this project as processed
+      unique_projects[$project]=1
+
+      # Only add non-empty projects
+      if [[ -n "$project" && -n "$commit_count" && -n "$summary" ]]; then
+        all_projects+=("$project")
+        all_commits+=("$commit_count")
+        all_summaries+=("$summary")
+
+        # Update max widths
+        if [[ ${#project} -gt $max_project_len ]]; then
+          max_project_len=${#project}
+        fi
+        if [[ ${#commit_count} -gt $max_commits_len ]]; then
+          max_commits_len=${#commit_count}
+        fi
+
+        ((found++))
+      fi
+    fi
+  done
+
+  # Print table with proper formatting
+  local project_header=$(printf "%-${max_project_len}s" "Project")
+  local commits_header=$(printf "%-${max_commits_len}s" "Commits")
+  echo "| $project_header | $commits_header | Summary |"
+
+  local separator_project=$(printf '%0.s-' $(seq 1 $max_project_len))
+  local separator_commits=$(printf '%0.s-' $(seq 1 $max_commits_len))
+  echo "| $separator_project | $separator_commits | --------- |"
+
+  if [[ $found -eq 0 ]]; then
+    local empty_project=$(printf "%-${max_project_len}s" "-")
+    local empty_commits=$(printf "%-${max_commits_len}s" "-")
+    echo "| $empty_project | $empty_commits | No commits found for yesterday |"
+  else
+    for i in $(seq 0 $(($found - 1))); do
+      # Skip empty entries
+      if [[ -n "${all_projects[$i]}" && -n "${all_commits[$i]}" ]]; then
+        local padded_project=$(printf "%-${max_project_len}s" "${all_projects[$i]}")
+        local padded_commits=$(printf "%-${max_commits_len}s" "${all_commits[$i]}")
+        echo "| $padded_project | $padded_commits | ${all_summaries[$i]} |"
+      fi
     done
   fi
-done <<< "$calendar_data_no_color"
+}
 
-##### Add emoji to items lacking emoji and construct the final table
-for line in "${lines[@]}"; do
-  IFS='|' read -r time item <<< "$line"
-  local time_number=$(echo "$time" | tr -d '[:alpha:]' | tr -d ':')
+# Function to intelligently summarize git commits
+smart_summarize() {
+  local commits="$1"
+  local max_length=80
+  local result=""
 
-  if ! [[ $item =~ ^[^[:alnum:]] ]]; then # if item lacks emoji
-    local emoji=${emoji_map[$time_number]} # then add emoji
-    item="${emoji} $item"
+  # Get all commit messages without hashes
+  local messages=$(echo "$commits" | sed 's/^[^ ]* //')
+
+  # Count total commits
+  local total_count=$(echo "$messages" | wc -l | tr -d ' ')
+
+  # Look for patterns
+  local feature_count=$(echo "$messages" | grep -i -E 'feat|feature|add|new|implement' | wc -l | tr -d ' ')
+  local fix_count=$(echo "$messages" | grep -i -E 'fix|bug|issue|error|crash|resolve' | wc -l | tr -d ' ')
+  local refactor_count=$(echo "$messages" | grep -i -E 'refactor|clean|improve|enhance|optimiz|simplif' | wc -l | tr -d ' ')
+  local docs_count=$(echo "$messages" | grep -i -E 'doc|comment|readme|wiki' | wc -l | tr -d ' ')
+  local test_count=$(echo "$messages" | grep -i -E 'test|spec|assert|verify' | wc -l | tr -d ' ')
+
+  # Build a smart summary
+  if [[ $total_count -eq 1 ]]; then
+    # For single commits, just use the message
+    result=$(echo "$messages" | sed 's/^/• /')
+  else
+    # For multiple commits, build a categorized summary
+    if [[ $feature_count -gt 0 ]]; then
+      result+="• Added $feature_count features "
+    fi
+    if [[ $fix_count -gt 0 ]]; then
+      result+="• Fixed $fix_count issues "
+    fi
+    if [[ $refactor_count -gt 0 ]]; then
+      result+="• Refactored $refactor_count items "
+    fi
+    if [[ $docs_count -gt 0 ]]; then
+      result+="• Updated docs ($docs_count) "
+    fi
+    if [[ $test_count -gt 0 ]]; then
+      result+="• Added/updated $test_count tests "
+    fi
+
+    # If we didn't categorize everything, mention the remainder
+    local categorized=$((feature_count + fix_count + refactor_count + docs_count + test_count))
+    if [[ $categorized -lt $total_count ]]; then
+      local other_count=$((total_count - categorized))
+      result+="• $other_count other changes "
+    fi
+
+    # Add sample commit if we have space
+    if [[ ${#result} -lt $((max_length - 30)) && $total_count -gt 0 ]]; then
+      local sample=$(echo "$messages" | head -1 | cut -c 1-25)
+      result+="• e.g. \"$sample\""
+    fi
   fi
 
-  body+="| ${time} | ${item} |"$'\n'
-done
+  # Truncate if still too long
+  if [[ ${#result} -gt $max_length ]]; then
+    result="${result:0:$((max_length-3))}..."
+  fi
 
-
-echo -e "${h1}\n\n${title}\n${table_header}\n${table_separator}\n${body}\n\n${kicker}"
-
-echo $body | extract_h2s
-
+  echo "$result"
 }
 
-############################    ___|  ____| __ __|       _ \    _ \    _ \       |  ____|   ___| __ __|     _ _| __ __|  ____|   \  |   ___|  ###################
-############################   |      __|      |        |   |  |   |  |   |      |  __|    |        |         |     |    __|    |\/ | \___ \  ################### Get project items, done w/ copilot.
-############################   |   |  |        |        ___/   __ <   |   |  \   |  |      |        |         |     |    |      |   |       | ################### THIS WORKS
-############################  \____| _____|   _|       _|     _| \_\ \___/  \___/  _____| \____|   _|       ___|   _|   _____| _|  _| _____/  ###################
+# Function to extract unique repositories referenced in a GitHub project
+github_project_repos() {
+  local project_url="https://github.com/users/jonathanpberger/projects/14"
+  local project_number="14"
+  local username="jonathanpberger"
 
-function get_project_items {
-  # Version 1.1.0
-  # Usage: `get_project_items "assignee_name" 36 49 48 30 39` or `get_project_items "" 36 49 48 30 39`
-  assignee_filter=${1:-""}
-  shift
-  project_numbers=("$@")
+  echo "Fetching repositories from GitHub project: $project_url"
 
-  current_date=$(date +"%m-%d-%Y")
-  limit=3
-  echo "~~~~~~~~~~~~~~~~~~ limit: $limit ~~~~~~~~~~~~~~~~~~\n\n"
+  # Check if GitHub CLI is installed
+  if ! command -v gh &> /dev/null; then
+    echo "Error: GitHub CLI not found. Please install it with: brew install gh"
+    return 1
+  fi
 
-  echo "~~~ Assignee filter: $assignee_filter"
-  echo -e "\n\n### 👑 Epics (as of $current_date)\n| Project | Title | Status | Story Type | Assignees | URL |\n|---------|-------|--------|------------|-----------|-----|"
-  for project in "${project_numbers[@]}"; do
-    gh p item-list $project --format json --limit $limit -q ".items[] | select((.status? // \"\") | test(\"In progress|Backlog|Waiting/Review\")) | select(.assignees==\"$assignee_filter\" or \"$assignee_filter\"==\"\") | select(if .[\"story Type\"]? then (.[\"story Type\"] // \"\") | test(\"Epic\") else false end) | \"| $project | \(.title) | \(.status) | \(.[\"story Type\"]) | \(.assignees) | \(.content.url | sub(\"https://github.com/strangelove-ventures/\"; \"\")) |\""
-    echo "~~ Project: $project"
-    break
-  done
+  # Check if logged in
+  if ! gh auth status &> /dev/null; then
+    echo "Error: Not logged in to GitHub CLI. Please run: gh auth login"
+    return 1
+  fi
 
-  echo -e "\n\n### ⭐️🐞⚙️🏁 Stories (as of $current_date, excluding Icebox and Done)\n| Project | Title | Status | Story Type | Assignees | URL |\n|---------|-------|--------|------------|-----------|-----|"
-  for project in "${project_numbers[@]}"; do
-    gh p item-list $project --format json --limit $limit -q ".items[] | select((.status? // \"\") | test(\"In progress|Backlog|Waiting/Review\")) | select(.assignees==\"$assignee_filter\" or \"$assignee_filter\"==\"\") | select(if .[\"story Type\"]? then ((.[\"story Type\"] // \"\") | test(\"Epic\")) | not else true end) | \"| $project | \(.title) | \(.status) | \(.[\"story Type\"]) | \(.assignees) | \(.content.url | sub(\"https://github.com/strangelove-ventures/\"; \"\")) |\""
-    sleep 1
-  done
-}
-
-# Optimized function to reduce API calls
-function get_project_items2 {
-  # Version 1.2.2
-  # Usage: `get_project_items "assignee_name" 36 49 48 30 39` or `get_project_items "" 36 49 48 30 39`
-  assignee_filter=${1:-""}
-  echo "Assignee filter: $assignee_filter"
-  shift
-  project_numbers=("$@")
-  echo "Project numbers: ${project_numbers[@]}"
-  current_date=$(date +"%m-%d-%Y")
-  limit=3
-  echo "~~~~~~~~~~~~~~~~~~ limit: $limit ~~~~~~~~~~~~~~~~~~\n\n"
-  total_api_calls=0
-  echo "total_api_calls: $total_api_calls"
-
-  echo -e "\n\n### 👑 Epics (as of $current_date)\n| Project | Title | Status | Story Type | Assignees | URL |\n|---------|-------|--------|------------|-----------|-----|"
-  echo -e "\n\n### ⭐️🐞⚙️🏁 Stories (as of $current_date, excluding Icebox and Done)\n| Project | Title | Status | Story Type | Assignees | URL |\n|---------|-------|--------|------------|-----------|-----|"
-
-  for project in "${project_numbers[@]}"; do
-    echo "~~~ Processing project number $project ~~~"
-    # Fetch all items for the project
-    items=$(gh p item-list $project --format json --limit $limit -q ".items[]")
-    total_api_calls=$((total_api_calls+1))
-    echo "total_api_calls: $total_api_calls"
-
-    # Loop through each item and filter based on conditions
-    while read -r item; do
-      # echo "/// in while loop for project $project"
-      # echo "//// item: $item"
-      item_status=$(jq -r '.status' <<< "$item")
-      # echo "///// status: $item_status"
-      story_type=$(jq -r '.["story Type"] // ""' <<< "$item")
-      # echo "////// story_type: $story_type"
-      assignees=$(jq -r '.assignees' <<< "$item")
-      # echo "/////// assignees: $assignees"
-      url=$(jq -r '.content.url' <<< "$item")
-      # echo "//////// url: $url"
-
-      if [[ "$item_status" =~ (in progress|backlog|waiting/review) ]] && [[ "$assignees" == "$assignee_filter" || "$assignee_filter" == "" ]]; then
-        if [[ "${story_type,,}" == *"epic"* ]]; then
-          echo "| $project | $(jq -r '.title' <<< "$item") | $item_status | $story_type | $assignees | ${url//"https://github.com/strangelove-ventures/"/} |"
-        else
-          echo "| $project | $(jq -r '.title' <<< "$item") | $item_status | $story_type | $assignees | ${url//"https://github.com/strangelove-ventures/"/} |"
-        fi
-      fi
-    done <<< "$items"
-  done
-
-  echo "API calls used: $total_api_calls"
-}
-
-
-
-
-######################   █████╗ ██╗     ██╗  ████████╗██╗        # alltl function v0.1
-######################  ██╔══██╗██║     ██║  ╚══██╔══╝██║        # Retrieves a combined list of all GitHub issues assigned to me and their project status.
-######################  ███████║██║     ██║     ██║   ██║        # Depends on GitHub CLI (`gh`) and `jq` for processing JSON.
-######################  ██╔══██║██║     ██║     ██║   ██║
-######################  ██║  ██║███████╗███████╗██║   ███████╗
-######################  ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝   ╚══════╝
-
-function alltl() {
-  # Get list of issues assigned to me
-  local issues=$(gh issue list --assignee @me --json number,title,repository --jq '.[] | {number, title, repo: .repository.nameWithOwner}')
-
-  # Get list of projects I'm a member of
-  local projects=$(gh api graphql -f query='
-    {
-      viewer {
-        projectsV2(first: 10) {
+  # GraphQL query to get repositories from project
+  local query='
+  query {
+    user(login: "'$username'") {
+      projectV2(number: '$project_number') {
+        items(first: 100) {
           nodes {
-            name
-            items(first: 100) {
-              nodes {
-                content {
-                  ... on Issue {
-                    number
+            content {
+              ... on Issue {
+                repository {
+                  name
+                  owner {
+                    login
                   }
                 }
-                fieldValues(first: 10) {
-                  nodes {
-                    projectField {
-                      name
-                    }
-                    value
+              }
+              ... on PullRequest {
+                repository {
+                  name
+                  owner {
+                    login
                   }
                 }
               }
@@ -835,238 +480,464 @@ function alltl() {
           }
         }
       }
-    }' --jq '.data.viewer.projectsV2.nodes[] | {project: .name, items: [.items.nodes[] | {number: .content.number, status: (.fieldValues.nodes[] | select(.projectField.name == "Status") | .value)]}}')
-
-  # Synthesize table with combined data
-  local header="| Title | Repo Name / Issue Number | Assigned Project | Status |"
-  local separator="|-------|-------------------------|------------------|--------|"
-  echo "$header"
-  echo "$separator"
-
-  for issue in $(echo "$issues" | jq -c '.'); do
-    local issue_number=$(echo "$issue" | jq -r '.number')
-    local issue_title=$(echo "$issue" | jq -r '.title')
-    local issue_repo=$(echo "$issue" | jq -r '.repo')
-    local project_name="none"
-    local status="none"
-
-    # Check projects for this issue
-    for project in $(echo "$projects" | jq -c '.'); do
-      local p_name=$(echo "$project" | jq -r '.project')
-      local p_issue=$(echo "$project" | jq --arg number "$issue_number" '.items[] | select(.number == ($number | tonumber))')
-      if [ "$p_issue" != "" ]; then
-        if [ "$project_name" == "none" ]; then
-          project_name=$p_name
-          status=$(echo "$p_issue" | jq -r '.status')
-        else
-          project_name="many"
-          status="many"
-          break
-        fi
-      fi
-    done
-
-    echo "| $issue_title | $issue_repo / $issue_number | $project_name | $status |"
-  done | column -t -s '|'
-
-  echo "Table has been synthesized."
-}
-
-function collect_field_names() {
-  local version="v0.4"
-
-  # Emit the version information
-  echo "••••••••• collect_field_names [$version] •••••••••"
-
-  # Retrieve and map the project names to their numbers
-  local project_info=$(gh project list --owner strangelove-ventures --format json ) | jq -r '[.[] | {number, name}]'
-
-  # Define the list of project numbers
-  local project_numbers=(46 49 39 36 34 30 24 18)
-
-  # Iterate over the project numbers to retrieve and print field names
-  for project_number in $project_numbers; do
-    # Extract the project name using the project number
-    local project_name=$(echo "$project_info" | jq -r --argjson number $project_number '.[] | select(.number == $number) | .name')
-
-    # Print the project name
-    echo "Project $project_number ($project_name) fields:"
-
-    # Retrieve and print the field names for the project
-    gh project field-list $project_number --owner strangelove-ventures --format json |
-      jq -r '[.fields[].name] | join(", ")'
-    echo # Print a newline for better readability
-  done
-}
-
-##################################################   ██████╗ ██████╗ ██╗ Map all issues to projects.
-##################################################   ██╔══██╗██╔══██╗██║
-##################################################   ██████╔╝██████╔╝██║
-##################################################   ██╔═══╝ ██╔═══╝ ██║
-##################################################   ██║     ██║     ██║
-##################################################   ╚═╝     ╚═╝     ╚═╝
-
-function ppi() {
-  echo "Version 0.6.1"
-
-  echo "Fetching current user..."
-  local user=$(gh api /user | jq -r '.login')
-
-  echo "Fetching Gordian tasks..."
-  local gordianTasks=$(gh p item-list 47 --format=json | jq -r '
-    .items | map({
-      status: .status,
-      title: .title,
-      url: .content.url,
-      assignees: (.assignees // [] | join(", "))
-    })'
-  )
-
-  echo "Fetching PM tasks from another project..."
-  local pmTasks=$(gh p item-list 36 --limit 300 --format=json | jq -r '
-    .items | map(select(.content.url != null)) | map({
-      status: .status,
-      title: .title,
-      project: .["project 🪚"],
-      url: .content.url,
-      projectStatuses: [{project: .project, status: .status}]
-    })'
-  )
-
-  echo "Fetching GitHub issues..."
-  local gitHubIssues=$(gh search issues --assignee=@me --state=open --limit=333 --include-prs --json="repository,number,state,title,url" | jq -r '.[] | {repository: .repository.name, number: .number, state: .state, title: .title, url: .url}')
-
-  echo "Combining tasks and issues..."
-  local combinedResults=$(jq -n '
-    input as $gordianTasks | input as $pmTasks | input as $gitHubIssues |
-    ($gordianTasks + $pmTasks + $gitHubIssues) | group_by(.url) | map({
-      title: .[0].title,
-      status: .[0].status,
-      state: (.[0].state // ""),
-      assignees: .[0].assignees,
-      repository: (.[0].repository // ""),
-      number: (.[0].number // ""),
-      url: .[0].url,
-      projectStatuses: (reduce .[] as $item ([]; . + ($item.projectStatuses // [])))
-    })' <(echo "$gordianTasks") <(echo "$pmTasks") <(echo "$gitHubIssues"))
-
-  local combinedTable=$(echo "$combinedResults" | jq -r '.[] | select(.url != null) | "| \(.title) | \(.status) // (if .projectStatuses then (.projectStatuses | map(.status) | join(", ")) else "N/A" end) | \(.assignees) | \(.repository) | \(.number) | \(.state) | \(.url) |"')
-
-  local count=$(echo "$combinedResults" | jq -r 'length')
-  local title="### Combined Gordian and SL PM Tasks with GitHub Issues for @$user"
-
-  local tableHeader="|URL|Title|Status|Assignees|Repository|Issue Number|Issue State|"
-  local separator="|---|-----|------|---------|----------|------------|-----------|"
-
-  echo -e "$title\n$tableHeader\n$separator\n$combinedTable"
-
-  echo -e "$title\n$tableHeader\n$separator\n$combinedTable" | pbcopy
-  echo -e "\n$title have been copied to the clipboard. There are $count combined tasks and issues. :-) ###"
-}
-
-#!/bin/zsh  # v0.3.0
-
-# Function to fetch and display assigned issues for a user
-gh_assigned_issues() {
-    local GITHUB_USERNAME="jonathanpberger"
-    local ASSIGNEE="$1"
-
-    # Function to fetch issue details
-    fetch_issue_details() {
-        local url="$1"
-        curl -s -H "Authorization: token $GITHUB_TOKEN" "$url" | jq -r '.[] | [.title, .html_url, (.project | if length == 0 then "none" elif length == 1 then .[0].name else "many" end), (.project | if length == 0 then "none" elif length == 1 then .[0].columns[0].name else [.[] | .columns[0].name] | unique | join(", ") end)] | @tsv' | column -t -s $'\t'
     }
+  }'
 
-    # Fetching assigned issues for the user
-    local issues_url="https://api.github.com/issues?assignee=$ASSIGNEE"
-    fetch_issue_details "$issues_url"
+  # Make the GraphQL request using GitHub CLI
+  local result=$(gh api graphql -f query="${query}")
+
+  # Process with jq to extract and format repository names
+  echo "$result" | jq -r '.data.user.projectV2.items.nodes[] |
+    select(.content != null and .content.repository != null) |
+    .content.repository.owner.login + "/" + .content.repository.name' |
+    sort | uniq
+
+  echo "\nNote: Only repositories from issues and PRs are shown. Draft issues may not have repository references."
 }
 
-#!/bin/zsh  # v0.5.0
+# Function to add all issues from a repository to a GitHub project
+add_repo_to_project() {
+  local repo="$1"
+  local project_number="14"
+  local username="jonathanpberger"
 
-# Function to fetch and display assigned issues for a user
-gh_assigned_issues() {
-    echo "~~~~~~~~~~~~ gh_assigned_issues v0.5.1 ~~~~~~~~~~~~"
-    local GITHUB_USERNAME="jonthanpberger"
-    local ASSIGNEE="jonthanpberger"
-    echo "Assignee: $ASSIGNEE"
+  if [[ -z "$repo" ]]; then
+    echo "Usage: add_repo_to_project owner/repository"
+    echo "Example: add_repo_to_project discoveryworks/hueshift"
+    return 1
+  fi
 
+  local owner=$(echo "$repo" | cut -d '/' -f1)
+  local repo_name=$(echo "$repo" | cut -d '/' -f2)
 
-    # GraphQL query to fetch assigned issues along with projects and their statuses
-    local graphql_query=$(cat <<EOF
+  echo "Adding issues from $owner/$repo_name to GitHub project #$project_number..."
+
+  # Get all open issues from the repository
+  local issues=$(gh issue list --repo "$repo" --state open --json number --jq '.[].number')
+
+  if [[ -z "$issues" ]]; then
+    echo "No open issues found in $repo"
+    return 0
+  fi
+
+  # Count the issues
+  local issue_count=$(echo "$issues" | wc -l | tr -d ' ')
+  echo "Found $issue_count open issues to add..."
+
+  # For each issue, add it to the project
+  local added=0
+  for issue_number in $issues; do
+    echo "Adding issue #$issue_number..."
+    gh api graphql -f query='
+      mutation {
+        addProjectV2ItemById(input: {
+          projectId: "'$(gh api graphql -f query='query{ user(login: "'$username'") { projectV2(number: '$project_number') { id } } }' --jq '.data.user.projectV2.id')'"
+          contentId: "'$(gh api graphql -f query='query{ repository(owner: "'$owner'", name: "'$repo_name'") { issue(number: '$issue_number') { id } } }' --jq '.data.repository.issue.id')'"
+        }) {
+          item {
+            id
+          }
+        }
+      }
+    ' >/dev/null 2>&1 && ((added++)) || echo "Failed to add issue #$issue_number"
+  done
+
+  echo "Added $added issues from $repo to project #$project_number"
+}
+
+# Alias for adding repos to project
+alias addrepo="add_repo_to_project"
+
+# Path to the project repos manifest file
+PROJECTS_MANIFEST="$HOME/.github_project_repos.json"
+
+# Function to create/update the project repos manifest
+gh_project_manifest() {
+  # Create default manifest if it doesn't exist
+  if [[ ! -f "$PROJECTS_MANIFEST" ]]; then
+    cat > "$PROJECTS_MANIFEST" << EOF
 {
-  user(login: "$ASSIGNEE") {
-    issues(first: 100, states: OPEN, orderBy: {field: CREATED_AT, direction: DESC}) {
-      nodes {
-        title
-        url
-        projectCards(first: 1) {
-          nodes {
-            column {
+  "project_number": 14,
+  "username": "jonathanpberger",
+  "repositories": [
+    "discoveryworks/hueshift",
+    "jonathanpberger/ios-claude-astroid",
+    "jonathanpberger/ios-claude-space_invaders",
+    "discoveryworks/discoveryworks.github.io",
+    "jonathanpberger/dot-rot",
+    "jonathanpberger/foam",
+    "jonathanpberger/mottypouth",
+    "jonathanpberger/pizza-pong-ios",
+    "jonathanpberger/port-of-call",
+    "jonathanpberger/scanventory"
+  ]
+}
+EOF
+    echo "Created default project manifest at $PROJECTS_MANIFEST"
+  fi
+
+  # Open the manifest for editing
+  ${EDITOR:-vi} "$PROJECTS_MANIFEST"
+}
+
+# Function to set up project automation rules based on manifest
+gh_project_automate() {
+  if [[ ! -f "$PROJECTS_MANIFEST" ]]; then
+    echo "Manifest file not found. Creating default..."
+    gh_project_manifest
+  fi
+
+  # Read data from manifest
+  local project_number=$(jq -r '.project_number' "$PROJECTS_MANIFEST")
+  local username=$(jq -r '.username' "$PROJECTS_MANIFEST")
+  local repos=$(jq -r '.repositories[]' "$PROJECTS_MANIFEST")
+
+  echo "Setting up automation for project #$project_number..."
+
+  # Get project ID
+  local project_id=$(gh api graphql -f query='
+    query {
+      user(login: "'$username'") {
+        projectV2(number: '$project_number') {
+          id
+        }
+      }
+    }' --jq '.data.user.projectV2.id')
+
+  # First, list existing automation rules to avoid duplicates
+  local existing_rules=$(gh api graphql -f query='
+    query {
+      user(login: "'$username'") {
+        projectV2(number: '$project_number') {
+          workflows {
+            nodes {
+              id
               name
-              project {
+            }
+          }
+        }
+      }
+    }' --jq '.data.user.projectV2.workflows.nodes')
+
+  echo "Setting up automation rules for repositories:"
+
+  # For each repository, create an automation rule if it doesn't exist
+  for repo in $repos; do
+    local owner=$(echo "$repo" | cut -d '/' -f1)
+    local name=$(echo "$repo" | cut -d '/' -f2)
+
+    echo "- $owner/$name"
+
+    # Check if a rule for this repo already exists
+    local rule_name="Auto-add from $owner/$name"
+    if echo "$existing_rules" | jq -e '.[] | select(.name=="'"$rule_name"'")' >/dev/null; then
+      echo "  ✓ Automation rule already exists"
+      continue
+    fi
+
+    # Create automation rule for this repository
+    gh api graphql -f query='
+      mutation {
+        createProjectV2Workflow(input: {
+          projectId: "'$project_id'"
+          name: "'"$rule_name"'"
+          enabled: true
+        }) {
+          projectWorkflow {
+            id
+          }
+        }
+      }' >/dev/null
+
+    # Get the newly created workflow ID
+    local workflow_id=$(gh api graphql -f query='
+      query {
+        user(login: "'$username'") {
+          projectV2(number: '$project_number') {
+            workflows {
+              nodes {
+                id
                 name
               }
             }
           }
         }
-      }
-    }
-  }
+      }' --jq '.data.user.projectV2.workflows.nodes[] | select(.name=="'"$rule_name"'") | .id')
+
+    # Add the trigger to the workflow (issues from the specified repository)
+    gh api graphql -f query='
+      mutation {
+        createProjectV2WorkflowTrigger(input: {
+          workflowId: "'$workflow_id'"
+          type: ISSUE_ADDED
+          filters: [{
+            key: "repository.name",
+            values: ["'$name'"]
+          }, {
+            key: "repository.owner.login",
+            values: ["'$owner'"]
+          }]
+        }) {
+          clientMutationId
+        }
+      }' >/dev/null
+
+    # Add the action to the workflow (add to project)
+    gh api graphql -f query='
+      mutation {
+        createProjectV2WorkflowAction(input: {
+          workflowId: "'$workflow_id'"
+          type: ADD_TO_PROJECT
+        }) {
+          clientMutationId
+        }
+      }' >/dev/null
+
+    echo "  ✓ Created automation rule"
+  done
+
+  echo "Automation setup complete. All issues from specified repositories will be automatically added to your project."
+  echo "To manage repositories, edit the manifest with: gh_project_manifest"
 }
+
+# Aliases for project automation management
+alias gh_manifest="gh_project_manifest"
+alias gh_automate="gh_project_automate"
+
+# Function to add workflow files to repos for auto-adding issues to projects
+gh_project_add_workflows() {
+  # Check for necessary tools
+  for cmd in gh jq git mktemp; do
+    if ! command -v $cmd &> /dev/null; then
+      echo "Error: Required command '$cmd' not found."
+      return 1
+    fi
+  done
+
+  if [[ ! -f "$PROJECTS_MANIFEST" ]]; then
+    echo "Manifest file not found. Please run gh_project_manifest first."
+    return 1
+  fi
+
+  # Read data from manifest
+  local project_number=$(jq -r '.project_number' "$PROJECTS_MANIFEST")
+  local username=$(jq -r '.username' "$PROJECTS_MANIFEST")
+  local repos=$(jq -r '.repositories[]' "$PROJECTS_MANIFEST")
+  local project_url="https://github.com/users/$username/projects/$project_number"
+
+  # Create a temporary working directory
+  local temp_dir=$(mktemp -d)
+  echo "Created temporary directory: $temp_dir"
+  echo "Adding workflow files to repositories..."
+
+  # Process each repository
+  for repo in ${(f)repos}; do
+    # Skip empty lines if any
+    [[ -z "$repo" ]] && continue
+
+    # Owner and name are implicitly handled by gh repo clone with owner/name format
+    echo "Processing $repo..."
+
+    # Extract repo name for path creation
+    local name=$(echo "$repo" | cut -d '/' -f2)
+    local repo_path="$temp_dir/$name"
+
+    # Clone the repository using the full owner/name
+    # Ensure gh repo clone uses the correct 'repo' variable
+    if ! gh repo clone "$repo" "$repo_path" -- --quiet 2>/dev/null; then
+      echo "  ✗ Failed to clone repository '$repo'. Skipping."
+      # Attempt to capture clone error
+      local clone_error=$(gh repo clone "$repo" "$repo_path" -- --quiet 2>&1 >/dev/null)
+      if [[ -n "$clone_error" ]]; then
+          echo "    Error: $clone_error"
+      fi
+      continue
+    fi
+
+    pushd "$repo_path" > /dev/null
+
+    # Create the workflow directory if it doesn't exist
+    mkdir -p .github/workflows
+    local workflow_file=".github/workflows/project-automation.yml"
+
+    # Create the workflow file content
+    local workflow_content
+    workflow_content="$(cat <<EOF
+# Add issues to GitHub project automatically
+name: Add to Project
+
+on:
+  issues:
+    types:
+      - opened
+
+jobs:
+  add-to-project:
+    name: Add issue to project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/add-to-project@v0.5.0
+        with:
+          project-url: $project_url
+          github-token: \\\${{ secrets.PROJECT_TOKEN }}
 EOF
-)
+)"
 
-    # Function to execute GraphQL query
-    execute_graphql_query() {
-        local query="$1"
-        curl -s -H "Authorization: token $GITHUB_TOKEN" -X POST -d "{\"query\": \"$query\"}" "https://api.github.com/graphql"
-    }
+    # Check if the workflow file already exists with the exact content
+    if [[ -f "$workflow_file" ]] && diff -q <(echo "$workflow_content") "$workflow_file" &> /dev/null; then
+      echo "  ✓ Workflow file already exists and is up-to-date."
+      popd > /dev/null
+      continue
+    fi
 
-    # Function to process GraphQL response and display issue details
-    process_response() {
-        local response="$1"
-        echo "Response received:"
-        echo "$response"
-        echo "Processing response..."
-        echo "$response" | jq -r '.data.user.issues.nodes[] | [.title, .url, (.projectCards.nodes[0] | if .column then .column.name else "none" end), (.projectCards.nodes[0] | if .column then .column.project.name else "none" end)] | @tsv' | column -t -s $'\t'
-    }
+    # Write the workflow file
+    echo "$workflow_content" > "$workflow_file"
 
-    # Fetching assigned issues using GraphQL
-    local response=$(execute_graphql_query "$graphql_query")
-    echo "## Assigned Issues for $ASSIGNEE"
-    process_response "$response"
+    # Create a new branch
+    local branch_name="bot/add-project-automation-$(date +%s)"
+    git checkout -b "$branch_name"
+
+    # Add and commit the file
+    git add "$workflow_file"
+    git commit -m "Add GitHub Project automation workflow"
+
+    # Push and create PR
+    if git push -u origin "$branch_name"; then
+      if gh pr create --title "Add GitHub Project automation workflow" --body "Automatically adds new issues to the project $project_url" --head "$branch_name"; then
+        echo "  ✓ Created PR for project automation workflow"
+      else
+        echo "  ✗ Failed to create PR"
+      fi
+    else
+      echo "  ✗ Failed to push changes"
+    fi
+
+    # Go back to original directory
+    popd > /dev/null
+  done
+
+  # Clean up
+  echo "Cleaning up temporary directory..."
+  rm -rf "$temp_dir"
+
+  echo "Done! PRs have been created for repositories that needed the workflow file."
+  echo
+  echo "IMPORTANT: You need to add a PROJECT_TOKEN secret to each repository."
+  echo "1. Create a Personal Access Token at https://github.com/settings/tokens"
+  echo "   with 'project' scope permissions"
+  echo "2. Add this token as a secret named 'PROJECT_TOKEN' in each repository's settings"
 }
 
+# Alias for adding workflow files
+alias gh_workflows="gh_project_add_workflows"
 
+# Function to set the PROJECT_TOKEN secret in multiple repositories
+gh_project_set_token() {
+  # Check for necessary tools
+  for cmd in gh jq read; do
+    if ! command -v $cmd &> /dev/null; then
+      echo "Error: Required command '$cmd' not found."
+      return 1
+    fi
+  done
 
+  if [[ ! -f "$PROJECTS_MANIFEST" ]]; then
+    echo "Manifest file not found. Please run gh_project_manifest first."
+    return 1
+  fi
 
+  echo "Reading repositories from $PROJECTS_MANIFEST..."
 
-gh_projects_and_item_counts() {
-    echo "| Project Name | Project ID | Item Count |"
-    echo "| ------------ | ---------- | ---------- |"
-    gh p list --format json | jq -r '.projects[] | "| \(.title) | \(.number) | \(.items.totalCount) |"'
+  # Read the full JSON content
+  local manifest_content=$(cat "$PROJECTS_MANIFEST")
+
+  # Get unique owners
+  local owners=$(echo "$manifest_content" | jq -r '.repositories[] | split("/")[0]' | sort | uniq)
+
+  if [[ -z "$owners" ]]; then
+    echo "No repositories found in the manifest."
+    return 1
+  fi
+
+  local total_success_count=0
+  local total_fail_count=0
+
+  # Process each owner separately
+  for owner in ${(f)owners}; do
+    echo "\nProcessing repositories for owner: $owner"
+
+    # Prompt for the Personal Access Token for this owner
+    local project_token
+    echo -n "Please enter the GitHub PAT for owner '$owner' (with 'repo' and 'project' scopes): "
+    # Read the token securely without echoing to the terminal
+    read -s project_token
+    echo # Add a newline after the user presses Enter
+
+    if [[ -z "$project_token" ]]; then
+      echo "Error: No token provided for owner '$owner'. Skipping."
+      continue
+    fi
+
+    # Get repositories for the current owner
+    local repos_for_owner=$(echo "$manifest_content" | jq -r --arg current_owner "$owner" '.repositories[] | select(startswith($current_owner + "/"))')
+
+    if [[ -z "$repos_for_owner" ]]; then
+        echo "No repositories found for owner '$owner' in the manifest."
+        continue
+    fi
+
+    echo "Setting PROJECT_TOKEN secret for '$owner' repositories..."
+
+    local owner_success_count=0
+    local owner_fail_count=0
+
+    # Process each repository for this owner
+    for repo in ${(f)repos_for_owner}; do
+      echo -n "  Setting secret for $repo... "
+      # Use gh secret set. The token value is passed via stdin for security.
+      # Use the specific token for this owner
+      if echo "$project_token" | gh secret set PROJECT_TOKEN --repo "$repo" --body - &> /dev/null; then
+        echo "✓ Success"
+        ((owner_success_count++))
+      else
+        echo "✗ Failed"
+        # Attempt to capture potential error message from stderr
+        local error_message=$(echo "$project_token" | gh secret set PROJECT_TOKEN --repo "$repo" --body - 2>&1 >/dev/null)
+        if [[ -n "$error_message" ]]; then
+            echo "    Error: $error_message"
+        fi
+        ((owner_fail_count++))
+      fi
+    done
+
+    echo "Finished setting secrets for owner '$owner'."
+    echo "  Successful: $owner_success_count"
+    echo "  Failed:     $owner_fail_count"
+
+    ((total_success_count += owner_success_count))
+    ((total_fail_count += owner_fail_count))
+
+  done # End of owner loop
+
+  echo "\nTotal Secret Setting Summary:"
+  echo "Successful: $total_success_count"
+  echo "Failed:     $total_fail_count"
+
+  if [[ $total_fail_count -gt 0 ]]; then
+    echo "\nFailures might be due to incorrect permissions for the token provided for that owner, the repository not existing, or other API issues."
+  fi
 }
 
+# Alias for setting the project token
+alias gh_token="gh_project_set_token"
 
+# make git worktrees more easily
 
-
-
-
-
-
-
-
-
-##  ███████╗██╗███╗   ██╗██╗███████╗██╗  ██╗███████╗██████╗     ██╗      ██████╗  █████╗ ██████╗ ██╗███╗   ██╗ ██████╗      █████╗ ██╗     ██╗ █████╗ ███████╗███████╗███████╗
-##  ██╔════╝██║████╗  ██║██║██╔════╝██║  ██║██╔════╝██╔══██╗    ██║     ██╔═══██╗██╔══██╗██╔══██╗██║████╗  ██║██╔════╝     ██╔══██╗██║     ██║██╔══██╗██╔════╝██╔════╝██╔════╝
-##  █████╗  ██║██╔██╗ ██║██║███████╗███████║█████╗  ██║  ██║    ██║     ██║   ██║███████║██║  ██║██║██╔██╗ ██║██║  ███╗    ███████║██║     ██║███████║███████╗█████╗  ███████╗
-##  ██╔══╝  ██║██║╚██╗██║██║╚════██║██╔══██║██╔══╝  ██║  ██║    ██║     ██║   ██║██╔══██║██║  ██║██║██║╚██╗██║██║   ██║    ██╔══██║██║     ██║██╔══██║╚════██║██╔══╝  ╚════██║
-##  ██║     ██║██║ ╚████║██║███████║██║  ██║███████╗██████╔╝    ███████╗╚██████╔╝██║  ██║██████╔╝██║██║ ╚████║╚██████╔╝    ██║  ██║███████╗██║██║  ██║███████║███████╗███████║
-##  ╚═╝     ╚═╝╚═╝  ╚═══╝╚═╝╚══════╝╚═╝  ╚═╝╚══════╝╚═════╝     ╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚═════╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝     ╚═╝  ╚═╝╚══════╝╚═╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝
-
-
-echo "•••••••••••••••• Finished Loading aliases!\n\n"
-
-
-
+gwtab() {
+  local branch="${1:?Branch name required}"
+  if git show-ref --verify --quiet "refs/heads/$branch"; then
+    git worktree add ".worktrees/$branch" "$branch"
+  else
+    git worktree add ".worktrees/$branch" -b "$branch"
+  fi
+}

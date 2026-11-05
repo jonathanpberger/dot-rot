@@ -1,0 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+## Norms and standards for this laptop
+- most software libraries are managed through mise; if you need ruby, node, etc., look in mise (not system or homebrew) first
+- python and rust are notable exceptions

@@ -1,0 +1,327 @@
+#!/bin/zsh
+# yday-semantic - Show git activity with semantic summaries using git-standup
+
+# Default parent directory and behavior
+parent_dir="$HOME/workspace"
+show_all=false
+days_back=""  # Let git-standup handle the default
+show_today=false
+custom_days=false
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --all)
+      show_all=true
+      days_back=7  # Show last week for --all
+      shift
+      ;;
+    --today)
+      show_today=true
+      days_back=0
+      shift
+      ;;
+    --parent=*)
+      parent_dir="${1#*=}"
+      # Expand tilde
+      parent_dir="${parent_dir/#\~/$HOME}"
+      shift
+      ;;
+    -d|--days)
+      days_back="$2"
+      custom_days=true
+      shift 2
+      ;;
+    *)
+      echo "Usage: $0 [--all] [--today] [--parent=<directory>] [-d|--days <number>]"
+      echo "  --all: Show last week's activity"
+      echo "  --today: Show today's activity"
+      echo "  --parent=<dir>: Directory to search for git repos (default: ~/workspace)"
+      echo "  -d, --days <n>: Number of days back to look"
+      echo ""
+      echo "Default behavior: Shows yesterday's commits (or Friday's on Monday)"
+      exit 1
+      ;;
+  esac
+done
+
+# If no flags set, calculate the correct days back for "yesterday"
+if [[ -z "$days_back" ]]; then
+  # Default mode: true yesterday (or Friday on Monday)
+  local day_of_week=$(date +%A)
+  if [[ "$day_of_week" == "Monday" ]]; then
+    standup_flags="-d 3 -u 3"  # Friday only
+  else
+    standup_flags="-d 1 -u 1"  # Yesterday only
+  fi
+elif [[ $days_back -eq 0 ]]; then
+  standup_flags="-d 0 -u 0"  # Today only
+else
+  standup_flags="-d $days_back"  # Last N days (including today)
+fi
+
+# Check if git-standup is installed
+if ! command -v git-standup &> /dev/null; then
+  echo "Error: git-standup is not installed."
+  echo "Install it with: npm install -g git-standup"
+  echo "Or visit: https://github.com/kamranahmedse/git-standup"
+  exit 1
+fi
+
+# Function to generate semantic summary by analyzing commit messages
+generate_semantic_summary() {
+  local messages="$1"
+  local project="$2"
+  
+  # Clean up messages: remove noise and standardize format
+  local clean_messages=$(echo "$messages" | \
+    sed 's/^Merge pull request.*$//' | \
+    sed 's/^Merge branch.*$//' | \
+    sed 's/^WIP[[:space:]]*://' | \
+    sed 's/^[Ff]ix[[:space:]]*:/fix:/' | \
+    sed 's/^[Aa]dd[[:space:]]*:/add:/' | \
+    sed 's/^[Uu]pdate[[:space:]]*:/update:/' | \
+    sed 's/^[Ff]eat[[:space:]]*:/feat:/' | \
+    sed 's/^[Ff]eature[[:space:]]*:/feat:/' | \
+    sed 's/^chore:/chore:/' | \
+    sed 's/^refactor:/refactor:/' | \
+    sed '/^[[:space:]]*$/d')
+  
+  # Exit early if no messages
+  [[ -z "$clean_messages" ]] && { echo "No meaningful commits"; return; }
+  
+  # Analyze commit patterns to understand the story
+  local story_summary=""
+  local commit_types=""
+  local key_features=""
+  
+  # Extract action types (conventional commits style)
+  commit_types=$(echo "$clean_messages" | grep -o '^[a-z]*:' | sort | uniq -c | sort -nr)
+  
+  # Extract key domain words (nouns that indicate features/components)
+  key_features=$(echo "$clean_messages" | \
+    grep -i -o -E '\b(auth|login|user|api|database|test|ui|component|service|model|controller|config|deploy|docker|security|payment|notification|search|mobile|performance|documentation|integration)\w*\b' | \
+    tr '[:upper:]' '[:lower:]' | \
+    sort | uniq -c | sort -nr | head -3 | awk '{print $2}')
+  
+  # Extract specific feature names and business logic terms
+  local business_terms=$(echo "$clean_messages" | \
+    grep -i -o -E '\b[A-Z][a-z]{2,}[A-Z][a-z]*\b|\b[a-z]{4,}[_-][a-z]{3,}\b' | \
+    head -5 | tr '\n' ' ')
+  
+  # Build story summary based on analysis
+  local primary_action=""
+  local primary_feature=""
+  
+  # Determine primary action from commit types
+  if echo "$commit_types" | head -1 | grep -q "feat:"; then
+    primary_action="Building"
+  elif echo "$commit_types" | head -1 | grep -q "fix:"; then
+    primary_action="Fixing"
+  elif echo "$commit_types" | head -1 | grep -q "refactor:"; then
+    primary_action="Refactoring"
+  elif echo "$commit_types" | head -1 | grep -q "update:"; then
+    primary_action="Updating"
+  elif echo "$commit_types" | head -1 | grep -q "add:"; then
+    primary_action="Adding"
+  elif echo "$commit_types" | head -1 | grep -q "chore:"; then
+    primary_action="Maintaining"
+  else
+    primary_action="Working on"
+  fi
+  
+  # Determine primary feature
+  primary_feature=$(echo "$key_features" | head -1)
+  
+  if [[ -n "$primary_feature" ]]; then
+    story_summary="$primary_action $primary_feature"
+    
+    # Add secondary features if they exist and are different
+    local secondary=$(echo "$key_features" | sed -n '2p')
+    if [[ -n "$secondary" && "$secondary" != "$primary_feature" ]]; then
+      story_summary="$story_summary & $secondary"
+    fi
+  else
+    # Fall back to extracting meaningful nouns from all messages
+    local meaningful_terms=$(echo "$clean_messages" | \
+      grep -i -o -E '\b[a-z]{4,}\b' | \
+      grep -v -E '^(this|that|with|from|into|have|been|were|will|your|they|when|what|also|some|work|more|file|code|line|text|data|info|item|part|side|main|full|very|most|many|much|less|same|each|only|just|good|best|make|made|need|want|take|come|know|think|look|find|give|keep|turn|move|show|help|call|might|could|would|should|still|after|before|where|there|here|back|down|over|such|being|doing|going)$' | \
+      sort | uniq -c | sort -nr | head -2 | awk '{print $2}')
+    
+    if [[ -n "$meaningful_terms" ]]; then
+      story_summary="$primary_action $(echo "$meaningful_terms" | tr '\n' ', ' | sed 's/, $//')"
+    else
+      # Last resort: use the most descriptive commit message
+      local best_commit=$(echo "$clean_messages" | \
+        grep -v '^[a-z]*:$' | \
+        awk 'length > 10 && length < 50' | \
+        head -1)
+      
+      if [[ -n "$best_commit" ]]; then
+        story_summary=$(echo "$best_commit" | sed 's/^[a-z]*://' | sed 's/^[[:space:]]*//' | cut -c 1-30)
+      else
+        story_summary="Code changes"
+      fi
+    fi
+  fi
+  
+  # Clean and format the final summary
+  story_summary=$(echo "$story_summary" | \
+    sed 's/[[:space:]]\+/ /g' | \
+    sed 's/^ *//' | \
+    sed 's/ *$//')
+  
+  # Capitalize first letter (portable way)
+  story_summary="$(echo "$story_summary" | cut -c1 | tr '[:lower:]' '[:upper:]')$(echo "$story_summary" | cut -c2-)"
+  
+  # Limit length and return
+  if [[ ${#story_summary} -gt 35 ]]; then
+    echo "${story_summary:0:32}..."
+  else
+    echo "$story_summary"
+  fi
+}
+
+# Function to get relative time description
+get_time_description() {
+  if [[ -z "$days_back" ]]; then
+    # Default mode: git-standup's smart handling
+    local day_of_week=$(date +%A)
+    if [[ "$day_of_week" == "Monday" ]]; then
+      echo "Friday, $(date -v-3d +%A\ %B\ %d)"
+    else
+      echo "yesterday, $(date -v-1d +%A\ %B\ %d)"
+    fi
+  elif [[ $days_back -eq 0 ]]; then
+    echo "today, $(date +%A\ %B\ %d)"
+  elif [[ $days_back -eq 1 ]]; then
+    echo "yesterday, $(date -v-1d +%A\ %B\ %d)"
+  elif [[ $days_back -eq 7 ]]; then
+    echo "last week"
+  else
+    echo "last $days_back days"
+  fi
+}
+
+# Change to parent directory
+cd "$parent_dir" 2>/dev/null || {
+  echo "Error: Cannot access directory $parent_dir"
+  exit 1
+}
+
+echo "## Git Repository Activity in \`$parent_dir\` ($(get_time_description))..."
+echo ""
+
+# Run git-standup and capture output
+standup_output=$(git-standup $standup_flags 2>/dev/null)
+
+
+if [[ -z "$standup_output" ]]; then
+  echo "| Repo | Commits | Summary |"
+  echo "|------|---------|---------|"
+  echo "| -    | -       | No commits found for $(get_time_description) |"
+  echo ""
+  exit 0
+fi
+
+# Initialize arrays for table data
+declare -A repo_commits
+declare -A repo_summaries
+all_repos=()
+
+# Parse git-standup output
+current_repo=""
+current_commits=""
+
+while IFS= read -r line; do
+  # Skip empty lines
+  [[ -z "$line" ]] && continue
+  
+  # Check if this is a repository header (starts with /, contains git repos)
+  if [[ "$line" =~ ^/.*/([^/]+)$ ]]; then
+    # Save previous repo data if we have it
+    if [[ -n "$current_repo" && -n "$current_commits" ]]; then
+      commit_count=$(echo "$current_commits" | grep -c '^.')  # Count non-empty lines
+      repo_commits[$current_repo]=$commit_count
+      repo_summaries[$current_repo]=$(generate_semantic_summary "$current_commits" "$current_repo")
+      all_repos+=("$current_repo")
+      
+    fi
+    
+    # Extract repo name from path
+    current_repo=$(basename "$line")
+    current_commits=""
+    continue
+  fi
+  
+  # Check if this line contains commit info (starts with hash and has " - ")
+  if [[ "$line" =~ ^[a-f0-9]+.*\ -\  ]]; then
+    # Simple approach: split on " - " and take everything after
+    commit_message="${line#*\ -\ }"
+    # Remove the timestamp and author info at the end - keep everything before " (X ago)"
+    commit_message=$(echo "$commit_message" | sed 's/ ([^)]* ago) <[^>]*>.*$//' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+    current_commits+="$commit_message"$'\n'
+    
+    continue
+  fi
+  
+  # Skip lines like "No commits from JPB during this period."
+done <<< "$standup_output"
+
+# Don't forget the last repo
+if [[ -n "$current_repo" && -n "$current_commits" ]]; then
+  commit_count=$(echo "$current_commits" | grep -c '^.')  # Count non-empty lines
+  repo_commits[$current_repo]=$commit_count
+  repo_summaries[$current_repo]=$(generate_semantic_summary "$current_commits" "$current_repo")
+  all_repos+=("$current_repo")
+fi
+
+# Sort repos alphabetically
+IFS=$'\n' sorted_repos=($(sort <<< "${all_repos[*]}"))
+
+# Calculate column widths
+max_repo=4      # "Repo"
+max_commits=7   # "Commits"
+max_summary=7   # "Summary"
+
+for repo in "${sorted_repos[@]}"; do
+  [[ ${#repo} -gt $max_repo ]] && max_repo=${#repo}
+  commits=${repo_commits[$repo]}
+  [[ ${#commits} -gt $max_commits ]] && max_commits=${#commits}
+  summary=${repo_summaries[$repo]}
+  [[ ${#summary} -gt $max_summary ]] && max_summary=${#summary}
+done
+
+# Cap maximum widths for readability
+[[ $max_repo -gt 30 ]] && max_repo=30
+[[ $max_summary -gt 50 ]] && max_summary=50
+
+# Print table
+printf "| %-${max_repo}s | %-${max_commits}s | %-${max_summary}s |\n" "Repo" "Commits" "Summary"
+
+# Print separator line
+printf "|"
+printf "%s|" "$(printf '%.0s-' $(seq 1 $((max_repo + 2))))"
+printf "%s|" "$(printf '%.0s-' $(seq 1 $((max_commits + 2))))"
+printf "%s|" "$(printf '%.0s-' $(seq 1 $((max_summary + 2))))"
+printf "\n"
+
+if [[ ${#sorted_repos[@]} -eq 0 ]]; then
+  printf "| %-${max_repo}s | %-${max_commits}s | %-${max_summary}s |\n" \
+    "-" "-" "No commits found for $(get_time_description)"
+else
+  for repo in "${sorted_repos[@]}"; do
+    commits=${repo_commits[$repo]}
+    summary=${repo_summaries[$repo]}
+    
+    # Truncate if needed
+    repo=${repo:0:$max_repo}
+    summary=${summary:0:$max_summary}
+    
+    printf "| %-${max_repo}s | %-${max_commits}s | %-${max_summary}s |\n" \
+      "$repo" "$commits" "$summary"
+  done
+fi
+
+# Add blank line after the table
+echo ""

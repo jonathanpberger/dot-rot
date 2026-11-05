@@ -1,0 +1,17 @@
+ssbs:
+  - name: "JPB"
+    profile: "JPB"
+    icon: ""
+    url: "https://gmail.com"
+    browser: "Brave Browser"
+
+  - name: "Foo"
+    profile: "Foo"
+    url: "https://foo.com"
+    browser: "Google Chrome"
+
+  - name: "Bar"
+    icon:
+    url: "https://research.example.com"
+    browser: "Firefox"
+    profile: "Bar" # for browsers like Firefox that use `-P` for profiles
